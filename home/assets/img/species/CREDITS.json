@@ -1,0 +1,156 @@
+{
+ "asiatic-lion": {
+  "species": "Asiatic lion",
+  "file": "File:Lions.Gir5_(cropped).jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Lions.Gir5_(cropped).jpg",
+  "author": "0720reemagupta",
+  "licence": "CC BY-SA 4.0"
+ },
+ "barasingha": {
+  "species": "Barasingha",
+  "file": "File:The_Swamp_deer_(Indian_Barahshinga).gif",
+  "source": "https://commons.wikimedia.org/wiki/File:The_Swamp_deer_(Indian_Barahshinga).gif",
+  "author": "Sudipta Nandy",
+  "licence": "CC BY-SA 4.0"
+ },
+ "black-kite": {
+  "species": "Black kite",
+  "file": "File:Schwarzmilan.jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Schwarzmilan.jpg",
+  "author": "Andreas Trepte",
+  "licence": "CC BY-SA 4.0"
+ },
+ "blackbuck": {
+  "species": "Blackbuck",
+  "file": "File:Blackbuck_male_female.jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Blackbuck_male_female.jpg",
+  "author": "Mr Raja Purohit",
+  "licence": "CC BY-SA 2.5"
+ },
+ "bonnet-macaque": {
+  "species": "Bonnet macaque",
+  "file": "File:Rhesus_Macaque_in_Andhra_Pradesh,_India.jpeg",
+  "source": "https://commons.wikimedia.org/wiki/File:Rhesus_Macaque_in_Andhra_Pradesh,_India.jpeg",
+  "author": "Shagil Muzhappilangad",
+  "licence": "CC BY-SA 4.0"
+ },
+ "cinereous-vulture": {
+  "species": "Cinereous vulture",
+  "file": "File:Buitre_negro_(1).jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Buitre_negro_(1).jpg",
+  "author": "Juan Lacruz",
+  "licence": "CC BY-SA 3.0"
+ },
+ "giant-forest-scorpion": {
+  "species": "Giant forest scorpion",
+  "file": "File:Giant_forest_scorpion.JPG",
+  "source": "https://commons.wikimedia.org/wiki/File:Giant_forest_scorpion.JPG",
+  "author": "Nireekshit",
+  "licence": "CC BY-SA 3.0"
+ },
+ "hill-myna": {
+  "species": "Hill myna",
+  "file": "File:Common_Hill_Myna,_Satchari_NP,_Bangladesh_1.jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Common_Hill_Myna,_Satchari_NP,_Bangladesh_1.jpg",
+  "author": "Nafis Ameen",
+  "licence": "CC BY-SA 4.0"
+ },
+ "indian-peafowl": {
+  "species": "Indian peafowl",
+  "file": "File:Peacock_on_tree_(52077240794).jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Peacock_on_tree_(52077240794).jpg",
+  "author": "Kandukuru Nagarjun from Bangalore, India",
+  "licence": "CC BY 2.0"
+ },
+ "rose-ringed-parakeet": {
+  "species": "Rose-ringed parakeet",
+  "file": "File:African_Rose-ringed_Parakeet,_Tendaba,_Gambia_1.jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:African_Rose-ringed_Parakeet,_Tendaba,_Gambia_1.jpg",
+  "author": "danielskatz",
+  "licence": "CC BY 4.0"
+ },
+ "sarus-crane": {
+  "species": "Sarus crane",
+  "file": "File:Sarus_crane_(Grus_antigone).jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Sarus_crane_(Grus_antigone).jpg",
+  "author": "Charles J. Sharp",
+  "licence": "CC BY-SA 4.0"
+ },
+ "sloth-bear": {
+  "species": "Sloth bear",
+  "file": "File:Sloth_Bear_Washington_DC.JPG",
+  "source": "https://commons.wikimedia.org/wiki/File:Sloth_Bear_Washington_DC.JPG",
+  "author": "Asiir",
+  "licence": "Public domain"
+ },
+ "sumatran-orangutan": {
+  "species": "Sumatran orangutan",
+  "file": "File:Sumatra-Orang-Utan_im_Pongoland.jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Sumatra-Orang-Utan_im_Pongoland.jpg",
+  "author": "Fiver, der Hellseher",
+  "licence": "CC BY-SA 4.0"
+ },
+ "bengal-tiger": {
+  "species": "Bengal tiger",
+  "file": "File:Bengal_tiger_in_Sanjay_Dubri_Tiger_Reserve_December_2024_by_Tisha_Mukherjee_11.jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Bengal_tiger_in_Sanjay_Dubri_Tiger_Reserve_December_2024_by_Tisha_Mukherjee_11.jpg",
+  "author": "Tisha Mukherjee",
+  "licence": "CC BY-SA 4.0"
+ },
+ "chital": {
+  "species": "Chital",
+  "file": "File:066_Chital_in_Ranthambore_National_Park_Photo_by_Giles_Laurent.jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:066_Chital_in_Ranthambore_National_Park_Photo_by_Giles_Laurent.jpg",
+  "author": "Giles Laurent",
+  "licence": "CC BY-SA 4.0"
+ },
+ "gaur": {
+  "species": "Gaur",
+  "file": "File:Indian_Gaur_from_anaimalai_hills_JEG5290.jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Indian_Gaur_from_anaimalai_hills_JEG5290.jpg",
+  "author": "PJeganathan",
+  "licence": "CC BY-SA 4.0"
+ },
+ "indian-leopard": {
+  "species": "Indian leopard",
+  "file": "File:Indian_leopard_in_Jawai_Bandh_April_2025_by_Tisha_Mukherjee_02.jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Indian_leopard_in_Jawai_Bandh_April_2025_by_Tisha_Mukherjee_02.jpg",
+  "author": "Tisha Mukherjee",
+  "licence": "CC BY-SA 4.0"
+ },
+ "indian-rock-python": {
+  "species": "Indian rock python",
+  "file": "File:Pratik_jain_dahod_python.JPG",
+  "source": "https://commons.wikimedia.org/wiki/File:Pratik_jain_dahod_python.JPG",
+  "author": "Pratik Jain",
+  "licence": "CC BY-SA 3.0"
+ },
+ "indian-star-tortoise": {
+  "species": "Indian star tortoise",
+  "file": "File:Indian_star_tortoise_(2016)_7365.jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Indian_star_tortoise_(2016)_7365.jpg",
+  "author": "Davidvraju",
+  "licence": "CC BY-SA 4.0"
+ },
+ "nilgai": {
+  "species": "Nilgai",
+  "file": "File:Nilgai_(Boselaphus_tragocamelus)_male.jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Nilgai_(Boselaphus_tragocamelus)_male.jpg",
+  "author": "Charles J. Sharp",
+  "licence": "CC BY-SA 4.0"
+ },
+ "rhesus-macaque": {
+  "species": "Rhesus macaque",
+  "file": "File:Rhesus_macaque_(Macaca_mulatta_mulatta),_male,_Gokarna.jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Rhesus_macaque_(Macaca_mulatta_mulatta),_male,_Gokarna.jpg",
+  "author": "Charles J. Sharp",
+  "licence": "CC BY-SA 4.0"
+ },
+ "sambar": {
+  "species": "Sambar",
+  "file": "File:Sambar_(Cervus_unicolor_unicolor)_male.jpg",
+  "source": "https://commons.wikimedia.org/wiki/File:Sambar_(Cervus_unicolor_unicolor)_male.jpg",
+  "author": "Charles J. Sharp",
+  "licence": "CC BY-SA 4.0"
+ }
+}

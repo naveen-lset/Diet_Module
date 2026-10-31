@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- maximum-scale=1 stops iPhone Safari zooming in when a text field is tapped; people can still pinch to zoom -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Antz Diet and Help Desk · phone and iPad prototype</title>
+<!-- Antz Home › Modules › Diet (diets and their history) and Help Desk (requests, Diet among them), for phone (390 × 844) and iPad (834 × 1194, 1194 × 834).
+     Look: Antz Design phone and tablet (assets/tokens.css and assets/antz.css, copied unchanged). Masters: js/masters.js. -->
+<link rel="preload" href="assets/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/antz.css">
+<link rel="stylesheet" href="css/module.css">
+</head>
+<body>
+<div class="stage">
+  <div id="stage-bar" class="stage__bar" role="region" aria-label="Prototype controls, not part of the app"></div>
+  <div class="device-slot">
+    <div class="device phone" role="application" aria-label="Antz">
+      <iframe id="homefr" class="homefr" title="Antz Home" hidden></iframe>
+      <div class="app" id="app"><div class="main" id="main"></div></div>
+      <div id="over"></div>
+      <div id="ovl"></div>
+      <div class="az-toast az-toast--success" id="toast" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
+<script src="js/masters.js"></script>
+<script src="js/data.js"></script>
+<script src="js/model.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/diets.js"></script>
+<script src="js/history.js"></script>
+<script src="js/helpdesk.js"></script>
+<script src="js/form.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

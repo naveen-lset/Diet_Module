@@ -1,0 +1,1474 @@
+/* ══ REVIEW SITE ONLY · 30 Sep 2026 ═══════════════════════════════════════════
+   Loaded by tools/review-build/build.py into home-page-redesign-gold.vercel.app
+   and nowhere else. Every rule hangs off `data-review`, which only the build's
+   pin script sets, so this file cannot leak into the main app even if copied.
+   Figma: CNhiaOGCLdnlNxj7x2Ohrd · Home 816:2. */
+
+/* HEADER STYLE (owner, 30 Sep 2026: "in profile give me option Header Style
+   Climate / Plain background, user can select"): PLAIN is the default and is
+   the still radial below; CLIMATE (`data-hdr-style="climate"`, set from the
+   profile menu and kept in localStorage 'rv-hdr') lifts these two rules and
+   the app's live weather sky shows through, as on the main V2.
+
+   HEADER · 881:1154 "Weather Sky" (owner, 5 Oct 2026: "header background
+   take as PNG then add"). The node exported at 2× as one picture —
+   assets/img/header-sky.png, 1488×874 for the 744×437 artboard: a pale
+   #FBFBFB→#E6F6F5 radial from above the top edge, with the node's grain
+   baked in — so no CSS gradient or noise is drawn over it. It covers the
+   band from the top centre, so the radial's peak stays over the middle at
+   every width. (It replaces 816:3's cream-to-mint radial.) */
+:root[data-review]:not([data-hdr-style='climate']) .wsky {
+  background: #E6F6F5 url("assets/img/header-sky.png") center top / cover no-repeat;
+}
+:root[data-review]:not([data-hdr-style='climate']) .wsky__scene { display: none; }
+
+/* SITES · 829:595 "Segmented Control" — chips, not underlined tabs. 52 tall
+   (4 + 44 + 4), inset 24 at the 744 artboard, 8 between chips; the menu chip
+   and the rest on rgba(0,0,0,.05) at r10, the chosen one #1F415B at r12. */
+:root[data-review][data-home='v2'] .site-tabs--v2 {
+  height: 52px; padding-block: 4px; gap: 8px;
+  padding-inline: max(16px, calc(50vw - 50%)) max(3px, calc(50vw - 50% - 21px));
+  background: linear-gradient(to top, #FFFFFF 82.449%, #E5EBEC 138.87%);
+  box-shadow: none; /* the node draws no rule under the chips */
+}
+:root[data-review] .site-tabs--v2 .site-tabs__menu {
+  width: auto; padding: 0 12px; border-radius: 10px; background: rgba(0, 0, 0, .05); color: #44544A;
+}
+:root[data-review] .site-tabs--v2 .site-tabs__track { gap: 8px; align-items: center; }
+:root[data-review][data-home='v2'] .site-tabs--v2 .site-tabs__tab {
+  flex: none; min-width: 88px; height: 44px; padding: 0 12px; border-radius: 10px;
+  background: rgba(0, 0, 0, .05); color: #44544A;
+  font: 500 14px/normal Inter, system-ui, sans-serif; letter-spacing: .1px;
+}
+:root[data-review][data-home='v2'] .site-tabs--v2 .site-tabs__tab[aria-selected='true'] {
+  min-width: 109px; padding: 0 14px; border-radius: 12px; background: #1F415B; color: #FFFFFF;
+}
+:root[data-review] .site-tabs--v2 .site-tabs__tab[aria-selected='true']::after { content: none; }
+:root[data-review] .site-tabs--v2 .site-tabs__tab:focus-visible { outline: 2px solid #1F415B; outline-offset: 2px; }
+
+/* VIEW ALL · 816:152 and 816:177 — one mark on the page: #44544A text and the
+   double chevron (Icon / Chevron, a 14×15 box whose glyph starts at 44.64%).
+   The announcement foot is 12px, the notes head 14px; the dots (816:144)
+   already match the node and are left alone. */
+:root[data-review] .adeck__all { color: #44544A; }
+:root[data-review] :is(.adeck__all, .obs-head__all) { display: inline-flex; align-items: center; gap: 0; }
+:root[data-review] :is(.adeck__all, .obs-head__all) img.rv-chev { flex: none; width: 7.91667px; height: 8.66667px; margin: 0 3px 0 5.5px; }
+
+/* SITES, STUCK · ONE GLASS WITH THE SEARCH BAR (owner, 30 Sep 2026: "on the
+   site selection also make the background as glass, now it's breaking", then
+   "top different, site selection different — can you merge, same effect").
+   Two backdrop layers never match: each blurs only what is under its own box,
+   so the pair showed a seam and, with a veil on the chips, two tints. So when
+   the chips stick there is ONE sheet: the chips' ::before reaches up behind
+   the search row (it sits in the chips' stacking context, z 6, under the
+   search row's z 20) and the search row's own glass steps aside. No fill —
+   the 25 Sep ruling for the search bar ("make it blur, don't give me
+   background colour") now holds for both; one rule and one shadow at the foot. */
+:root[data-review][data-home='v2'].v2-tabs-stuck .search-row::before { opacity: 0; }
+:root[data-review][data-home='v2'].v2-tabs-stuck .site-tabs--v2 { background: transparent; box-shadow: none; }
+:root[data-review][data-home='v2'].v2-tabs-stuck .site-tabs--v2::before {
+  /* 12 of glass under the chips (owner: "need down padding"); the glass grows,
+     not the row, so the page under it does not shift when the bar sticks */
+  content: ''; position: absolute; left: 0; right: 0; bottom: -12px; top: calc(-1 * var(--v2-search-h, 72px)); z-index: -1; pointer-events: none;
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid rgba(195, 206, 199, .38);
+  box-shadow: 0 8px 20px -14px rgba(22, 55, 61, .38);
+}
+:root[data-review][data-home='v2'].v2-tabs-stuck .site-tabs--v2 .site-tabs__menu,
+:root[data-review][data-home='v2'].v2-tabs-stuck .site-tabs--v2 .site-tabs__tab:not([aria-selected='true']) { background: rgba(255, 255, 255, .6); }
+
+/* SCROLLED, PLAIN HEADER · 886:1155 "Home Header" (owner, 5 Oct 2026: "when I
+   scroll this kind background has to come"). The stuck bar is no longer clear
+   glass: it carries the header's own sky — 886:1263 is the same 744×437
+   "Weather Sky" as 881:1154, pixel for pixel, so it is the same PNG, laid from
+   the top centre at the same `cover` the resting band uses, and the bar reads
+   as the top of the header that stayed. Opaque, so nothing blurs and the node
+   draws no rule or shadow at its foot. The chips go to the node's
+   rgba(0,0,0,.07). Climate keeps the glass over its live sky. */
+:root[data-review]:not([data-hdr-style='climate'])[data-home='v2'] .search-row::before,
+:root[data-review]:not([data-hdr-style='climate'])[data-home='v2'].v2-tabs-stuck .site-tabs--v2::before {
+  background: #E6F6F5 url("assets/img/header-sky.png") center top / cover no-repeat;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  border-bottom: 0; box-shadow: none;
+}
+:root[data-review]:not([data-hdr-style='climate'])[data-home='v2'].v2-tabs-stuck .site-tabs--v2 .site-tabs__menu,
+:root[data-review]:not([data-hdr-style='climate'])[data-home='v2'].v2-tabs-stuck .site-tabs--v2 .site-tabs__tab:not([aria-selected='true']) { background: rgba(0, 0, 0, .07); }
+
+/* SITES, AT REST · room above the chips (owner, 30 Sep 2026: "top padding
+   need here"). 12 over the chips, 4 under, so the strip stands 60 and the
+   chips no longer touch the band above. */
+:root[data-review][data-home='v2'] .site-tabs--v2 { height: 60px; padding-top: 12px; padding-bottom: 4px; }
+
+/* PENDING ACTIONS · THE NOTES FILL THE BOARD (owner, 30 Sep 2026: "Pending
+   actions make it fill"). The notes were a fixed 1 : .78, so two rows stood
+   taller than the board and the second row was cut by the board's own
+   scroll. Here the board is a two-column grid whose rows share its height
+   equally: every note shows whole, however many there are, and nothing
+   scrolls. An odd last note keeps a column's width, centred. */
+:root[data-review] .l-v2bd__board { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: minmax(0, 1fr); align-content: stretch; overflow: hidden; padding: 8px 2px 4px; }
+:root[data-review] .l-v2bd__note { width: auto; height: auto; aspect-ratio: auto; min-height: 0; }
+:root[data-review] .l-v2bd__note:last-child:nth-child(odd) { grid-column: 1 / -1; justify-self: center; width: calc(50% - 6px); }
+/* on a phone the board is short and three rows of notes are ~55 tall: the
+   number steps down from its cqw size so the label keeps its line above it */
+@media (max-width: 599px) {
+  :root[data-review] .l-v2bd__board { gap: 10px 10px; }
+  :root[data-review] .l-v2bd__note { padding: 6px 9px 5px; justify-content: space-between; }
+  :root[data-review] .l-v2bd__t { font-size: 12px; -webkit-line-clamp: 1; }
+  :root[data-review] .l-v2bd__note b { font-size: 22px !important; }  /* the inline cqw size is the tablet's */
+  :root[data-review] .l-v2bd__note em { right: 7px; bottom: 6px; }
+}
+
+/* NOTE POPUP ON A PHONE · the card reads like the tablet's (owner, 30 Sep
+   2026: "in mobile inside container make it same as tablet version, outside
+   container make height"). The box was the tablet's 640 tall on a 330-wide
+   phone, so the same content ran 66 past it: it scrolled, and "Scroll for
+   full screen" sat on the author row. The phone box now takes the screen's
+   height less 48, capped at 780, so the whole note shows as it does on a
+   tablet and the hint lands in the body's own 64 of foot room. */
+@media (max-width: 600px) {
+  /* 1 Oct 2026 ("reduce the card height, it become so big"): no taller than
+     the longest note in the set (`--dpop-fit`, measured by DetailPopup), so a
+     short note no longer leaves a band of empty white under its author */
+  :root[data-review] .dpop:not(.is-full) { height: min(var(--dpop-fit, 780px), 780px, calc(100dvh - 48px)); }
+  /* a short phone (667–740 tall) gives the photo back what the note needs: 260 down to 170 */
+  :root[data-review] .dpop:not(.is-full) .dpop__media { height: clamp(170px, calc(100dvh - 500px), 260px); }
+}
+
+/* HEADER · THE AVATAR LEADS THE GREETING (owner, 30 Sep 2026: "on header
+   only, profile avatar move to left near the Good morning — avatar, and next
+   the good-morning name"). The avatar is still the same button (it opens the
+   side drawer); only its place changes. `.header-actions` dissolves into the
+   header row so its three children can be ordered: avatar · greeting ·
+   (weather, bell) on the right. The phone rule that puts the weather first
+   (`order: -1`) is outranked here. */
+:root[data-review][data-home='v2'] .home-header { justify-content: flex-start; gap: 14px; }
+:root[data-review][data-home='v2'] .home-header .header-actions { display: contents; }
+:root[data-review][data-home='v2'] .home-header .header-actions #avatarBtn { order: -2; flex: none; width: 48px; height: 48px; }
+:root[data-review][data-home='v2'] .home-header .greeting { order: -1; flex: 0 1 auto; }
+:root[data-review][data-home='v2'] .home-header .header-actions .wx { order: 1; margin-left: auto; margin-right: 0; }
+:root[data-review][data-home='v2'] .home-header .header-actions .icon-btn--bell { order: 2; flex: none; }
+@media (max-width: 743px) {
+  :root[data-review][data-home='v2'] .home-header { gap: 10px; }
+  :root[data-review][data-home='v2'] .home-header .header-actions #avatarBtn { width: 44px; height: 44px; }
+}
+/* THE GREETING, SMALLER ON A PHONE (owner, 30 Sep 2026: "can you reduce the
+   font size for mobile", of the header): the name 24 → 20, the salutation
+   15 → 13, the avatar 44 → 40 to keep the pair in proportion; the narrowest
+   phones take the name to 18 so it and its wave share one line. */
+@media (max-width: 743px) {
+  :root[data-review][data-home='v2'] .greeting__name, :root[data-review][data-home='v2'] .greeting__wave { font-size: 20px; letter-spacing: -.2px; }
+  :root[data-review][data-home='v2'] .greeting__word { font-size: 13px; }
+  :root[data-review][data-home='v2'] .home-header .header-actions #avatarBtn { width: 40px; height: 40px; }
+}
+@media (max-width: 379px) {
+  :root[data-review][data-home='v2'] .greeting__name, :root[data-review][data-home='v2'] .greeting__wave { font-size: 18px; letter-spacing: -.18px; }
+}
+
+/* EDIT, IN WORDS ONLY · and VIEW beside it (owner, 30 Sep 2026: "Edit text —
+   remove pencil icon, itself enough; also near have to give me view"). Both
+   heads' Edit lose the glyph; View opens the quick module list (index.html,
+   `.mview`, gated on data-review) and steps aside while the grid is being
+   edited, where Done and Add take the row. */
+/* ICONS, NOT WORDS (owner, 30 Sep 2026, third ruling: "for Edit show pencil
+   icon, for View show plus icon; same way for My species — show only pencil
+   icon"). The words stay as the buttons' accessible names (aria-label on the
+   Modules Edit, font-size 0 text on My species' Edit, an sr-only span on View). */
+:root[data-review][data-home='v2'] .section-head--home .link-btn:not(.link-btn--done):not(.mview-btn) > span { display: none; }
+:root[data-review][data-home='v2'] .section-head--home .link-btn:not(.link-btn--done)::before { width: 22px; height: 22px; background-size: 22px 22px; }
+:root[data-review][data-home='v2'] .section-head--home .mview-btn::before { content: none; display: none; }
+:root[data-review][data-home='v2'] .section-head--home .mview-btn { color: #006D35; }
+:root[data-review][data-home='v2'] .section-head--home .mview-btn .icon { display: block; width: 24px; height: 24px; stroke-width: 2.2; }
+:root[data-review][data-home='v2'] .fav__edit { font-size: 0 !important; gap: 0; }  /* over the phone rule's #favTitle-weighted :is() */
+:root[data-review][data-home='v2'] .fav__edit::before { width: 22px; height: 22px; -webkit-mask-size: 22px 22px; mask-size: 22px 22px; }
+:root[data-review] .section-head--home .section-head__actions { gap: 20px; }
+:root[data-review] .section-head--editing .mview-btn, body.is-editing .mview-btn { display: none; }
+
+/* THE LIST · "Your Modules" (redrawn 1 Oct 2026: "fix the Add Module bottom
+   sheet — every bottom sheet has to have a proper header, left & right 16px;
+   each module one line explanation; on the top remove tick mark; remove from
+   home interaction has to give"). A bottom sheet at every width, 16 off each
+   side (to 760, then centred), the screen less 24 above on a phone and 88% on
+   a tablet. The head is the other sheets' own: the title left, a round close
+   right — no Cancel, no ✓. A row is the module's tile, its name over its one
+   line, a chevron. TAP opens it; SWIPE LEFT reveals Add to Home (Antz
+   OnSurface #006D35) or, on a module already there, Remove (Tertiary
+   #FA6140), either done at once with Undo in the notice. Nothing behind
+   scrolls. */
+.mview-scrim { position: fixed; inset: 0; z-index: 460; background: rgba(16, 45, 52, .32); opacity: 0; transition: opacity 240ms ease; }
+.mview-scrim.is-on { opacity: 1; }
+.mview { position: fixed; z-index: 461; left: 50%; bottom: 0; width: min(760px, calc(100vw - 32px)); height: min(88dvh, 900px); display: flex; flex-direction: column;
+  border-radius: 20px 20px 0 0; background: #F4F7F6; box-shadow: 0 -20px 60px -20px rgba(16, 45, 52, .4);
+  transform: translate(-50%, 104%); transition: transform 320ms cubic-bezier(.32, .72, 0, 1); font-family: Inter, system-ui, sans-serif; }
+.mview.is-on { transform: translate(-50%, var(--mv-drag, 0px)); }
+/* the finger has it: no easing while it is pulled down (`--mv-drag`) */
+.mview.is-pulling { transition: none; }
+/* grown out of the Modules button: no slide or scale — the circle is the open (see reveal() in the sheet's script) */
+.mview.is-grow { transition: none; }
+/* CLOSED IS GONE (1 Oct 2026). `display: flex` above outranks the UA's
+   [hidden], so the closed sheet stayed laid out and took every tap over it. */
+.mview[hidden] { display: none; }
+/* TWO FORMS, ONE SHEET (owner, 17 Oct 2026: "For Mobile it has proper
+   component & Tablet also, Apple kind of popup or bottom sheet"):
+   · a phone gets the iOS bottom sheet — edge to edge, the screen less 24,
+     the grabber on top;
+   · a tablet (and the web) gets iPad's form sheet — a card in the middle,
+     every corner round, rising out of a slight scale-down with a fade.
+   Both close by Close, the scrim, Escape, or a pull down on the head. */
+@media (max-width: 743px) { .mview { width: 100%; height: calc(100dvh - 24px); } }
+@media (min-width: 744px) {
+  .mview { top: 50%; bottom: auto; width: min(640px, calc(100vw - 64px)); height: min(82dvh, 860px); border-radius: 20px;
+    box-shadow: 0 30px 80px -24px rgba(16, 45, 52, .5), 0 0 0 .5px rgba(16, 45, 52, .08);
+    transform: translate(-50%, calc(-50% + var(--mv-drag, 0px))) scale(.94); opacity: 0;
+    transition: transform 360ms cubic-bezier(.32, .72, 0, 1), opacity 200ms ease; }
+  .mview.is-on { transform: translate(-50%, calc(-50% + var(--mv-drag, 0px))) scale(1); opacity: 1; }
+  .mview__handle { display: none; }
+  .mview__head { padding-top: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .mview, .mview-scrim { transition: none; } }
+/* the bottom row (Modules · Quick Actions · chat) steps out while the sheet
+   is up, as a tab bar does under an iPad form sheet */
+.qa { transition: opacity 200ms ease, visibility 0s; }
+html.mview-on .qa { opacity: 0; visibility: hidden; transition: opacity 200ms ease, visibility 0s 200ms; }
+/* the head and the grabber are the pull's: the page must not take the finger */
+.mview__handle, .mview__head { touch-action: none; }
+.mview__handle { flex: none; width: 40px; height: 5px; margin: 8px auto 0; border-radius: 3px; background: rgba(31, 65, 91, .18); }
+/* the head: the section heads' type (16 Medium), in the page's black */
+.mview__head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px 4px 20px; }
+.mview__title { margin: 0; font-size: 16px; font-weight: 500; line-height: normal; letter-spacing: 0; color: #000; }
+.mview__x { flex: none; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: rgba(0, 0, 0, .05); color: #44544A; cursor: pointer; }
+.mview__x .icon { width: 18px; height: 18px; stroke-width: 2.2; }
+@media (hover: hover) { .mview__x:hover { background: rgba(0, 0, 0, .08); } }
+.mview__x:focus-visible { outline: 2px solid #00AFD6; outline-offset: 2px; }
+/* the search and the grid / list switch share one row (owner, 20 Oct 2026), both 44 tall on the same grey */
+.mview__tools { flex: none; display: flex; align-items: center; gap: 8px; margin: 12px 16px 4px; }
+.mview__tools .mview__mode { height: 44px; padding: 4px; border-radius: 12px; }
+.mview__tools .mview__mode button { width: 40px; height: 36px; border-radius: 9px; }
+.mview__search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; margin: 0; height: 44px; padding: 0 14px; border-radius: 12px; background: rgba(0, 0, 0, .05); color: #7A8684; }
+.mview__search .icon { width: 18px; height: 18px; }
+.mview__search input { flex: 1; min-width: 0; border: 0; background: none; font: 400 16px Inter, sans-serif; color: #44544A; outline: 0; }
+.mview__hint { flex: none; margin: 6px 20px 0; font-size: 12px; color: #7A8684; }
+.mview__list:focus { outline: none; }   /* focused on open, for the keys; not a control */
+.mview__list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 0 16px 24px; }
+.mview__cat { margin: 16px 4px 8px; font-size: 12px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; color: #7A8684; }
+.mview__item { position: relative; margin-bottom: 8px; border-radius: 14px; overflow: hidden; }
+/* the action is the colour of what it does; drawn only while its row moves */
+.mview__act { position: absolute; top: 0; right: 0; bottom: 0; width: 124px; padding-left: 20px; border-radius: 14px; background: #006D35 !important; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 0; color: #fff; font: 600 13px Inter, sans-serif; cursor: pointer; }
+.mview__act.is-remove { background: #FA6140 !important; }
+.mview__act { visibility: hidden; } .mview__item.is-swiping .mview__act { visibility: visible; }
+.mview__act .icon { width: 22px; height: 22px; stroke-width: 2.4; }
+.mview__row { position: relative; display: flex; align-items: center; gap: 14px; min-height: 68px; padding: 12px 14px; background: #fff; border-radius: 14px; cursor: pointer; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.mview__row:focus-visible { outline: 2px solid #00AFD6; outline-offset: -2px; }
+/* ONE INK, AN OPEN RING (owner, 20 Oct 2026: "I dont want Fill inside Circle … All module Colours have to same
+   here. Now its too Colourful", then "Use our Antz primary green Colour"): no fill, and the ring and every mark
+   in MD3_Antz/Primary #37BD69 (`--c-primary`) — the module art through `.mview__mark`'s mask, the line icons by
+   currentColor. No house badge on it any more. */
+.mview__ico { position: relative; flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
+  color: var(--c-primary, #37BD69); box-shadow: inset 0 0 0 1px var(--c-primary, #37BD69); }
+.mview__mark { display: block; width: 24px; height: 24px; background: currentColor; pointer-events: none;
+  -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+.mview__ico img { width: 26px; height: 26px; pointer-events: none; }
+.mview__ico .icon { width: 22px; height: 22px; color: inherit; }
+/* the name (Antz_Body_Title, a size up) over its one line (Antz_Body_Regular, grey, cut with an ellipsis) */
+.mview__txt { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.mview__txt b { display: block; font-size: 15px; font-weight: 600; line-height: normal; color: #1F415B; }
+.mview__txt small { display: block; font-size: 13px; font-weight: 400; line-height: normal; color: #7A8684; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mview__chev { flex: none; color: rgba(31, 65, 91, .35); }
+.mview__chev .icon { width: 20px; height: 20px; }
+.mview__empty { padding: 24px; text-align: center; color: #7A8684; }
+/* THE SECTIONS (17 Oct 2026) · Recent as tiles, then All Modules with the
+   grid / list switch — the 7D · 30D · 30+ control's pill, the chosen one
+   white with the Antz green mark */
+.mview__sec { margin: 0; font-size: 15px; font-weight: 600; line-height: normal; letter-spacing: 0; color: #1F415B; }
+.mview__list > .mview__sec:first-child { margin: 12px 4px 10px; }
+.mview__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 24px 4px 0; }
+.mview__list > .mview__bar:first-child { margin-top: 12px; }
+.mview__mode { flex: none; display: flex; padding: 2px; border-radius: 8px; background: rgba(0, 0, 0, .05); }
+.mview__mode button { display: grid; place-items: center; width: 36px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: none; color: #7A8684; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mview__mode button[aria-pressed='true'] { background: #fff; color: #006D35; box-shadow: 0 1px 2px rgba(16, 45, 52, .12); }
+.mview__mode button:focus-visible { outline: 2px solid #00AFD6; outline-offset: -2px; }
+.mview__list .mview__hint { margin: 8px 4px 0; }
+/* the tiles: the module's own tile over its name, on a white panel as the rows are */
+.mview__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 4px; padding: 16px 8px; border-radius: 14px; background: #fff; }
+@media (min-width: 744px) { .mview__grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+/* Recent is one row: a phone's four columns drop the fifth */
+@media (max-width: 743px) { .mview__grid--recent .mview__tile:nth-child(n+5) { display: none; } }
+.mview__tile { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; padding: 4px 2px; border: 0; border-radius: 12px; background: none; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 160ms ease; }
+.mview__tile:active { transform: scale(.94); }
+.mview__tile:focus-visible { outline: 2px solid #00AFD6; outline-offset: 2px; }
+.mview__tile .mview__ico { width: 56px; height: 56px; border-radius: 50%; transition: transform 200ms ease; }
+.mview__tile .mview__ico img, .mview__tile .mview__mark { width: 28px; height: 28px; }
+.mview__tile .mview__ico .icon { width: 26px; height: 26px; }
+@media (hover: hover) { .mview__tile:hover .mview__ico { transform: translateY(-2px); } }
+.mview__lbl { max-width: 100%; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: break-word; font-size: 12.5px; font-weight: 500; line-height: 1.25; text-align: center; color: #1F415B; }
+@media (prefers-reduced-motion: reduce) { .mview__tile, .mview__tile .mview__ico { transition: none; } }
+/* FIGMA 67918:13710 (owner, 21 Oct 2026: "Current All Module Bottomsheet Design has to change … use
+   icons from here … one row Module Placement has like these"): the twenty on MD3_Antz/Background, three
+   white r12 cards to a row, 8 apart; in each the frame's 32.76 gradient icon over a 10.48 Inter Semi Bold
+   name in OnPrimaryContainer #1F515B, 6.55 between. No ring: the icon is the mark. A tablet's wider form
+   sheet takes five to a row at the same card size. */
+.mview { background: #EFF5F2; }
+.mview__grid--all { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; padding: 0; border-radius: 0; background: none; }
+/* iPad AND TABLET: three to a row, bigger (owner, 21 Oct 2026: "For ipad or Tablet … keep three in row, make it
+   Bigger. Because Empty Space Was There") — the form sheet's 608 of content as three ~195px cards */
+@media (min-width: 744px) {
+  .mview .mview__grid--all { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .mview .mview__grid--all .mview__tile { gap: 12px; height: 150px; padding: 16px 8px; border-radius: 16px; }
+  .mview .mview__grid--all .mview__ico { width: 52px; height: 52px; }
+  .mview .mview__grid--all .mview__lbl { font-size: 16px; }
+}
+.mview__grid--all .mview__tile { justify-content: center; gap: 8px; height: 107.44px; padding: 12px 4px; border-radius: 12px; background: #fff; }
+.mview__grid--all .mview__ico { width: 32.76px; height: 32.76px; border-radius: 0; box-shadow: none; }
+.mview__grid--all .mview__ico img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.mview__grid--all .mview__fig { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; }
+/* THE SAME ICONS ON THE HOME CARDS, IN WHITE (owner, 21 Oct 2026: "here also u can replace that icons
+   Only But White Colour"): glyph() marks a Figma module's mark `data-fig` with its export (--fig) and
+   the common-size transform (--fig-t). The card's own <img> takes the export in place — the same
+   `content: url()` swap the bell and search use on V2 — keeps its box, turns white (every inked pixel
+   to #fff, the gaps left open), and sits at the common size. */
+:root[data-home='v2'] #moduleGrid [data-fig] > img { content: var(--fig); object-fit: contain; filter: brightness(0) invert(1); transform: var(--fig-t); }
+/* …and the wide Mortality count card, whose mark is its own file rather than glyph()'s; the transform
+   is inkFit('mortality'). Natality keeps its chick: the Figma frame has no Natality icon. */
+:root[data-home='v2'] #moduleGrid .card[data-variant='insight.mortality'] .l-v2ki__mark { content: url("assets/icon/mf-mortality.svg"); object-fit: contain;
+  filter: brightness(0) invert(1); transform: scale(.836) translate(-.25%, 5.38%); }
+.mview__grid--all .mview__mark { width: 100%; height: 100%; background: linear-gradient(118deg, #00D6C9, #37BD69); }
+/* the name a size up from the frame's 10.48 (owner, 21 Oct 2026: "Increase the font Size, Very small now") */
+.mview__grid--all .mview__lbl { font-size: 13px; font-weight: 600; line-height: 1.2; color: #1F515B; }
+/* MOTION (owner, 21 Oct 2026: "Animetions has to there"): on open the cards rise in one after
+   another and each icon pops on a soft overshoot; a press sinks the card and squeezes its icon.
+   `backwards`, not `both`, so the press can still move them once they have landed. */
+@keyframes mvCardIn { from { opacity: 0; transform: translateY(16px) scale(.94); } }
+@keyframes mvIcoPop { from { opacity: 0; transform: scale(.4) rotate(-12deg); } 60% { opacity: 1; } }
+.mview__grid--all.is-enter .mview__tile { animation: mvCardIn 480ms cubic-bezier(.32, .72, 0, 1) backwards; animation-delay: calc(var(--mv-d0, 150ms) + var(--i, 0) * 28ms); }
+.mview__grid--all.is-enter .mview__ico { animation: mvIcoPop 560ms cubic-bezier(.34, 1.56, .64, 1) backwards; animation-delay: calc(var(--mv-d0, 150ms) + 80ms + var(--i, 0) * 28ms); }
+/* the grid / list switch redraws at once: no wait for the sheet's own open */
+.mview .is-swap { --mv-d0: 0ms; }
+.mview__grid--all .mview__tile { transition: transform 200ms cubic-bezier(.32, .72, 0, 1), box-shadow 200ms ease; }
+.mview__grid--all .mview__tile:active { transform: scale(.95); }
+.mview__grid--all .mview__ico { transition: transform 260ms cubic-bezier(.34, 1.56, .64, 1); }
+.mview__grid--all .mview__tile:active .mview__ico { transform: scale(.88); }
+@media (hover: hover) { .mview__grid--all .mview__tile:hover { box-shadow: 0 6px 16px -10px rgba(31, 81, 91, .35); } .mview__grid--all .mview__tile:hover .mview__ico { transform: translateY(-2px) scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { .mview__grid--all.is-enter .mview__tile, .mview__grid--all.is-enter .mview__ico { animation: none; } .mview__grid--all .mview__tile, .mview__grid--all .mview__ico { transition: none; } }
+/* THE LIST, BACK (owner, 21 Oct 2026: "Near Search Add Option like grid & List view. on old varsion is
+   there right"): the switch beside the field again, and the seventeen as rows in the cards' order — white
+   r12 on the sheet's background, 8 apart, each the card's icon at its size, the name in the cards'
+   #1F515B over its one line, a chevron; the swipe under it adds to Home or removes. No ring, no tint. */
+.mview__rows { margin-top: 12px; }
+.mview__rows .mview__item, .mview__rows .mview__act { border-radius: 12px; }
+.mview__rows .mview__row { gap: 14px; min-height: 64px; padding: 12px 14px 12px 16px; border-radius: 12px; }
+.mview__rows .mview__ico { width: 32.76px; height: 32.76px; border-radius: 0; box-shadow: none; }
+.mview__rows .mview__ico img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.mview__rows .mview__fig { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; }
+.mview__rows .mview__mark { width: 100%; height: 100%; background: linear-gradient(118deg, #00D6C9, #37BD69); }
+.mview__rows .mview__txt b { color: #1F515B; }
+@media (min-width: 744px) {
+  .mview .mview__rows .mview__item { margin-bottom: 12px; }
+  .mview .mview__rows .mview__item, .mview .mview__rows .mview__act { border-radius: 16px; }
+  .mview .mview__rows .mview__row { gap: 16px; min-height: 76px; padding: 14px 18px 14px 20px; border-radius: 16px; }
+  .mview .mview__rows .mview__ico { width: 40px; height: 40px; }
+  .mview .mview__rows .mview__txt b { font-size: 16px; }
+  .mview .mview__rows .mview__txt small { font-size: 14px; }
+}
+/* the rows rise in as the cards do, a little closer together; a press sinks the row */
+.mview__rows.is-enter .mview__item { animation: mvCardIn 480ms cubic-bezier(.32, .72, 0, 1) backwards; animation-delay: calc(var(--mv-d0, 150ms) + var(--i, 0) * 22ms); }
+.mview__rows.is-enter .mview__ico { animation: mvIcoPop 560ms cubic-bezier(.34, 1.56, .64, 1) backwards; animation-delay: calc(var(--mv-d0, 150ms) + 80ms + var(--i, 0) * 22ms); }
+.mview__rows .mview__ico { transition: transform 260ms cubic-bezier(.34, 1.56, .64, 1); }
+.mview__rows .mview__row:active .mview__ico { transform: scale(.88); }
+@media (prefers-reduced-motion: reduce) { .mview__rows.is-enter .mview__item, .mview__rows.is-enter .mview__ico { animation: none; } .mview__rows .mview__ico { transition: none; } }
+.mview__toast { position: absolute; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 3; display: flex; align-items: center; gap: 14px; max-width: calc(100% - 32px); padding: 10px 12px 10px 16px; border-radius: 12px; background: #1F415B; color: #fff; font: 500 14px Inter, sans-serif; white-space: nowrap; transform: translate(-50%, 12px); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+.mview__toast > span { overflow: hidden; text-overflow: ellipsis; }
+.mview__toast.is-on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.mview__undo { flex: none; padding: 6px 10px; border: 0; border-radius: 8px; background: rgba(255, 255, 255, .14); color: #A5F3C4; font: 600 14px Inter, sans-serif; cursor: pointer; }
+.mview__toast.is-page { position: fixed; z-index: 470; bottom: calc(96px + env(safe-area-inset-bottom)); pointer-events: none; }
+
+/* KEY INSIGHTS HEAD, COMPACT ON A PHONE (owner, 30 Sep 2026: "can we reduce
+   this for mobile"). Five 52-wide tabs and a 17px title ran the calendar off
+   the card's edge; here the title is 15, the tabs 42 (Today 50), 12px text on
+   a 5px pad, the calendar glyph 16 — the whole row fits beside the title. */
+@media (max-width: 743px) {
+  /* the app's phone rule lists #favTitle in its :is(), which lends it an id's weight; this :is() carries one too */
+  :root[data-review][data-home='v2'] :is(#kinsTitle, .kins__title) { font-size: 15px; }
+  :root[data-review][data-home='v2'] .kins__head { gap: 8px; }
+  :root[data-review][data-home='v2'] .kins__tab { width: 42px; padding: 5px 0; font-size: 12px; }
+  :root[data-review][data-home='v2'] .kins__tab[data-r='today'] { width: 50px; }
+  :root[data-review][data-home='v2'] .kins__tab[data-r='today'], :root[data-review][data-home='v2'] .kins__tab[data-r='w'] { padding: 6px 0; }
+  :root[data-review][data-home='v2'] .kins__tab img { width: 16px; height: 16px; }
+}
+
+/* DRAWER SPACING · "still need spacing — can see the difference" (owner, 30
+   Sep 2026, on the 398×859 drawer). Measured: every row 40 tall with 73 of
+   the list left empty under Reset, and the rule over "This page" running the
+   list's full width while the two under it were inset 16. So the rows take
+   height the list has, 34 to 56 each (flex, so it fills exactly and a 667
+   phone still does not scroll) — the groups get the same step between them,
+   and all three rules share one inset. */
+:root[data-review] .pdrawer__list { display: flex; flex-direction: column; padding-top: clamp(4px, 1dvh, 12px); }
+/* the rows SHARE the height the list has, 34 to 56 each, so it fills without
+   overflowing on any phone; what is left past 56 stays at the foot */
+:root[data-review] .pdrawer .pdrawer__list > .pmenu__item { flex: 1 0 auto; min-height: 34px; max-height: 56px; }
+:root[data-review] .pdrawer .pdrawer__list > .pdrawer__seg { flex: 1 0 auto; min-height: 40px; max-height: 58px; }
+:root[data-review] .pdrawer .pdrawer__list > :is(.pdrawer__h, .pmenu__rule) { flex: none; }
+:root[data-review] .pdrawer .pdrawer__h { margin: clamp(6px, 1.4dvh, 14px) 16px clamp(2px, .6dvh, 8px); padding: clamp(8px, 1.6dvh, 16px) 0 0; }
+:root[data-review] .pdrawer .pmenu__rule { margin-block: clamp(6px, 1.2dvh, 12px); }
+:root[data-review] .pdrawer .pdrawer__row .pmenu__label, :root[data-review] .pdrawer .pdrawer__list .pmenu__label { font-size: 15px; }
+
+/* EDIT MODE · TWO BUTTONS, NOT ONE CAPSULE (owner, 1 Oct 2026: "Add module
+   button has to be an two buttons concept. Tick mark has to onsurface
+   colour"). The capsule gives its glass back to the two inside it: Add
+   Module is its own glass pill, and Done its own glass disc beside it, 10
+   apart, the tick in Antz OnSurface #006D35 — one height, one material, two
+   things to press. */
+:root[data-review] body.is-editing .qa-edit {
+  gap: 10px; padding: 0; background: none; box-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+:root[data-review] body.is-editing .qa-edit > .add-module-btn,
+:root[data-review] body.is-editing .qa-edit > .link-btn--done {
+  height: var(--qa-h, 52px); border-radius: 999px; background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-lift));
+          backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat)) brightness(var(--glass-lift));
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, .25), inset 0 1px 0 0 var(--glass-spec), inset 0 -1px 0 0 var(--glass-bounce),
+              inset 0 0 0 1px var(--glass-rim), inset 0 -6px 12px -6px var(--glass-depth);
+  transition: transform 160ms cubic-bezier(.34, 1.56, .64, 1);
+}
+:root[data-review] body.is-editing .qa-edit > .add-module-btn { padding: 0 22px 0 18px; }
+:root[data-review] body.is-editing .qa-edit > .link-btn--done { width: var(--qa-h, 52px); padding: 0; color: #006D35; }
+:root[data-review] body.is-editing .qa-edit > .link-btn--done .icon { width: 24px; height: 24px; stroke-width: 2.4; }
+:root[data-review] body.is-editing .qa-edit > .link-btn--done:hover { background: var(--glass-fill); filter: brightness(1.04); }
+:root[data-review] body.is-editing .qa-edit > :is(.add-module-btn, .link-btn--done):active { transform: scale(.95); }
+@media (prefers-reduced-motion: reduce) { :root[data-review] body.is-editing .qa-edit > * { transition: none; } }
+
+/* SECTION HEADS IN BLACK (owner, 1 Oct 2026: "all headings like Key
+   Insights, Notes, My Species labels make it black colour"). The id in the
+   :is() lends the weight to pass the app's phone rule (which lists #favTitle).
+   Under a dark live sky My species stays white, as WeatherSky sets it. */
+:root[data-review][data-home='v2'] :is(#obsTitle, #kinsTitle, #modulesTitle, .obs-head__title, .kins__title, .section-head--home .section-head__title) { color: #000; }
+:root[data-review][data-home='v2']:not([data-sky-tone='dark']) :is(#favTitle, .fav__title) { color: #000; }
+
+/* THE TICKER · ROOM AFTER LIVE (owner, 1 Oct 2026: "in tickers part live icon
+   after that label need some space"): the label starts 14 after the mark,
+   not the node's 8 — in the tape and on the pinned copy alike */
+:root[data-review] .hstrip__label { padding-left: 14px; }
+
+/* THE DOCKED PROFILE STAYS ON THE LEFT (owner, 1 Oct 2026: "on the header when
+   I scroll profile going right side, it has to be on left side only. Make it
+   all proper animations"). The review header leads with the avatar, so the
+   one that docks into the stuck search bar takes the row's FIRST place, not
+   its last. It arrives from where the header's avatar went — up and to the
+   left — growing out of nothing as the field gives it room, on the bar's own
+   clock; it leaves the same way. At rest it is 0 wide with the row's 8 of gap
+   taken back, so the field does not shift a pixel until the bar sticks. */
+:root[data-review][data-home='v2'] .search-row__profile {
+  order: -1; margin-left: 0 !important; margin-right: -8px;   /* !important over the app's V2 rest rule, which takes back the gap on the LEFT (0,5,0) */
+  transform: translate(-8px, -10px) scale(.6); transform-origin: 0 50%;
+  transition: width 300ms cubic-bezier(.32, .72, 0, 1), margin-right 300ms cubic-bezier(.32, .72, 0, 1),
+              transform 360ms cubic-bezier(.34, 1.4, .64, 1), opacity 160ms ease, visibility 0s linear 300ms;
+}
+:root[data-review][data-home='v2'] .search-row.is-stuck .search-row__profile {
+  width: 38px; margin-left: 0; margin-right: 4px; opacity: 1; visibility: visible; transform: none;
+  transition: width 300ms cubic-bezier(.32, .72, 0, 1), margin-right 300ms cubic-bezier(.32, .72, 0, 1),
+              transform 420ms cubic-bezier(.34, 1.4, .64, 1) 40ms, opacity 220ms ease 60ms, visibility 0s linear 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-review][data-home='v2'] .search-row__profile,
+  :root[data-review][data-home='v2'] .search-row.is-stuck .search-row__profile { transform: none; transition: visibility 0s linear; }
+}
+
+/* EDIT MODE, SECOND PASS (owner, 1 Oct 2026: "Choose Size not required; the
+   tick button has to be filled with background OnSurface, tick as white").
+   The resize popover loses its "Choose Size" line — the three sizes say what
+   they are — though the words stay for a screen reader, which names the
+   radio group by them. Done is a filled #006D35 disc with a white tick. */
+:root[data-review] .size-pop .size-picker__label {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+:root[data-review] body.is-editing .qa-edit > .link-btn--done {
+  background: #006D35; color: #fff;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: 0 6px 16px -6px rgba(0, 109, 53, .55), inset 0 1px 0 rgba(255, 255, 255, .22);
+}
+:root[data-review] body.is-editing .qa-edit > .link-btn--done:hover { background: #005C2D; filter: none; }
+
+/* ══ V2 ON A PHONE, AS FIGMA 903:2 "Home · Mobile (5 Oct)" DRAWS IT ════════
+   Owner, 6 Oct 2026: "only for Mobile do it like the design — no more
+   compliment in design & font, spacing". Every number below is the node's
+   (get_design_context, 903:5 · 903:48 · 907:1257 · 907:1492 · 907:1686 ·
+   907:2307 · 903:511); nothing from 744 up changes. It supersedes the
+   earlier phone rulings where they disagree — the 20/13 greeting, the 12/14
+   announcement chip and head with Read More, the 44 site chips at r12, the
+   band gaps of 12. `html` + [data-review] lift each rule over the app's
+   phone block and the style blocks that load after this sheet.
+   The grid's order and its two insight cards are V2_PHONE_LAYOUT and the
+   `v2-ki` layout in index.html; the Key Insights band and the Command Centre
+   banner are not drawn on a phone. */
+@media (max-width: 743px) {
+  /* ── header · 903:5: 20 16 16, 10 apart; avatar 32; 12 Regular #7A8684 over
+     16 Medium #1F415B, 4 between; 21° 16 Medium #4A5550; the bell bare ── */
+  html:root[data-review][data-home='v2'] .home-header { padding: 20px 16px 16px; gap: 10px; }
+  html:root[data-review][data-home='v2'] .home-header .header-actions #avatarBtn { width: 32px; height: 32px; }
+  html:root[data-review][data-home='v2'] .greeting { gap: 4px; }
+  html:root[data-review][data-home='v2'] .greeting__word { font-size: 12px; font-weight: 400; line-height: 15px; color: #7A8684; }
+  html:root[data-review][data-home='v2'] :is(.greeting__name, #greetName) { font-size: 16px; font-weight: 500; line-height: normal; letter-spacing: 0; color: #1F415B; }
+  html:root[data-review][data-home='v2'] .greeting__wave { font-size: 20px; font-weight: 600; letter-spacing: -.2px; margin-left: 0; }
+  /* 993:1734: the name and the wave a 20 row, 2.4 apart — a flex row drops the
+     markup's space before the wave, which had set it 4 further out */
+  html:root[data-review][data-home='v2'] .greeting__name { display: flex; align-items: center; gap: 2.4px; height: 20px; white-space: nowrap; }
+  html:root[data-review][data-home='v2'] .header-actions .wx { gap: 0 4px; }
+  html:root[data-review][data-home='v2'] .header-actions .wx__t { font-size: 16px; font-weight: 500; line-height: normal; color: #4A5550; }
+  html:root[data-review][data-home='v2'] .header-actions .icon-btn--bell { background: none; box-shadow: none; }
+  /* the search bar · 903:26: 60 tall, the field 8 off the header and 8 over
+     the favourites — the row keeps its 10 of sticky glass and gives back 2 */
+  html:root[data-review][data-home='v2'] .search-row { margin-top: -2px; margin-bottom: -2px; }
+  /* 903:28: the placeholder 14 Regular #7A8684, 12 after the 20 glyph — 16 + 20 + 12 in.
+     Only the drawn hint; the input keeps 16 so iOS does not zoom on focus */
+  html:root[data-review][data-home='v2'] .search__hint { left: 48px; max-width: calc(100% - 64px); font-size: 14px; }
+  html:root[data-review][data-home='v2'] :is(.search__hint-lead, .search__cycle) { font-size: 14px; }
+
+  /* ── Recents · the folder and its soft pills are shared with the tablet now
+     (RECENTS AND THE TICKER'S OUTLINE, after this block); what stays here is
+     the phone's own measure: 12 under the search and 16 over the band's foot,
+     132 × 158 cards 6 apart at r10 ── */
+  html:root[data-review][data-home='v2'] .fav-band:not([hidden]) { padding-top: 12px; padding-bottom: 16px; gap: 0; }
+  html:root[data-review][data-home='v2'] .fav__rail { gap: 6px; }
+  html:root[data-review][data-home='v2'] .fav__card { width: 132px; flex-basis: 132px; height: 158px; padding: 12px; border-radius: 10px; background: #EEF5F6; }
+  html:root[data-review][data-home='v2'] .fav__txt { gap: 2px; }
+  html:root[data-review][data-home='v2'] .fav__name { font-size: 14px; font-weight: 500; line-height: normal; letter-spacing: .1px; text-shadow: none; }
+  html:root[data-review][data-home='v2'] .fav__idsep { font-size: 0; }
+  html:root[data-review][data-home='v2'] .fav__idsep::before { content: ':'; font-size: 14px; }
+  html:root[data-review][data-home='v2'] .fav__meta { font-family: Inter, var(--font); font-size: 12px; font-weight: 400; line-height: normal; letter-spacing: 0; opacity: .9; }  /* 907:1185 is Inter Regular (Antz_Subtext_Regular), not the figures' DM Sans; the name has no shadow */
+  html:root[data-review][data-home='v2'] .fav__sex { top: 8px; right: 9px; }
+
+  /* ── the audit ticker · 907:1257: 16 under the favourites, 42 tall at r12,
+     a .5 #FFE86E edge on rgba(252,244,174,.5); "AUDIT SCORE 68%" 12/600; a
+     site 12 Regular #44544A with its figure 12/600 #250E01, 8 to the photo,
+     13 to the rule ── */
+  html:root[data-review][data-home='v2'] .hstrip { margin-top: 14px; border-radius: 12px; box-shadow: inset 0 0 0 .5px #FFE86E; }   /* 993:1828: 14 under the sky's foot (455 − 441) */
+  html:root[data-review][data-home='v2'] .hstrip__lane { height: 42px; border-radius: 12px; }
+  html:root[data-review][data-home='v2'] .hstrip__cap { border-radius: 12px 0 0 12px; }
+  html:root[data-review][data-home='v2'] .hstrip__lead { display: none; }
+  html:root[data-review][data-home='v2'] .hstrip__it { gap: 8px; padding-right: 13px; }
+  html:root[data-review][data-home='v2'] .hstrip__txt { font-size: 12px; font-weight: 400; color: #44544A; }
+  html:root[data-review][data-home='v2'] .hstrip__txt b { font-size: 12px; font-weight: 600; color: #250E01; }
+
+  /* ── Announcements · 907:1492: 16 under the ticker, 16 12 12 inside, the card
+     r10 and 431 tall, 32 to the dots; chip 10 Medium #2FA85C; the head
+     16/22; byline 12; body 14/19 #44544A, three lines, no Read More; the
+     attachments 12; the photo r10 ── */
+  html:root[data-review][data-home='v2'] .hstrip + .adeck,
+  html:root[data-review][data-home='v2'] .adeck { margin-top: 16px; padding: 16px 12px 12px; }
+  html:root[data-review][data-home='v2'] .adeck .adeck__foot { margin-top: 32px; }
+  html:root[data-review][data-home='v2'] .adeck .adeck__card { --adeck-h: 431px; border-radius: 10px; }
+  html:root[data-review][data-home='v2'] .adeck .adeck__body { gap: 12px; }
+  html:root[data-review][data-home='v2'] .adeck .adeck__text { gap: 4px; }
+  html:root[data-review][data-home='v2'] .adeck .adeck__chip { height: auto; padding: 2px 12px 2px 2px; border-radius: 15px; font-size: 10px; font-weight: 500; letter-spacing: 0; }
+  html:root[data-review][data-home='v2'] .adeck .adeck__hl { font-size: 16px; font-weight: 500; line-height: 22px; }
+  html:root[data-review][data-home='v2'] .adeck .adeck__by { height: 28px; padding-top: 4px; gap: 6px; font-size: 12px; line-height: normal; }
+  html:root[data-review][data-home='v2'] .adeck .adeck__av { width: 24px; height: 24px; font-weight: 500; }
+  html:root[data-review][data-home='v2'] .adeck .adeck__desc { font-size: 14px; line-height: 19px; color: #44544A; -webkit-line-clamp: 3; }
+  html:root[data-review][data-home='v2'] .adeck .adeck__text .adeck__more { display: none; }
+  html:root[data-review][data-home='v2'] .adeck .adeck__att { height: 22px; padding-top: 4px; gap: 6px; font-size: 12px; line-height: normal; }
+  html:root[data-review][data-home='v2'] .adeck .adeck__att :is(img, svg) { width: 16px; height: 16px; }
+  html:root[data-review][data-home='v2'] .adeck .adeck__img { border-radius: 10px; }
+
+  /* ── the sites · 907:1686: 16 under the band, 20 over the chips, no foot; the
+     menu a 44 pill and the chips stadia 12 16, 14 Medium — the lit one on
+     #1F515B, the rest on rgba(0,0,0,.07) in #44544A ── */
+  html:root[data-review][data-home='v2'] .site-tabs--v2 { height: 61px; margin-top: 16px; padding-top: 20px; padding-bottom: 0; gap: 8px; }
+  html:root[data-review][data-home='v2']:not(.v2-tabs-stuck) .site-tabs--v2 { background: linear-gradient(0deg, #fff 0%, #fff 82.449%, #F7F9F9 100%); }
+  html:root[data-review][data-home='v2'] .site-tabs--v2 .site-tabs__track { gap: 8px; }
+  html:root[data-review][data-home='v2'] .site-tabs--v2 .site-tabs__menu { width: 44px; height: 41px; padding: 0; border-radius: 100px; background: rgba(0, 0, 0, .07); }
+  html:root[data-review][data-home='v2'] .site-tabs--v2 .site-tabs__menu svg { width: 24px; height: 24px; }
+  html:root[data-review][data-home='v2'] .site-tabs--v2 .site-tabs__tab { height: 41px; padding: 0 16px; border-radius: 100px; font-size: 14px; font-weight: 500; letter-spacing: .1px; background: rgba(0, 0, 0, .07); color: #44544A; }
+  html:root[data-review][data-home='v2'] .site-tabs--v2 .site-tabs__tab[aria-selected='true'] { padding: 0 16px; border-radius: 100px; background: #1F515B; color: #fff; }
+
+  /* ── Observation Notes · 907:2307: 16 under the sites, 20 12 12 inside, 16
+     under the head; 290 cards 8 apart; the title 16 Medium; the tags 12 with
+     no lead bullet; the note 12/17; the author 12 ── */
+  html:root[data-review][data-home='v2'] .obs-band { margin-top: 16px; padding: 20px 0 12px; }
+  html:root[data-review][data-home='v2'] .obs-band .obs-head { margin: 0 10px 16px 12px; }
+  html:root[data-review][data-home='v2'] .obs-rail { gap: 8px; padding: 0 12px; scroll-padding-left: 12px; }
+  html:root[data-review][data-home='v2'] .obs { height: 411px; }  /* the rail's 411; the body takes the rest */
+  html:root[data-review][data-home='v2'] .obs__body { gap: 4px; }
+  html:root[data-review][data-home='v2'] .obs__title { font-weight: 500; }
+  html:root[data-review][data-home='v2'] .obs__tags { margin-top: 0; padding-bottom: 9px; font-size: 12px; }
+  html:root[data-review][data-home='v2'] .obs__tags span { font-size: 12px; }
+  html:root[data-review][data-home='v2'] .obs__tags span[aria-hidden] { margin: 0 4px 0 0; font-size: 14px; }
+  html:root[data-review][data-home='v2'] .obs__tags span[aria-hidden]:first-child { display: none; }
+  html:root[data-review][data-home='v2'] .obs__tags span:not([aria-hidden]) { margin-right: 6px; }
+  html:root[data-review][data-home='v2'] .obs__note { margin-top: 0; padding-top: 4px; font-size: 12px; line-height: 17px; }
+  html:root[data-review][data-home='v2'] .obs__by { font-size: 12px; }
+  html:root[data-review][data-home='v2'] .obs__acts { gap: 14px; }
+
+  /* ── Modules · 903:511: 16 under the notes, 16 over the head, 12 under it;
+     no Key Insights band and no banner — the tiles are in the grid ── */
+  html:root[data-review][data-home='v2'] .hero--estate { display: none; }
+  html:root[data-review][data-home='v2'] .modules-band { margin-top: 16px; padding-top: 16px; }
+  /* the node's own corners: Users, Security and Diet & Kitchen at 16 */
+  html:root[data-review][data-home='v2'] #moduleGrid .card:is([data-variant='users.default'], [data-variant='security.default'], [data-variant='diet.photo']) { border-radius: 16px; }
+
+  /* ── an insight card · 907:2723 / 907:2775: 12 16 inside; the mark and name
+     (14 Medium, 6 apart) left, the segment right — 42 tabs on a white 50%
+     track, 12 Regular #44544A, the lit one white; the count DM Sans 44/36 ── */
+  html:root[data-review][data-home='v2'] #moduleGrid .card[data-layout='v2-ki'] { padding: 12px 16px; border-radius: 12px; }
+}
+
+/* RECENTS AND THE TICKER'S OUTLINE · THE PHONE'S ON THE TABLET TOO (owner, 21 Oct
+   2026, of the iPad: "update the Tabs System same as Mobile", then of its ticker:
+   "Animation not there same as Mobile"). Both moved out of the phone block as they
+   were; :where() keeps their weight where it was, so the 320–359 step still wins.
+   The web home (data-v2desk) keeps its own rail and ticker. A tablet keeps its own
+   148 cards 8 apart and its ticker's 8 corners: the folder and the outline follow them. */
+/* ── Recents · SOFT PILLS AND A WHITE FOLDER (owner, 19 Oct 2026: "implement
+   the Soft Pills", variant A of mockups/recents-folder-tabs.html, after
+   "background has to white, don't add too much outline, make more
+   premium"). 12 under the search and 16 over the band's foot, as before.
+   The four tabs are soft white pills, 54 tall, 6 apart (the mockup's 8,
+   "pills between, can you reduce little"), each its 20 mark over its 12.5
+   name. Every corner is r12 like the page's other containers — the search,
+   Announcements, Observation Notes, the module cards (owner, 19 Oct 2026:
+   "follow the corner radius of other containers"; an r8 pass came first).
+   The picked one turns white and opens into the rail as one folder:
+   the band's script draws it as one SVG path (.fav__fold) — white with a
+   soft shadow under the tabs and the cards, and no outline at all ("remove
+   the outline"; a 7% hairline came first) — and glides it to the next tab
+   on the tabs' 460ms curve. No bar. The rail sits 12 inside the folder,
+   the inset those containers keep ("there is no breathing space"). The cards
+   inside are each width's own: the phone block's 132s, the tablet's 148s ── */
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__box { position: relative; isolation: isolate; display: flex; flex-direction: column; gap: 0; min-width: 0; border-radius: 0; background: none; }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__head { position: relative; z-index: 1; height: auto; }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__rail { position: relative; z-index: 1; margin: 0; padding: 12px; border-radius: 12px; scroll-padding-inline: 12px; }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__tabs { --tab-hug: 0; gap: 6px; height: auto; align-items: flex-end; box-shadow: none; }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__tab { --tab-gap: 6px; flex: 1 1 0; width: auto; min-width: 0; height: 54px; margin-bottom: 8px; padding: 0 4px; overflow: visible;
+  flex-direction: column; justify-content: center; gap: 6px; border-radius: 12px; background-color: rgba(255, 255, 255, .55);
+  color: rgba(68, 84, 74, .88); font: 500 12.5px/1 Inter, var(--font); letter-spacing: .1px;
+  transition: background-color .3s ease .14s, color .26s ease; }   /* the pill comes back once the folder has left it */
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__tab[aria-selected='true'] { color: var(--c-on-primary-ctr, #1F515B); background-color: transparent; transition: background-color .1s, color .26s ease; }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__tab:focus-visible { outline-offset: -3px; border-radius: 12px; }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__tab svg { width: 20px; height: 20px; transition: none; }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__tabl { max-width: none; margin: 0; opacity: 1; transition: none; }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__tab[aria-selected='true'] .fav__tabl { max-width: none; margin: 0; font-weight: 600; }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__tabbar { display: none; }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__fold { display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__fold--fill { z-index: 0; filter: drop-shadow(0 1px 2px rgba(31, 65, 91, .06)) drop-shadow(0 10px 22px rgba(31, 65, 91, .09)); }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__fold--fill path { fill: #fff; }
+/* under the climate header's dark sky the soft pills go glassy and their ink white; the folder stays white */
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])).has-wsky[data-sky-tone='dark'] .fav__tab:not([aria-selected='true']) { background-color: rgba(255, 255, 255, .18); color: rgba(255, 255, 255, .88); }
+@media (prefers-reduced-motion: reduce) {
+  html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__tab { transition: none; }
+}
+/* a 320–359 phone: a quarter is under 70, so "Bookmarks" steps down to fit its pill */
+@media (max-width: 359px) {
+  html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .fav__tab { padding: 0 2px; font-size: 11px; letter-spacing: 0; }
+}
+/* THE OUTLINE RUNS (owner, 6 Oct 2026: "here outline has to animate" — the
+   running light, picked over a pulse and a one-off draw). The .5 #FFE86E
+   edge is drawn ABOVE the cap now (the cap had hidden it at the left), and
+   a short warm streak laps it every 3s, like the LIVE signal beside it.
+   Masked to a 1.5 ring so it never touches the words; still for reduced
+   motion. */
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .hstrip { box-shadow: none; }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .hstrip::before,
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .hstrip::after {
+  content: ''; position: absolute; inset: 0; z-index: 4; border-radius: inherit; pointer-events: none;
+}
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .hstrip::before { box-shadow: inset 0 0 0 .5px #FFE86E; }
+html:root[data-review][data-home='v2']:where(:not([data-v2desk])) .hstrip::after {
+  padding: 1.5px;
+  background: conic-gradient(from var(--hs-run), transparent 0deg, transparent 290deg, rgba(255, 232, 110, .35) 320deg, #FFE86E 350deg, #FFFBE0 356deg, transparent 360deg);  /* light: the edge's own #FFE86E to near-white (owner: "too dark, make it light") */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: hs-run 3s linear infinite;
+}
+
+/* the ticker's running outline (RECENTS AND THE TICKER'S OUTLINE above) */
+@property --hs-run { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes hs-run { to { --hs-run: 360deg; } }
+@media (prefers-reduced-motion: reduce) {
+  html:root[data-review][data-home='v2'] .hstrip::after { animation: none; opacity: 0; }
+}
+
+/* NO KEY INSIGHTS BAND AT ANY WIDTH (owner, 6 Oct 2026, of the tablet: "remove
+   the Key Insights, and the same way it has to come under Modules"). Its
+   tiles are the grid's `v2-ki` cards; the band stays built, unseen, because
+   its species sheet is the one a card opens. */
+html:root[data-review][data-home='v2'] .kins { display: none; }
+
+/* TABLET · RECENTLY VIEWED AND THE SITE CHIPS IN THE PHONE'S STYLE (owner,
+   6 Oct 2026, of these two parts only). The 903:2 treatment at the tablet's
+   own sizes (902:2's 148 cards, 15px AAID, 44 chips): AAID:n in Inter Medium
+   with no shadow, the species line Inter Regular at 90%; the chips and the
+   menu as stadia on rgba(0,0,0,.07) in #44544A, the lit one #1F515B. */
+@media (min-width: 744px) {
+  html:root[data-review][data-home='v2'] .fav__name { font-weight: 500; letter-spacing: .1px; line-height: normal; text-shadow: none; }
+  html:root[data-review][data-home='v2'] .fav__idsep { font-size: 0; }
+  html:root[data-review][data-home='v2'] .fav__idsep::before { content: ':'; font-size: 15px; }
+  html:root[data-review][data-home='v2'] .fav__meta { font-family: Inter, var(--font); font-weight: 400; letter-spacing: 0; opacity: .9; }
+  html:root[data-review][data-home='v2'] .site-tabs--v2 .site-tabs__menu { border-radius: 100px; background: rgba(0, 0, 0, .07); }
+  html:root[data-review][data-home='v2'] .site-tabs--v2 .site-tabs__tab { padding: 0 16px; border-radius: 100px; letter-spacing: .1px; background: rgba(0, 0, 0, .07); color: #44544A; }
+  html:root[data-review][data-home='v2'] .site-tabs--v2 .site-tabs__tab[aria-selected='true'] { padding: 0 16px; border-radius: 100px; background: #1F515B; color: #fff; }
+}
+
+/* V2 ON THE WEB · mockups/home-desktop.html, EXACTLY (owner, 7 Oct 2026:
+   "I want it exactly as the second image"). data-v2desk is set in the head
+   script on a desktop browser — 1200 and up, a mouse or trackpad — and the
+   script at the end of index.html moves the app's own bands into place:
+   the search row into the header's row, the ticker over two columns, the
+   site chips under the Modules head, and Favourites / Announcements /
+   Observation Notes into the right rail. The grid's six columns and order
+   are V2_DESK_LAYOUT. Every rule carries the full prefix so it outranks the
+   tablet's, and nothing here reaches a page without data-v2desk. */
+html:root[data-review][data-home='v2'][data-v2desk] {
+  --max-content: 1376px; --grid-cols: 5; --grid-gap: 16px;  /* the tablet's cards (8 Oct 2026), five across so they sit smaller ("reduce the Card") */
+  --d-ink: #1F2A30; --d-ink-2: #44544A; --d-mute: #6B7773; --d-line: #E3E9E6; --d-teal: #1F515B;
+}
+/* the row keeps the tablet's 162:144 cell at five columns (the tablet's own rule divides by four) */
+html:root[data-review][data-home='v2'][data-v2desk] #moduleGrid { --grid-row: calc((100cqw - 64px) / 5 / 1.125); }
+/* the page's ground goes on the root: the sky band sits at z -1, under any body background */
+html:root[data-review][data-home='v2'][data-v2desk] { background: #EFF5F2; }
+html:root[data-review][data-home='v2'][data-v2desk] body { background: transparent; }
+
+/* ── the header: one row — greeting · search · weather and bell ── */
+/* the header is a flex row whose .header-actions dissolve (avatar first, the
+   weather and bell last): the search takes the middle, 640 at most */
+html:root[data-review][data-home='v2'][data-v2desk] .home-header {
+  display: flex; align-items: center; gap: 12px; min-height: 0; height: auto; padding-top: 20px; padding-bottom: 20px;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .greeting { flex: none; order: -1; }
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .header-actions #avatarBtn { width: 44px; height: 44px; }
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .header-actions .wx { margin-left: 0; }
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .clock { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .greeting__word { font-size: 13px; line-height: normal; }
+html:root[data-review][data-home='v2'][data-v2desk] .greeting__name { font-size: 22px; font-weight: 600; line-height: normal; white-space: nowrap; }
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .search-row {
+  position: static; top: auto; display: flex; gap: 10px; flex: 1 1 auto; order: 0; width: auto; max-width: 640px;
+  margin: 0 auto; padding: 0; background: none; box-shadow: none;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .search-row::before,
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .search-row::after { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .search-row__profile { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .search { flex: 1 1 auto; height: 44px; min-height: 44px; border-radius: 12px; }
+html:root[data-review][data-home='v2'][data-v2desk] .home-header :is(.search__input, .search__hint) { font-size: 14px; }
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .search-btn { width: 44px; height: 44px; border-radius: 12px; }
+html:root[data-review][data-home='v2'][data-v2desk] .main-frame { padding-top: 0; }
+
+/* ── the ticker over both columns, then the two ── */
+html:root[data-review][data-home='v2'][data-v2desk] #panel-modules > .hstrip { margin-top: 24px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 40px; align-items: start; margin-top: 32px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main { min-width: 0; display: flex; flex-direction: column; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main > .modules-band { margin: 0; padding: 0; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail > * { margin: 0; flex: none; }
+
+/* ── LEFT · Modules: the head, the chips, the banner, the grid ── */
+html:root[data-review][data-home='v2'][data-v2desk] #modulesHead { min-height: 32px; height: auto; margin: 0 0 16px; padding: 0; }
+html:root[data-review][data-home='v2'][data-v2desk] #modulesTitle { font-size: 16px; font-weight: 600; line-height: normal; color: var(--d-ink); }
+html:root[data-review][data-home='v2'][data-v2desk] .modules-band .site-tabs--v2 {
+  position: static; top: auto; display: flex; flex-wrap: wrap; gap: 8px; height: auto; width: auto;
+  margin: 0 0 16px; padding: 0; background: none; box-shadow: none; overflow: visible;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .modules-band .site-tabs--v2::before { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .modules-band .site-tabs__menu { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .modules-band .site-tabs__track { display: flex; flex-wrap: wrap; gap: 8px; overflow: visible; padding: 0; margin: 0; }
+html:root[data-review][data-home='v2'][data-v2desk] .modules-band .site-tabs--v2 .site-tabs__tab {
+  height: 38px; padding: 0 18px; border-radius: 999px; font-size: 14px; font-weight: 400; background: #E2E8E6; color: var(--d-ink-2); box-shadow: none;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .modules-band .site-tabs--v2 .site-tabs__tab[aria-selected='true'] { padding: 0 18px; background: var(--d-teal); color: #fff; }
+html:root[data-review][data-home='v2'][data-v2desk] .modules-band .site-tabs__tab::after { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .modules-band .hero { height: 168px; min-height: 0; margin: 0 0 16px; border-radius: 16px; }
+html:root[data-review][data-home='v2'][data-v2desk] #moduleGrid .card { border-radius: 16px; }
+
+/* ── RIGHT · the rail: three cards ── */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-all,
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck__all,
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs-head__all {
+  display: inline-flex; align-items: center; height: auto; padding: 0; border: 0; background: none; margin-left: auto;
+  font: inherit; font-size: 13px; font-weight: 400; letter-spacing: 0; line-height: normal; color: var(--d-ink-2); cursor: pointer;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-all::after { content: '\00a0»'; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail :is(.adeck__all, .obs-head__all) img { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail :is(.adeck__all, .obs-head__all)::after { content: '\00a0»'; position: static; inset: auto; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail :is(#favTitle, #adeckTitle, #obsTitle) {
+  margin: 0; font-size: 16px; font-weight: 600; line-height: normal; letter-spacing: 0; color: var(--d-ink);
+}
+
+/* Favourites: a white card, the four in a row at 3:4 */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav-band:not([hidden]) {
+  display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 16px; border-radius: 20px; background: #fff;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__head { display: flex; align-items: center; height: auto; min-height: 32px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__edit { display: none !important; }
+/* every favourite, four in view, the rest a scroll away (owner, 8 Oct 2026:
+   "Favorites Animals i can Scroll there") — trackpad, shift-wheel or the bar */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__rail {
+  display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 24px) / 3.4); grid-template-columns: none; gap: 8px;
+  margin: 0; padding: 0 0 8px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain;
+  scrollbar-width: thin; scrollbar-color: #C9D6D1 transparent;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__rail::-webkit-scrollbar { display: block; height: 6px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__rail::-webkit-scrollbar-thumb { background: #C9D6D1; border-radius: 3px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__item { scroll-snap-align: start; }
+/* three and a bit in view, so the cut card says the row moves; and V2 hides the
+   Find animals tile, so its empty slot goes too (it was a blank at the end) */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__item:has(> .fav__card--add) { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__rail.is-dragging { cursor: grabbing; user-select: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__rail.is-dragging * { pointer-events: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__card { width: 100%; flex-basis: auto; height: auto; aspect-ratio: 3 / 4; padding: 8px 6px 7px 8px; border-radius: 12px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__name { font-size: 11px; font-weight: 600; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__idsep::before { font-size: 11px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__meta { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__sex { top: 6px; right: 6px; transform: scale(.8); transform-origin: top right; }
+
+/* Announcements: a mint card, its title and View all over one card — the
+   photograph on top, the text under it; the dots at the foot */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck {
+  position: relative; display: block; margin: 0; padding: 16px; border-radius: 20px; background: linear-gradient(180deg, #E6F6F3, #D8F0EC);
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail #adeckTitle {
+  position: static; width: auto; height: auto; min-height: 32px; display: flex; align-items: center; margin: 0 0 10px; clip: auto; clip-path: none; overflow: visible; white-space: normal;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck__foot { position: static; display: flex; justify-content: center; margin: 12px 0 0; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__all { position: absolute; top: 16px; right: 16px; height: 32px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__card {
+  --adeck-h: 340px; width: 100%; height: var(--adeck-h); padding: 0; gap: 0; flex-direction: column-reverse; border-radius: 14px; box-shadow: none;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__card:not([data-i='0']) { opacity: 0; pointer-events: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__img { flex: none; width: 100%; height: 150px; border-radius: 0; align-self: stretch; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__body { flex: 1 1 auto; min-height: 0; padding: 12px 14px 14px; gap: 8px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__chip { height: auto; padding: 4px 8px 4px 4px; gap: 6px; font-size: 10px; font-weight: 600; letter-spacing: .04em; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__chip img { width: 18px; height: 18px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__text { gap: 4px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__hl { font-size: 15px; font-weight: 500; line-height: 1.35; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__desc { font-size: 13px; line-height: 1.5; -webkit-line-clamp: 3; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__meta { margin-top: auto; padding: 0; font-size: 11px; font-weight: 400; color: var(--d-mute); }
+
+/* Observation Notes: a white card, three notes as a list — a 72 picture,
+   the title and date, the tags, two lines of the note, who and the counts */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs-band { margin: 0; padding: 16px; border-radius: 20px; background: #fff; overflow: visible; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs-band .obs-head { display: flex; align-items: center; height: auto; min-height: 32px; margin: 0 0 10px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs-band .v2seg { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs-rail { display: flex; flex-direction: column; gap: 0; margin: 0; padding: 0; overflow: visible; scroll-snap-type: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs-rail > :is(.obs:nth-of-type(n+4), .obs-next) { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs {
+  --obs-w: auto; display: grid; grid-template-columns: 72px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 12px;
+  width: auto; height: auto; min-height: 0; padding: 12px 0; border: 0; border-top: 1px solid var(--d-line); border-radius: 0; background: none; box-shadow: none; overflow: visible;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs:first-of-type { border-top: 0; padding-top: 2px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__media { grid-row: 1 / 3; width: 72px; height: 72px; aspect-ratio: auto; border-radius: 12px; overflow: hidden; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__media::after,
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__strip,
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__flat-txt { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__pri { top: 4px; right: 4px; width: 18px; height: 18px; padding: 1px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__pri-ico { font-size: 8px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__body { padding: 0; box-shadow: none; gap: 0; min-width: 0; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__title { font-size: 14px; font-weight: 600; color: var(--d-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__date { order: 0; flex: none; margin: 0; font-size: 11px; color: var(--d-mute); }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__tags { margin: 2px 0 4px; padding: 0; border: 0; font-size: 11px; color: var(--d-mute); }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__note { margin: 0; font-size: 12px; line-height: 1.45; color: var(--d-ink-2); -webkit-line-clamp: 2; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__actions { grid-column: 2; display: flex; align-items: center; justify-content: space-between; margin: 6px 0 0; padding: 0; border: 0; min-height: 0; height: auto; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__av { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__by { font-size: 11px; color: var(--d-mute); }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__acts { gap: 6px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__act { height: auto; min-height: 0; padding: 0; gap: 3px; font-size: 11px; color: var(--d-mute); }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__act::after { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__ico,
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__ico img { width: 13px; height: 13px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .obs__count b { font-size: 11px; font-weight: 400; }
+
+/* ── the bottom bar: Quick Actions with chat beside it, centred on the page
+   (owner, 8 Oct 2026: "make it Centre for the Web") — the row's own left: 50% ── */
+html:root[data-review][data-home='v2'][data-v2desk] .qa-row .mhint { display: none; }
+
+/* ── WEB · fewer controls (owner, 8 Oct 2026: "For Web we can hide the Scaner,
+   Notifications, Modules Under Site Selection"): the scan button and the bell
+   leave the header, and the Modules title goes — the site chips take its row,
+   with + and the pencil kept at the row's end ── */
+html:root[data-review][data-home='v2'][data-v2desk] .home-header :is(.search-btn, .icon-btn--bell) { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main > .modules-band {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: center;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main > .modules-band > * { grid-column: 1 / -1; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main > .modules-band > #siteTabsV2 { grid-column: 1; grid-row: 1; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main > .modules-band > #modulesHead { grid-column: 2; grid-row: 1; align-self: start; height: 38px; min-height: 0; margin: 0 0 16px; }
+html:root[data-review][data-home='v2'][data-v2desk] #modulesTitle { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ── WEB · the ticker runs edge to edge (owner, 8 Oct 2026): out of the page's
+   column to the window's two sides, square-cornered; the root clips the
+   sideways overflow a classic scrollbar's width would otherwise make ── */
+html:root[data-review][data-home='v2'][data-v2desk] { overflow-x: clip; }
+html:root[data-review][data-home='v2'][data-v2desk] #panel-modules > .hstrip {
+  margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); border-radius: 0;
+}
+
+/* ── WEB · no weather in the header, no Command Centre banner over the grid
+   (owner, 8 Oct 2026: "Remove the Weather Part, Also Remove Antz Command
+   Centre") ── */
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .wx,
+html:root[data-review][data-home='v2'][data-v2desk] .modules-band .hero--estate { display: none; }
+/* the search sits at the header's right end (owner, 8 Oct 2026: "Search
+   make it Right side"), where the weather was */
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .search-row { margin: 0 0 0 auto; }
+
+/* ── WEB · the closed All Modules panel lets go of the page (owner, 8 Oct
+   2026: "here i can't scroll down"). At rest it was opacity 0 but still a
+   668 × 657 box over the middle of the screen, taking the wheel and the
+   clicks meant for the cards under it. Closed, it is hidden outright; it
+   shows again for its open and while it plays its close. ── */
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules:not(.is-open):not(.is-closing) .qa-menu { visibility: hidden; pointer-events: none; }
+
+/* ══ WEB · MODULES, PROPERLY (owner, 8 Oct 2026) ══════════════════════════
+   "Here have to Show Propre Modules Selection. Once I have Selected It has to
+   go to that Particuler ModulePage … Inside Pharmacy Module I want Back From
+   Home Option too. Also Some Where Have to Show Recent Module on Home." */
+
+/* ── the All Modules launcher: a white sheet, the four categories, each tile
+   the module's colour chip, its name and one line of what it holds ── */
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-menu {
+  width: min(920px, calc(100vw - 64px)); padding: 24px 24px 20px; border-radius: 24px;
+  background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none;
+  box-shadow: 0 30px 80px -24px rgba(16, 45, 52, .45), 0 0 0 1px rgba(16, 45, 52, .06);
+}
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-menu__head { padding: 0 0 4px; }
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-menu__head b { font-size: 20px; font-weight: 600; letter-spacing: 0; color: var(--d-ink); text-shadow: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-menu__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; overflow-y: auto; overscroll-behavior: contain;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-mod-cat {
+  grid-column: 1 / -1; margin: 14px 0 2px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--d-mute);
+}
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-mod {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 12px; align-items: center; justify-items: start;
+  height: auto; min-height: 64px; padding: 10px 12px; border: 1px solid var(--d-line); border-radius: 14px;
+  background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; color: var(--d-ink); text-align: left;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-mod::before,
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-mod::after { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-mod:hover { background: #F4F8F6; border-color: #CFDCD7; }
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-mod:active { transform: scale(.98); }
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-mod:focus-visible { outline: 2px solid var(--d-teal); outline-offset: 2px; }
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-mod__g {
+  grid-row: 1 / 3; display: grid; place-items: center; width: 40px; height: 40px; margin: 0; border-radius: 12px; background: var(--qa-mod-g, var(--d-teal));
+}
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-mod__g img { width: 22px; height: 22px; filter: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-mod__t {
+  align-self: end; font-size: 14px; font-weight: 600; line-height: 1.25; color: var(--d-ink); text-shadow: none; hyphens: manual;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-mod__d {
+  align-self: start; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden;
+  font-size: 12px; line-height: 1.35; color: var(--d-mute);
+}
+.qa-mod__d { display: none; }
+
+/* ── THE WEB BAR over every module page: the logo is Home, the module's name
+   drops the module list, the breadcrumb says where you are (ModulePages.js,
+   webBar). Not drawn off the web. ── */
+.mweb { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .mweb {
+  position: relative; z-index: 3; flex: none; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px;
+  background: #fff; border-bottom: 1px solid #DFE8E4;
+}
+.mweb__logo { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 10px 0 4px; border: 0; border-radius: 10px; background: none; cursor: pointer; }
+.mweb__mark { width: 30px; height: 32px; background: #2E8B57; -webkit-mask: url("assets/img/antz-mark.svg") center / contain no-repeat; mask: url("assets/img/antz-mark.svg") center / contain no-repeat; }  /* the mark is drawn white: a mask lets it wear the wordmark's green */
+.mweb__logo span { font-size: 22px; font-weight: 700; letter-spacing: .02em; color: #2E8B57; }
+.mweb__logo:hover { background: #F0F6F4; }
+.mweb__sw { position: relative; }
+.mweb__mod {
+  display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px 0 6px; border: 1px solid #DFE8E4; border-radius: 12px;
+  background: #fff; color: #1F2A30; font: inherit; font-size: 15px; cursor: pointer;
+}
+.mweb__mod:hover, .mweb__mod[aria-expanded='true'] { background: #F4F8F6; border-color: #C9D6D1; }
+.mweb__mod b { font-weight: 600; white-space: nowrap; }
+.mweb__mod > svg { width: 16px; height: 16px; color: #6B7773; transition: transform 160ms ease; }
+.mweb__mod[aria-expanded='true'] > svg { transform: rotate(180deg); }
+.mweb__g, .mweb__ig { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--mweb-g, #1F515B); color: #fff; }
+.mweb__g img, .mweb__ig img { width: 16px; height: 16px; }
+.mweb__g svg { width: 16px; height: 16px; }
+.mweb__pop {
+  position: absolute; top: calc(100% + 8px); left: 0; width: 560px; max-height: min(620px, calc(100dvh - 90px)); display: flex; flex-direction: column;
+  padding: 12px; border-radius: 16px; background: #fff; box-shadow: 0 24px 60px -18px rgba(16, 45, 52, .4), 0 0 0 1px rgba(16, 45, 52, .08);
+}
+.mweb__pop[hidden] { display: none; }
+.mweb__find { flex: none; display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 12px; border-radius: 10px; background: #F1F5F3; color: #6B7773; }
+.mweb__find svg { width: 18px; height: 18px; }
+.mweb__find input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; font-size: 14px; color: #1F2A30; outline: none; }
+.mweb__list { overflow-y: auto; overscroll-behavior: contain; padding: 4px 2px 2px; }
+.mweb__cat { margin: 12px 8px 6px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #6B7773; }
+.mweb__row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; }
+.mweb__it { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px 0 8px; border: 0; border-radius: 10px; background: none; color: #1F2A30; font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+.mweb__it:hover, .mweb__it:focus-visible { background: #F0F6F4; outline: none; }
+.mweb__it[aria-selected='true'] { background: #E6F2EE; font-weight: 600; }
+.mweb__in { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.mweb__it > svg { flex: none; width: 16px; height: 16px; color: #1F515B; }
+.mweb__none { margin: 16px 8px; color: #6B7773; }
+.mweb__crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; margin-left: 8px; padding-left: 16px; border-left: 1px solid #DFE8E4; font-size: 14px; color: #6B7773; }
+.mweb__crumbs button { padding: 4px 6px; border: 0; border-radius: 6px; background: none; color: #1F515B; font: inherit; cursor: pointer; }
+.mweb__crumbs button:hover { background: #F0F6F4; }
+.mweb__crumbs b { font-weight: 500; color: #1F2A30; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mweb__crumbs i { font-style: normal; color: #A3B0AC; }
+/* the shell's own pages need no second bar under it; a built page keeps its own */
+html:root[data-review][data-home='v2'][data-v2desk] .mpage[data-view='msh'] .mpage__bar { display: none; }
+.msh__home { width: 100%; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
+.msh__home + .msh__cap { margin-top: 14px; padding-top: 14px; border-top: 1px solid #DFE8E4; }
+
+/* ── the module shell: its screens down the left, the page on the right ── */
+.msh { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 100%; background: #EFF5F2; }
+.msh__nav { position: sticky; top: 0; align-self: start; display: flex; flex-direction: column; gap: 4px; max-height: calc(100dvh - 60px); overflow-y: auto; padding: 16px 12px 24px; }
+.msh__cap { margin: 4px 12px 10px; font-size: 12px; font-weight: 600; letter-spacing: .08em; color: #6B7773; }
+.msh__item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 14px; border-radius: 10px; color: #33443E; font-size: 15px; text-decoration: none; }
+.msh__item svg { flex: none; width: 20px; height: 20px; }
+.msh__item span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.msh__item:hover { background: rgba(31, 81, 91, .07); }
+.msh__item[aria-current='page'] { background: #1F515B; color: #fff; }
+.msh__main { min-width: 0; padding: 20px 32px 48px 16px; }
+.msh__h { margin: 4px 0 20px; font-size: 26px; font-weight: 500; color: #1F2A30; }
+.msh__hero { position: relative; display: flex; align-items: center; gap: 24px; min-height: 180px; padding: 28px 32px; border-radius: 20px; background: var(--msh-g); color: #fff; overflow: hidden; }
+.msh__hero-ico { flex: none; display: grid; place-items: center; width: 96px; height: 96px; border-radius: 24px; background: rgba(255, 255, 255, .18); }
+.msh__hero-ico img { width: 56px; height: 56px; }
+.msh__hero h2 { margin: 0 0 8px; font-size: 26px; font-weight: 600; }
+.msh__hero p { margin: 0; max-width: 60ch; font-size: 15px; line-height: 1.5; opacity: .92; }
+.msh__sh { margin: 28px 0 12px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #6B7773; }
+.msh__tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.msh__tile { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 72px; padding: 0 18px; border-radius: 14px; background: #fff; color: #1F2A30; font-size: 15px; font-weight: 500; text-decoration: none; box-shadow: 0 1px 2px rgba(16, 45, 52, .06); }
+.msh__tile svg { flex: none; width: 18px; height: 18px; color: #1F515B; }
+.msh__tile:hover { box-shadow: 0 6px 18px -8px rgba(16, 45, 52, .3); }
+.msh__crumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6B7773; }
+.msh__crumbs a { color: #1F515B; text-decoration: none; }
+.msh__crumbs a:hover { text-decoration: underline; }
+.msh__empty { padding: 40px 32px; border: 1px dashed #C9D6D1; border-radius: 16px; background: #fff; color: #44544A; font-size: 15px; line-height: 1.6; }
+.msh__empty p { margin: 0 0 6px; }
+
+/* ── WEB · the announcements turn inside their card (owner, 8 Oct 2026:
+   "announcements Animetion not good … Only for Web"): no deck behind the
+   front card and no flight; the one leaving slides 24 left as it fades, the
+   next comes in from 24 right, and nothing leaves the card's frame. Waiting
+   cards (data-i 1–2) sit to the right, the one just gone (3) to the left, so
+   Back runs the same motion the other way. The JS hand-off is `flat()` in
+   the deck. ── */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__stack { overflow: hidden; border-radius: 14px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__card {
+  transition: opacity 420ms ease, transform 520ms cubic-bezier(.2, .7, .2, 1);
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__card[data-i='0'] { transform: none; opacity: 1; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__card:is([data-i='1'], [data-i='2']) { transform: translateX(24px); opacity: 0; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__card[data-i='3'] { transform: translateX(-24px); opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__card { transition: opacity 200ms ease; transform: none !important; }
+}
+
+/* ── WEB · the All Modules list scrolls (owner, 8 Oct 2026: "all Modules i
+   con't scroll"): the panel is capped to the window (its max-height is set
+   on open) and clips, but the grid inside it was never given the rest of
+   that height, so it grew to its full 720 and the panel cut it off. The panel
+   is a column now and the grid takes what the title leaves, scrolling in it. ── */
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-menu { display: flex; flex-direction: column; }
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-menu__head { flex: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .qa--modules .qa-menu__grid {
+  flex: 1 1 auto; min-height: 0; align-content: start; padding: 0 4px 4px 0; scrollbar-width: thin; scrollbar-color: #C9D6D1 transparent;
+}
+
+/* ══ WEB · OBSERVATION NOTES IN THE GRID (owner, 8 Oct 2026) ════════════════
+   The page's own band, moved into the obs.rail frame (four columns by three
+   rows). Second pass, same day: "If I want See all Notes Where is See All?
+   Also is this Size we are used in Tablet view. Also Overall Section
+   Container icon … Check other Places how i placed." So:
+     · THE CARDS ARE THE TABLET'S, untouched — 290 × 411, the 209 photo, the
+       16px title, three lines of note — nothing here resizes them; three
+       rows is what it takes to hold them;
+     · THE HEAD IS THE WEB'S OTHER SECTIONS': no icon (Favourites and
+       Announcements carry none), the title at 16/600, and View all » at the
+       right in their 13px — it opens every note, as on the tablet;
+     · the frame is a grid card's: 16 round, the tablet band's grey. ══════════ */
+html:root[data-review][data-home='v2'][data-v2desk] #moduleGrid .card:has(> .obs-slot) {
+  padding: 0; border-radius: 16px; background: #E7EDEB; box-shadow: none; overflow: hidden; cursor: default;
+}
+html:root[data-review][data-home='v2'][data-v2desk] #moduleGrid .card:has(> .obs-slot)::before,
+html:root[data-review][data-home='v2'][data-v2desk] #moduleGrid .card:has(> .obs-slot)::after { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .obs-slot { position: absolute; inset: 0; display: flex; }
+html:root[data-review][data-home='v2'][data-v2desk] .obs-slot > .obs-band {
+  flex: 1; display: flex; flex-direction: column; min-width: 0; margin: 0; padding: 16px 0 20px; border-radius: 0; background: none; box-shadow: none; overflow: hidden;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .obs-slot .obs-head {
+  flex: none; display: flex; align-items: center; justify-content: space-between; height: auto; min-height: 32px; margin: 0 0 12px; padding: 0 20px;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .obs-slot #obsTitle { margin: 0; font-size: 16px; font-weight: 600; line-height: normal; letter-spacing: 0; color: var(--d-ink); }
+html:root[data-review][data-home='v2'][data-v2desk] .obs-slot .v2seg { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .obs-slot .obs-head__all {
+  display: inline-flex; align-items: center; height: auto; padding: 0; border: 0; background: none; margin-left: auto;
+  font: inherit; font-size: 13px; font-weight: 400; letter-spacing: 0; line-height: normal; color: var(--d-ink-2); cursor: pointer;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .obs-slot .obs-head__all img { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .obs-slot .obs-head__all::after { content: '\00a0»'; position: static; inset: auto; }
+html:root[data-review][data-home='v2'][data-v2desk] .obs-slot .obs-head__all:hover { color: var(--d-ink); text-decoration: underline; }
+html:root[data-review][data-home='v2'][data-v2desk] .obs-slot .obs-rail {
+  flex: 1; min-height: 0; margin: 0; padding: 0 20px; scroll-padding-left: 20px; overscroll-behavior-x: contain;
+}
+
+/* ══ WEB · THE MODULE EXPLORER (owner, 8 Oct 2026: "Explorer is good …
+   Implement") — mockups/all-modules-web.html, B; ModulePages.js,
+   openExplorer. Drawn only on the web, where Quick Actions opens it. ══ */
+.mx { position: fixed; inset: 0; z-index: 420; display: grid; place-items: center; padding: 32px; }
+.mx[hidden] { display: none; }
+html.mx-lock, html.mx-lock body { overflow: hidden; }
+.mx__scrim { position: absolute; inset: 0; background: rgba(16, 40, 46, .32); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; transition: opacity 180ms ease; }
+.mx__panel {
+  --ink: #1F2A30; --ink-2: #44544A; --mute: #6B7773; --line: #E4EAE7; --teal: #1F515B;
+  position: relative; display: flex; flex-direction: column; width: min(1060px, 100%); height: min(620px, 100%);
+  border-radius: 20px; background: #fff; color: var(--ink); font: 14px/1.45 Inter, system-ui, sans-serif; box-shadow: 0 30px 80px -24px rgba(0, 0, 0, .45), 0 0 0 1px rgba(0, 0, 0, .04); overflow: hidden;
+  opacity: 0; transform: translateY(10px) scale(.985); transition: opacity 180ms ease, transform 220ms cubic-bezier(.2, .7, .2, 1);
+}
+.mx.is-on .mx__scrim { opacity: 1; }
+.mx.is-on .mx__panel { opacity: 1; transform: none; }
+.mx button { font-family: inherit; line-height: inherit; color: inherit; }
+.mx svg { flex: none; }
+.mx__head { flex: none; display: flex; align-items: center; gap: 16px; height: 68px; padding: 0 16px 0 24px; border-bottom: 1px solid var(--line); }
+.mx__head h2 { flex: none; width: 204px; margin: 0; font-size: 17px; font-weight: 600; }
+.mx__find { flex: 1; max-width: 520px; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 14px; border-radius: 12px; background: #F4F7F6; color: var(--mute); }
+.mx__find svg { width: 18px; height: 18px; }
+.mx__find input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font: inherit; font-size: 14px; color: var(--ink); }
+.mx__find kbd { padding: 2px 6px; border-radius: 6px; background: #fff; box-shadow: 0 0 0 1px var(--line); font: 11px Inter, sans-serif; color: var(--mute); }
+.mx__x { display: grid; place-items: center; width: 34px; height: 34px; margin-left: auto; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.mx__x:hover { background: #F2F6F4; }
+.mx__x svg { width: 18px; height: 18px; }
+.mx__body { flex: 1; min-height: 0; display: flex; }
+.mx__side { flex: none; width: 228px; display: flex; flex-direction: column; gap: 2px; padding: 14px 12px; border-right: 1px solid var(--line); overflow-y: auto; }
+.mx__side hr { width: 100%; margin: 8px 0; border: 0; border-top: 1px solid var(--line); }
+.mx__cat { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--ink-2); font-size: 13.5px; text-align: left; white-space: nowrap; cursor: pointer; }
+.mx__cat svg { width: 16px; height: 16px; }
+.mx__cat span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.mx__cat em { font-style: normal; font-size: 12px; color: var(--mute); }
+.mx__cat:hover { background: #F4F7F6; color: var(--ink); }
+.mx__cat[aria-pressed='true'] { background: #E8F3F0; color: var(--teal); font-weight: 600; }
+.mx__cat[aria-pressed='true'] em { font-weight: 400; }
+.mx__edit { margin-top: auto; padding: 8px 10px; border: 0; background: none; color: var(--teal) !important; font-size: 13px !important; font-weight: 600; text-align: left; cursor: pointer; }
+.mx__edit:hover { text-decoration: underline; }
+.mx__list { flex: 1; min-width: 0; overflow-y: auto; overscroll-behavior: contain; padding: 8px 16px 20px; }
+.mx__grp { margin: 14px 8px 6px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+.mx__rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 8px; }
+.mx__row { display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 10px; border: 0; border-radius: 10px; background: none; text-align: left; cursor: pointer; }
+.mx__row:hover { background: #F4F7F6; }
+.mx__row.is-on { background: #EEF6F3; }
+.mx__row b { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; font-weight: 500; hyphens: manual; }
+.mx__row > svg { width: 16px; height: 16px; color: var(--mute); opacity: 0; transition: opacity 150ms; }
+.mx__row:hover > svg, .mx__row.is-on > svg { opacity: 1; }
+.mx__g { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; background: var(--mx-g, var(--teal)); }
+.mx__g img { width: 17px; height: 17px; }
+.mx__none { margin: 40px 8px; color: var(--mute); text-align: center; }
+.mx__detail { flex: none; width: 280px; display: flex; flex-direction: column; padding: 20px 20px 16px; border-left: 1px solid var(--line); background: #FAFBFB; overflow: hidden; }
+.mx__dh { display: flex; align-items: center; gap: 12px; }
+.mx__dh .mx__g { width: 44px; height: 44px; border-radius: 12px; }
+.mx__dh .mx__g img { width: 23px; height: 23px; }
+.mx__dh h3 { margin: 0; font-size: 17px; font-weight: 600; hyphens: manual; }
+.mx__dh small { display: block; color: var(--mute); font-size: 12px; }
+.mx__detail p { margin: 12px 0 16px; color: var(--ink-2); font-size: 13px; line-height: 1.5; }
+.mx__open { flex: none; height: 38px; margin-bottom: 18px; border: 0; border-radius: 10px; background: var(--teal); color: #fff !important; font-size: 13.5px !important; font-weight: 600; cursor: pointer; }
+.mx__open:hover { background: #18434B; }
+.mx__cap { margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+.mx__scr { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; margin: 0 -6px; }
+.mx__scr button { display: flex; align-items: center; gap: 10px; flex: none; height: 36px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--ink-2); font-size: 13.5px; text-align: left; cursor: pointer; }
+.mx__scr button::before { content: ''; flex: none; width: 6px; height: 6px; border-radius: 50%; background: #C9D6D1; }
+.mx__scr button::after { content: '›'; margin-left: auto; color: var(--mute); }
+.mx__scr button:hover { background: #EEF3F1; color: var(--ink); }
+.mx__scr button:hover::before, .mx__scr button.is-hit::before { background: var(--teal); }
+.mx__scr button.is-hit { font-weight: 600; color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .mx__scrim, .mx__panel { transition: none; } }
+
+/* WEB · MODULE EXPLORER, FIGMA 950:6513 (owner, 8 Oct 2026: "Module
+   Selection something like these"). Overrides the explorer above:
+     · a 1060 × 632 card, rounded 12; the head 80 tall — "Modules" at the
+       left, the search (458.5 × 40, a 5% grey) at the right, no close button
+       (the scrim and Esc close it);
+     · the sidebar: All modules and the four areas, 41-tall tabs, no counts;
+     · the list: plain headings, modules as outlined 48-tall cards two
+       across, the hovered one filled in the module teal;
+     · the detail: only the hovered module's screens, each with its chevron. */
+.mx__panel { width: min(1060px, 100%); height: min(632px, 100%); border-radius: 12px; }
+.mx__head { height: 80px; gap: 20px; padding: 20px; border-bottom-color: rgba(0, 0, 0, .05); }
+.mx__head h2 { flex: 1 1 auto; width: auto; font-size: 16px; font-weight: 500; line-height: normal; color: #263A2F; }
+.mx__find { flex: none; width: 458.5px; max-width: 50%; height: 40px; padding: 0 14px; gap: 10px; border-radius: 12px; background: rgba(0, 0, 0, .05); color: #44544A; }
+.mx__find input { font-size: 12px; color: #263A2F; }
+.mx__find input::placeholder { color: #757575; opacity: 1; }
+.mx__find kbd { padding: 2px 6px; border-radius: 4px; box-shadow: none; color: #6B7773; }
+.mx__x { display: none; }
+
+.mx__side { gap: 6px; padding: 16px 10px 16px 16px; border-right-color: #E4EAE7; }
+.mx__cat { height: 41px; flex: none; padding: 12px; gap: 10px; border-radius: 8px; color: #44544A; font-size: 14px; font-weight: 500; letter-spacing: .1px; }
+.mx__cat:hover { background: #F2F7F5; color: #44544A; }
+.mx__cat[aria-pressed='true'] { background: #E8F4F2; color: #44544A; font-weight: 500; }
+
+.mx__list { padding: 22px 16px 24px; }
+.mx__grp { margin: 0 0 16px; font-size: 14px; font-weight: 500; letter-spacing: .1px; text-transform: none; color: #44544A; }
+.mx__rows + .mx__grp { margin-top: 32px; }
+.mx__rows { gap: 8px; }
+.mx__row { height: 48px; gap: 12px; padding: 0 8px; border: 1px solid rgba(0, 0, 0, .05); border-radius: 12px; background: #fff; color: #44544A; transition: background-color 120ms ease, color 120ms ease; }
+.mx__row b { font-size: 14px; font-weight: 500; letter-spacing: .1px; }
+.mx__row > svg { display: none; }
+.mx__row:hover, .mx__row.is-on { border-color: #1F515B; background: #1F515B; color: #fff; }
+.mx__g { border-radius: 8px; }
+.mx__none { margin: 40px 0; }
+
+.mx__detail { padding: 16px; border-left-color: #EFF5F2; background: #FAFBFB; }
+.mx__scr { gap: 4px; margin: 0 -8px; }
+.mx__scr button { height: 36px; padding: 0 8px; color: #44544A; font-size: 13.5px; line-height: 19.575px; }
+.mx__scr button::before { display: none; }
+.mx__scr button::after { font-size: 14px; color: #6B7773; }
+.mx__scr button:hover { background: #EEF3F1; color: #263A2F; }
+.mx__scr button.is-hit { font-weight: 600; color: #1F515B; }
+
+/* owner, 11 Oct 2026: "Modules listing in one Vertical, No need two module on
+   one row. Also u can Reduce the Size of Width". One module per row, and the
+   card narrows to 880 so the single column isn't left half empty — the list
+   keeps about 370 between the 228 sidebar and the 280 detail. */
+.mx__panel { width: min(880px, 100%); }
+.mx__rows { grid-template-columns: minmax(0, 1fr); }
+
+/* ══ WEB · ANNOUNCEMENTS AS A LIST (owner, 8 Oct 2026: "Make it 3 Cards on
+   vertical inbetween i can Scroll. Do in the Live only"). The deck stops
+   turning (no dwell, so no auto-turn) and its cards stand one under another:
+   three in view, the rest a scroll away inside the card. Each is compact — the
+   photograph a square at the left, the chip, two lines of headline and two of
+   text, the byline — and any of them opens its announcement (the deck's
+   flat()). The dots go: a list needs no "which one". ══ */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__dwell { animation: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__dots { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__foot { height: 0; margin: 0; }  /* holds only View all now, which sits at the head */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__stack {
+  display: flex; flex-direction: column; gap: 10px; height: auto; max-height: 436px; margin: 0 -6px 0 0; padding: 0 6px 2px 0;
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; border-radius: 0;
+  scrollbar-width: thin; scrollbar-color: #BFD3CE transparent;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__card {
+  position: relative !important; inset: auto !important; z-index: auto; flex: none; display: flex; flex-direction: row; align-items: stretch; gap: 12px;
+  width: 100%; height: auto; min-height: 0; padding: 10px; border-radius: 14px; background: #fff; box-shadow: none;
+  opacity: 1 !important; transform: none !important; pointer-events: auto !important; cursor: pointer; transition: box-shadow 160ms ease;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__card:hover { box-shadow: 0 8px 20px -12px rgba(16, 45, 52, .4); }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__img {
+  flex: none; order: -1; width: 92px; height: auto; min-height: 92px; align-self: stretch; border-radius: 10px; overflow: hidden;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__img img { width: 100%; height: 100%; object-fit: cover; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__body { flex: 1; min-width: 0; padding: 0; gap: 6px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__chip { align-self: flex-start; padding: 2px 8px 2px 2px; gap: 5px; font-size: 9.5px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__chip img { width: 16px; height: 16px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__hl { font-size: 14px; line-height: 1.3; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__desc { font-size: 12px; line-height: 1.4; -webkit-line-clamp: 2; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__more { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck .adeck__meta { margin-top: auto; font-size: 11px; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   WEB · FIGMA 918:24 "Desktop Home page" (owner, 8 Oct 2026: "Implement this
+   design from Figma … For Web u can do like these"). Everything below is the
+   frame's, and overrides the web rules above it where they differ:
+     · a white header, rounded at its foot, the search on the right (317 × 48,
+       a 5% grey); no sky and no ticker — the frame draws neither;
+     · the site chips across the page under it, the site menu at their head;
+     · two columns, 744 and 632: the Modules panel (white, its head with + and
+       the pencil, the four-column grid of 162 × 144, Observation Notes under
+       it), and the right column — Favourites Animals, Pending, Announcements.
+   ══════════════════════════════════════════════════════════════════════════ */
+html:root[data-review][data-home='v2'][data-v2desk] { --max-content: 1392px; --grid-cols: 4; --grid-gap: 16px; background: #EFF5F2; }
+html:root[data-review][data-home='v2'][data-v2desk] #moduleGrid { --grid-row: 144px; }
+html:root[data-review][data-home='v2'][data-v2desk] :is(.wsky, #panel-modules > .hstrip) { display: none !important; }
+
+/* header */
+html:root[data-review][data-home='v2'][data-v2desk] .home-header {
+  margin: 0 calc(50% - 50vw); padding: 32px max(24px, calc(50vw - 50% + 24px)); border-radius: 0 0 20px 20px; background: #fff;
+}
+/* owner, 8 Oct 2026: "Desktop top header fixed, then the data below can
+   scroll". The header holds at the top of the window; everything under it
+   scrolls beneath. */
+html:root[data-review][data-home='v2'][data-v2desk] .home-header {
+  position: sticky; top: 0; z-index: 50; box-shadow: 0 4px 16px rgba(31, 65, 91, .06);
+}
+html:root[data-review][data-home='v2'][data-v2desk] .greeting__word { font-size: 13px; color: rgba(31, 65, 91, .82); }
+html:root[data-review][data-home='v2'][data-v2desk] .greeting__name { font-size: 20px; font-weight: 500; color: #1F415B; }
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .search-row { flex: none; width: 317px; max-width: none; margin: 0 0 0 auto; }
+html:root[data-review][data-home='v2'][data-v2desk] .home-header .search { height: 48px; min-height: 48px; padding: 0 24px; gap: 16px; border-radius: 12px; background: rgba(0, 0, 0, .05); box-shadow: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .home-header :is(.search__input, .search__hint) { font-size: 14px; color: #7A8684; }
+
+/* the site chips, across the page */
+html:root[data-review][data-home='v2'][data-v2desk] #panel-modules > .site-tabs--v2 {
+  position: static; display: flex; align-items: center; gap: 8px; height: auto; margin: 16px 0 0; padding: 5px 0; background: none; box-shadow: none; overflow: visible;
+}
+html:root[data-review][data-home='v2'][data-v2desk] #panel-modules > .site-tabs--v2::before { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] #panel-modules > .site-tabs--v2 .site-tabs__menu {
+  display: grid; place-items: center; width: 50px; height: 50px; border-radius: 10px; background: #DDEBE9; color: #1F415B;
+}
+html:root[data-review][data-home='v2'][data-v2desk] #panel-modules > .site-tabs--v2 .site-tabs__track { display: flex; gap: 8px; margin: 0; padding: 0; overflow: visible; }
+html:root[data-review][data-home='v2'][data-v2desk] #panel-modules > .site-tabs--v2 .site-tabs__tab {
+  height: 50px; padding: 0 12px; border-radius: 10px; background: #DDEBE9; color: #44544A; font-size: 14px; font-weight: 500; letter-spacing: .1px; box-shadow: none;
+}
+html:root[data-review][data-home='v2'][data-v2desk] #panel-modules > .site-tabs--v2 .site-tabs__tab[aria-selected='true'] { padding: 0 27.5px; border-radius: 12px; background: #1F415B; color: #fff; }
+html:root[data-review][data-home='v2'][data-v2desk] #panel-modules > .site-tabs--v2 .site-tabs__tab::after { display: none; }
+
+/* two columns */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d { grid-template-columns: minmax(0, 744fr) minmax(0, 632fr); gap: 16px; margin-top: 16px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail { gap: 16px; }
+
+/* LEFT · the Modules panel */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main > .modules-band {
+  display: block; padding: 24px; border-radius: 20px; background: #fff;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main > .modules-band > #modulesHead {
+  display: flex; align-items: center; height: auto; min-height: 19px; margin: 0 0 24px; padding: 0;
+}
+html:root[data-review][data-home='v2'][data-v2desk] #modulesTitle {
+  position: static; width: auto; height: auto; overflow: visible; clip-path: none; white-space: nowrap;
+  font-size: 16px; font-weight: 500; line-height: normal; color: #1F2A30;
+}
+html:root[data-review][data-home='v2'][data-v2desk] #moduleGrid .card { border-radius: 12px; }
+
+/* Observation Notes, closing the panel */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main #recentObs {
+  margin: 24px 0 0; padding: 20px 0 20px 20px; border-radius: 16px; background: #E7EDEB; overflow: hidden;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main #recentObs .obs-head { display: flex; align-items: center; justify-content: space-between; height: auto; min-height: 19px; margin: 0 0 16px; padding: 0 20px 0 0; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main #obsTitle { margin: 0; font-size: 16px; font-weight: 500; line-height: normal; letter-spacing: 0; color: #1F2A30; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main #recentObs .v2seg { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main #recentObs .obs-head__all {
+  display: inline-flex; align-items: center; height: auto; padding: 0; border: 0; background: none; margin-left: auto;
+  font: inherit; font-size: 13px; font-weight: 400; letter-spacing: 0; line-height: normal; color: #44544A; cursor: pointer;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main #recentObs .obs-head__all img { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main #recentObs .obs-head__all::after { content: '\00a0»'; position: static; inset: auto; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main #recentObs .obs-rail {
+  margin: 0; padding: 0 20px 0 0; gap: 14px; scroll-padding-left: 0; overscroll-behavior-x: contain;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__main #recentObs .obs-rail.is-dragging { cursor: grabbing; scroll-snap-type: none; }
+
+/* RIGHT · Favourites Animals */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav-band:not([hidden]) { gap: 16px; padding: 20px 0 20px 20px; border-radius: 20px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__head { padding-right: 20px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail :is(#favTitle, #adeckTitle) { font-size: 16px; font-weight: 500; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__rail { grid-auto-columns: 132px; gap: 8px; padding: 0 20px 0 0; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .fav__card { height: 158px; aspect-ratio: auto; }
+
+/* RIGHT · Pending, the catalogue's card in two columns of rows */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend > .card {
+  position: relative; display: block; width: 100%; height: auto; min-height: 0; padding: 0; border-radius: 16px;
+  background: linear-gradient(180deg, #FFE6DC, #FFD6C7); box-shadow: none; overflow: hidden; container-type: normal;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend > .card::before,
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend > .card::after { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .l-v2sn { position: static; display: flex; flex-direction: column; gap: 14px; padding: 18px 18px 16px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .l-v2sn__head { display: flex; align-items: center; gap: 9px; color: #3B2420; font-size: 19px; font-weight: 700; letter-spacing: -.19px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .l-v2sn__head svg { width: 21px; height: 21px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .l-v2sn__rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; height: auto; overflow: visible; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .l-v2sn__row {
+  display: flex; align-items: center; gap: 10px; height: 66px; min-height: 0; padding: 0 16px; border: 0; border-radius: 10px;
+  background: rgba(255, 255, 255, .7); color: #3B2420; font-size: 14.9px; font-weight: 500; text-align: left; cursor: pointer;
+}
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .l-v2sn__row:hover { background: rgba(255, 255, 255, .9); }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .l-v2sn__t { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .l-v2sn__row b { font-family: var(--font-num, 'DM Sans', sans-serif); font-size: 16.4px; font-weight: 700; color: #3B2420; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .l-v2sn__row.is-late b { color: #D7263D; }
+
+/* RIGHT · Announcements */
+html:root[data-review][data-home='v2'][data-v2desk] .v2d__rail .adeck { padding: 20px; border-radius: 20px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .l-v2sn__t { font-size: 14.9px; font-weight: 500; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .l-v2sn__head b { font-size: 19px; font-weight: 700; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .card [class*='fold'], html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .l-v2sn::after { display: none; }
+html:root[data-review][data-home='v2'][data-v2desk] .main-frame { padding-left: 24px; padding-right: 24px; }
+html:root[data-review][data-home='v2'][data-v2desk] .v2d-pend .l-v2sn__head { height: 23px; line-height: 23px; }
+
+/* ══ THE ANIMALS BAND'S FOUR TABS (owner, 19 Oct 2026: "implement in the live",
+   from mockups/animals-tabs.html, concept 6 "Strip") ═══════════════════════
+   Recent · Favourites · Bookmarks · Folders where the title was: four equal
+   tabs inside the page padding on a hairline, one colour — MD3_Antz
+   OnSurfaceVariant — and under the picked one a 3px bar, no glow. The others
+   show only their icon, which never moves; the picked one opens to its name
+   beside it. Sizes (owner, 19 Oct 2026: "icon & text too small, make a little
+   bigger"): a 22px mark and a 16px name, 20 and 14 on a phone — where the
+   picked Favourites or Bookmarks is a little wider than its 89.5px quarter
+   and spreads into the empty room beside its neighbours' marks, which stay
+   put; the bar then spans the name (place(), in the band's script). */
+html:root[data-review][data-home='v2'] .fav-band.has-tabs .fav__head { display: flex; align-items: center; height: auto; min-height: 22px; }
+.fav__box { display: contents; }   /* the folder around the tabs and the rail on a phone or tablet (RECENTS AND THE TICKER'S OUTLINE); flat on the web home */
+.fav__fold { display: none; }      /* the white folder (RECENTS AND THE TICKER'S OUTLINE); nothing on the web home */
+.fav-band.has-tabs .fav__edit { display: none; }
+.fav__tabs { flex: 1; min-width: 0; position: relative; display: flex; margin: 0; box-shadow: inset 0 -1px 0 rgba(31, 65, 91, .14); }
+.fav__tab { --tab-gap: 8px; position: relative; z-index: 1; flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; height: 52px; padding: 0 3px 6px; border: 0; background: none;
+  color: var(--c-on-surface-var, #44544A); font: 500 16px/1 Inter, var(--font); letter-spacing: .1px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.fav__tab svg { flex: none; width: 22px; height: 22px; }
+.fav__tabl { flex: none; max-width: 0; margin-left: 0; overflow: hidden; white-space: nowrap; opacity: 0;   /* flex: none — it may spread past a phone's quarter, never be squeezed */
+  transition: max-width 460ms cubic-bezier(.32, .72, 0, 1), margin-left 460ms cubic-bezier(.32, .72, 0, 1), opacity 150ms ease; }
+.fav__tab[aria-selected='true'] .fav__tabl { max-width: 120px; margin-left: var(--tab-gap); opacity: 1; font-weight: 600; transition-delay: 0s, 0s, 130ms; transition-duration: 460ms, 460ms, 240ms; }
+.fav__tab:focus-visible { outline: 2px solid #1F415B; outline-offset: -4px; border-radius: 10px; }
+.fav__tabbar { position: absolute; z-index: 0; left: 0; bottom: 0; height: 3px; border-radius: 3px; background: var(--c-on-surface-var, #44544A); pointer-events: none;
+  transition: transform 480ms cubic-bezier(.32, .72, 0, 1), width 480ms cubic-bezier(.32, .72, 0, 1); }
+@media (max-width: 479px) { .fav__tab { --tab-gap: 6px; height: 50px; padding: 0 0 6px; font-size: 14px; letter-spacing: 0; } .fav__tab svg { width: 20px; height: 20px; } }
+@media (prefers-reduced-motion: reduce) { .fav__tabl, .fav__tabbar { transition: none; } }
+:root.has-wsky[data-sky-tone='dark'] .fav__tab { color: rgba(255, 255, 255, .8); }
+:root.has-wsky[data-sky-tone='dark'] .fav__tab[aria-selected='true'] { color: #fff; }
+:root.has-wsky[data-sky-tone='dark'] .fav__tabbar { background: #fff; }
+:root.has-wsky[data-sky-tone='dark'] .fav__tabs { box-shadow: inset 0 -1px 0 rgba(255, 255, 255, .16); }
+/* the cards the tabs add: a Favourite star or a Bookmark mark on the corner the
+   sex tag leaves free (its 24 by 24, 6 round), a type tag on the other */
+.fav__mark { position: absolute; z-index: 2; top: 8px; left: 8px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; background: rgba(255, 255, 255, .92); color: #1F515B; }
+.fav__mark--star { color: #F2B01E; }
+.fav__mark svg { width: 14px; height: 14px; }
+.fav__tag { position: absolute; z-index: 2; top: 8px; right: 8px; display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 7px; border-radius: 6px; background: rgba(255, 255, 255, .92); color: #1F415B; font: 600 11px/1 Inter, var(--font); letter-spacing: .1px; }
+.fav__tag svg { width: 13px; height: 13px; }
+/* a folder: its first four photos as the cover, the card's own scrim over them */
+.fav__mosaic { position: absolute; inset: 0; display: grid; grid-template: 1fr 1fr / 1fr 1fr; gap: 2px; background: rgba(255, 255, 255, .85); }
+.fav__mosaic > * { position: relative; width: 100%; height: 100%; min-height: 0; overflow: hidden; }
+.fav__mosaic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* View all and Back: the add card, kept beside other cards (the page hides an
+   add card that is not alone, and the web hides it outright) */
+.fav__item > .fav__card--all { display: flex !important; gap: 8px; }
+html:root[data-review][data-home='v2'] .fav__item:has(> .fav__card--all) { display: block !important; }
+.fav__alln { position: relative; z-index: 1; font: 400 12px/1 Inter, var(--font); color: var(--c-on-surface-var, #44544A); }
+
+/* ══ THE BOTTOM ROW'S MARKS (owner, 19 Oct 2026, from the same mockup: "put the
+   menu icon on the arrow; instead of Quick Actions icon show thunder icon",
+   then "icon has previously added Quick Access icon") ══════════════════════
+   Modules wears the grid mark Quick Actions wore (qa-actions.svg, 18.33 in its
+   20 box); Quick Actions a bolt, on the same mask, so it still turns to the ×. */
+.mhint__g { flex: none; display: block; width: 20px; height: 20px; background: currentColor;
+  -webkit-mask: url(assets/icon/qa-actions.svg) 1.042px 1.042px / 18.33px 18.33px no-repeat;
+          mask: url(assets/icon/qa-actions.svg) 1.042px 1.042px / 18.33px 18.33px no-repeat; }
+html:root[data-home='v2'] .qa-pill__grid {
+  -webkit-mask: url(assets/icon/qa-bolt.svg) center / 20px 20px no-repeat;
+          mask: url(assets/icon/qa-bolt.svg) center / 20px 20px no-repeat; }
+/* Quick Actions keeps its full size on scroll, as Modules does (owner,
+   20 Oct 2026: "Dont Reduce the Size when I scrolling time") */
+html:root[data-home='v2'] .qa.is-scrolled .qa-pill { gap: var(--s2); }
+html:root[data-home='v2'] .qa.is-scrolled .qa-pill__t { max-width: 12em; opacity: 1; }
+
+/* QUICK ACTIONS WITHOUT ITS FOOT (owner, 21 Oct 2026: "Remove this, also remove Drafts"): on V2 the foot
+   keeps only its "No action matches" line, so it takes no room and draws no rule until that shows. */
+.qa-foot--bare { margin-top: 0; padding-top: 0; border-top: 0; }
+.qa-foot--bare:has(.qa-foot__none[hidden]) { display: none; }
+
+/* QUICK ACTIONS · FIGMA 1015:11345 (owner, 21 Oct 2026: "based on this Change Icons. Header Icons are U can
+   make Fill"): each row's glyph sits in the frame's ring — 0.9px OnSurface #006D35, glyph .6 of the ring —
+   at 32 for a 48 row, so the hairline now starts under the label at 14 + 32 + 12. The folder heads wear
+   filled marks in the folder's own ink. */
+.qa-frow .qa-frow__g--ring { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; box-shadow: inset 0 0 0 .9px currentColor; }
+/* ring and glyph take the row's text colour, OnSurfaceVariant (owner, 21 Oct 2026: "icon & circle Colour Should
+   same as text"); so do the folder heads' marks, against their headings */
+.qa-frow__ink { display: block; width: 19.2px; height: 19.2px; background: currentColor;
+  -webkit-mask: var(--qa-g) center / contain no-repeat; mask: var(--qa-g) center / contain no-repeat; }
+/* the clinic house keeps its export, greyed 80%: #006D35 lands at #42574C beside the text's #44544A, and its light
+   inner stroke stays light */
+.qa-frow__ink--img { background: none; -webkit-mask: none; mask: none; object-fit: contain; filter: grayscale(.8); }
+.qa--folders .qa-frow + .qa-frow::before { left: 58px; }
+/* QUICK ACTIONS ON THE PHONE (owner, 21 Oct 2026, over the floating sheet: "In the Mobile. Keep Flowting only,
+   Remove Down Blur. also Circle With icons Can u Reduce the Size", then "Inside padding give 12px left &
+   Right"): the floating panel sits 4px from the screen's sides and keeps 12 inside, the title indented 12
+   more to sit over the cards' heads; the list ends
+   in a clean edge (no fade); the ring comes down to 28 with its glyph at the frame's .6, the hairline with it. */
+@media (max-width: 743px) {
+  :root[data-home='v2'] .qa-menu { width: calc(100vw - 8px); padding-left: 12px; padding-right: 12px; padding-bottom: 0; }
+  /* no padding under the list (owner: "Dont give Down Pading here"): the folders run to the panel's edge, and
+     the scroller keeps 12 of its own so the last card still clears the corner at the end */
+  :root[data-home='v2'] .qa-body { padding-bottom: 12px; }
+  :root[data-home='v2'] .qa-title { padding-left: 12px; padding-right: 12px; }
+  :root[data-home='v2'] .qa-body { -webkit-mask-image: none; mask-image: none; }
+  .qa-frow .qa-frow__g--ring { width: 28px; height: 28px; }
+  .qa-frow__ink { width: 16.8px; height: 16.8px; }
+  .qa--folders .qa-frow + .qa-frow::before { left: 54px; }
+}
+.qa-fold__fill { display: block; width: 24px; height: 24px; background: var(--ink-head, #44544A);
+  -webkit-mask: var(--qa-head) center / contain no-repeat; mask: var(--qa-head) center / contain no-repeat; }

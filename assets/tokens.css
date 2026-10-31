@@ -1,0 +1,112 @@
+/* Antz mobile + tablet tokens. Source: Figma MD3_Antz variables and Antz text styles
+   (VVMS-Mobile, Training, Help Desk, Hospital-Ipad), settled 26 Oct 2026.
+   Names match the Figma variable names so a value can be traced back. */
+
+@font-face {
+  font-family: "Inter";
+  src: url("inter-latin.woff2") format("woff2");
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Material Symbols Rounded";
+  src: url("material-symbols-rounded.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  /* ---- Colour: MD3_Antz ---- */
+  --Primary: #37BD69;
+  --OnPrimary: #FFFFFF;
+  --OnPrimaryContainer: #1F515B;      /* selected fill, navy action, values */
+  --Secondary: #00D6C9;
+  --OnSecondary: #FFFFFF;
+  --SecondaryContainer: #AFEFEB;
+  --OnSecondaryContainer: #1F415B;    /* dark detail header, sheet scrim */
+  --Tertiary: #FA6140;
+  --TertiaryContainer: #FFBDA8;
+  --OnTertiaryContainer: #250E01;
+  --Error: #E93353;
+  --OnError: #FFFFFF;
+  --ErrorContainer: #FFD3D3;
+  --OnErrorContainer: #4A0415;
+  --addPrimary: #00AFD6;
+  --moderatePrimary: #FFE86E;
+  --moderateSecondary: #E4B819;
+  --notes: #FCF4AE;
+
+  --Background: #EFF5F2;
+  --OnBackground: #E1F9ED;
+  --Surface: #F2FFF8;
+  --OnSurface: #006D35;
+  --SurfaceVariant: #DAE7DF;
+  --OnSurfaceVariant: #44544A;        /* titles, labels, body */
+  --Outline: #839D8D;
+  --OutlineVariant: #C3CEC7;
+  --displaybgPrimary: #E8F4F2;
+  --displaybgSecondary: #DDEBE9;
+
+  --neutralPrimary: #000000;
+  --neutralSecondary: #7A8684;        /* meta lines */
+  --neutralPrimary20: rgba(0, 0, 0, .20);
+  --neutral05: rgba(0, 0, 0, .05);
+  --white: #FFFFFF;
+
+  --greenturq: linear-gradient(116.5deg, #00D6C9 8.8%, #37BD69 102%);
+  --scrim: rgba(31, 65, 91, .5);      /* OnSecondaryContainer at 50% */
+
+  /* Status tints (fill / text pairs) */
+  --status-positive-bg: var(--OnBackground);          --status-positive-fg: var(--OnSurface);
+  --status-pending-bg: rgba(255, 232, 110, .30);      --status-pending-fg: var(--moderateSecondary);
+  --status-negative-bg: rgba(255, 211, 211, .40);     --status-negative-fg: var(--Error);
+  --status-cancelled-bg: rgba(255, 189, 168, .30);    --status-cancelled-fg: var(--Tertiary);
+  --status-neutral-bg: var(--neutral05);              --status-neutral-fg: var(--OnSurfaceVariant);
+  --status-awaiting-bg: rgba(228, 184, 25, .10);      --status-awaiting-fg: var(--OnTertiaryContainer);
+
+  /* ---- Type: Antz text ---- */
+  --font: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --icon-font: "Material Symbols Rounded";
+  --t-stat: 600 28px/1 var(--font);           /* Antz_Stat_Title  (tablet numbers) */
+  --t-major-title: 600 24px/1 var(--font);    /* Antz_Major_Title */
+  --t-major-medium: 500 24px/1 var(--font);   /* Antz_Major_Medium */
+  --t-medium: 500 20px/1 var(--font);         /* Antz_Medium_Medium: screen title */
+  --t-minor-title: 600 16px/1 var(--font);    /* Antz_Minor_Title */
+  --t-minor-medium: 500 16px/1 var(--font);   /* Antz_Minor_Medium */
+  --t-minor-regular: 400 16px/1 var(--font);  /* Antz_Minor_Regular */
+  --t-body-title: 600 14px/1 var(--font);     /* Antz_Body_Title */
+  --t-body-medium: 500 14px/1 var(--font);    /* Antz_Body_Medium, letter-spacing .1px */
+  --t-body-regular: 400 14px/1 var(--font);   /* Antz_Body_Regular; paragraphs use 20px line */
+  --t-subtext-title: 600 12px/1 var(--font);  /* Antz_Subtext_title */
+  --t-subtext-regular: 400 12px/1 var(--font);/* Antz_Subtext_Regular */
+  --t-small: 500 10px/1 var(--font);          /* Antz_Small: badges only */
+
+  /* ---- Space ---- */
+  --gutter-phone: 16px;
+  --gutter-tablet: 20px;
+  --s-2: 2px; --s-4: 4px; --s-8: 8px; --s-12: 12px; --s-16: 16px; --s-20: 20px; --s-24: 24px; --s-32: 32px;
+
+  /* ---- Size ---- */
+  --field-h: 56px;
+  --btn-main-h: 56px;
+  --btn-decision-h: 48px;
+  --btn-compact-h: 40px;
+  --topbar-h: 72px;
+  --nav-h: 80px;
+  --search-h: 40px;
+  --chip-h: 32px;
+  --fab: 56px;
+  --touch-min: 44px;
+
+  /* ---- Radius ---- */
+  --r-4: 4px; --r-8: 8px; --r-12: 12px; --r-16: 16px; --r-24: 24px; --r-full: 100px;
+
+  /* ---- Elevation (named Figma effects) ---- */
+  --e-cards: 0 2px 2px rgba(0, 0, 0, .10);
+  --e-1px: 0 1px 1px rgba(0, 0, 0, .10);
+  --e-minus1px: 0 -1px 0 rgba(0, 0, 0, .10);
+  --e-fab: 0 4px 4px rgba(0, 0, 0, .15);
+  --e-menu: 0 4px 14px rgba(0, 0, 0, .15);
+}

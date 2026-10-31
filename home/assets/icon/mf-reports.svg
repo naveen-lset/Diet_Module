@@ -1,0 +1,16 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="lab_profile">
+<mask id="mask0_0_4" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="50" height="50">
+<rect id="Bounding box" width="50" height="50" fill="#D9D9D9"/>
+</mask>
+<g mask="url(#mask0_0_4)">
+<path id="lab_profile_2" d="M16.6667 25V20.8333H33.3333V25H16.6667ZM16.6667 16.6667V12.5H33.3333V16.6667H16.6667ZM12.5 29.1667H28.125C29.1319 29.1667 30.0694 29.3837 30.9375 29.8177C31.8056 30.2517 32.5347 30.8681 33.125 31.6667L37.5 37.3958V8.33333H12.5V29.1667ZM12.5 41.6667H35.5208L29.8437 34.2188C29.6354 33.941 29.3837 33.724 29.0885 33.5677C28.7934 33.4115 28.4722 33.3333 28.125 33.3333H12.5V41.6667ZM37.5 45.8333H12.5C11.3542 45.8333 10.3733 45.4254 9.55729 44.6094C8.74132 43.7934 8.33333 42.8125 8.33333 41.6667V8.33333C8.33333 7.1875 8.74132 6.2066 9.55729 5.39062C10.3733 4.57465 11.3542 4.16667 12.5 4.16667H37.5C38.6458 4.16667 39.6267 4.57465 40.4427 5.39062C41.2587 6.2066 41.6667 7.1875 41.6667 8.33333V41.6667C41.6667 42.8125 41.2587 43.7934 40.4427 44.6094C39.6267 45.4254 38.6458 45.8333 37.5 45.8333Z" fill="url(#paint0_linear_0_4)"/>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_4" x1="11.0087" y1="8.4392" x2="51.1843" y2="24.4652" gradientUnits="userSpaceOnUse">
+<stop stop-color="#00D6C9"/>
+<stop offset="1" stop-color="#37BD69"/>
+</linearGradient>
+</defs>
+</svg>

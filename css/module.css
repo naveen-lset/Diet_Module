@@ -1,0 +1,885 @@
+/* css/module.css — the Diet module on Antz Design (assets/tokens.css + assets/antz.css, copied unchanged).
+   Here: the prototype stage, the device frames, phone and iPad layouts, and the diet parts the design system does not have yet. */
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--displaybgSecondary);font-family:var(--font);color:var(--OnSurfaceVariant);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:inherit}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--addPrimary);outline-offset:2px}
+input,select,textarea{font-family:inherit}
+a{color:inherit;text-decoration:none}
+.grow{flex:1;min-width:0}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- the stage, outside the device: prototype controls only ---------- */
+.stage{min-height:100%;display:flex;flex-direction:column;align-items:center;padding:16px 24px 24px;gap:16px}
+.stage__bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;padding:10px 16px;border:1px dashed var(--Outline);border-radius:var(--r-8);font:var(--t-body-regular);color:var(--OnSurfaceVariant);max-width:100%}
+.stage__bar b.cap{font:var(--t-subtext-title);letter-spacing:.6px;text-transform:uppercase;color:var(--OnPrimaryContainer)}
+.stage__grp{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.stage__opt{color:var(--OnSurface);text-decoration:underline;text-underline-offset:3px}
+.stage__opt[aria-current="true"]{font-weight:600;text-decoration:none;color:var(--OnPrimaryContainer)}
+.device-slot{position:relative;flex:none}
+.device{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden;background:var(--Background);box-shadow:0 24px 64px rgba(31,65,91,.22),0 0 0 1px rgba(31,65,91,.08)}
+.device.phone{width:390px;height:844px;border-radius:40px}
+.device.tab-p{width:834px;height:1194px;border-radius:24px}
+.device.tab-l{width:1194px;height:834px;border-radius:24px}
+body.fill .stage{padding:0}
+body.fill .stage__bar{display:none}
+/* on a real phone or iPad the app is the visible screen: pinned to the edges the browser actually shows (not 100vh, which mobile browsers
+   measure as if the address bar and toolbar were not there, pushing the bottom bars under them), and clear of the notch and home indicator */
+body.fill{overflow:hidden;overscroll-behavior:none;background:var(--white)}
+body.fill .device{position:fixed;top:env(safe-area-inset-top,0px);right:env(safe-area-inset-right,0px);bottom:env(safe-area-inset-bottom,0px);left:env(safe-area-inset-left,0px);width:auto!important;height:auto!important;border-radius:0;transform:none!important;box-shadow:none}
+@supports (height:100dvh){body.fill .device{max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}}
+
+/* ---------- the app: panes and the bottom navigation ---------- */
+.app{position:absolute;inset:0;display:flex;flex-direction:column}
+.main{flex:1;min-height:0;display:flex}
+.tab .main{gap:8px;padding:12px;background:var(--displaybgSecondary)}
+.pane{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--Background)}
+.phone .pane{flex:1}
+.tab .pane{border-radius:var(--r-12);overflow:hidden}
+.pane__body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+.pane__foot{flex:none}
+.pane--fill{flex:1}
+.pane--w300{flex:0 0 300px}.pane--w320{flex:0 0 320px}.pane--w340{flex:0 0 340px}.pane--w360{flex:0 0 360px}.pane--w400{flex:0 0 400px}
+.body{padding:16px var(--gutter-phone) 24px;display:flex;flex-direction:column;gap:12px}
+.tab .body{padding:16px 16px 24px}
+.tab .pane--fill .body{padding:20px var(--gutter-tablet) 32px}
+.body--flush{padding-top:0}
+.az-topbar{gap:8px}
+.az-topbar__lead{width:auto;min-width:30px}
+.tab .az-topbar{padding:20px}
+.az-topbar .az-iconbtn{flex:none}
+@media (hover:hover){.az-iconbtn:hover{background:var(--neutral05)}}
+.az-topswitch{cursor:pointer}
+.az-topbar__title small{display:block;font:var(--t-body-regular);color:var(--neutralSecondary);margin-top:4px;overflow:hidden;text-overflow:ellipsis}
+.az-topbar--two{height:auto;min-height:var(--topbar-h);padding-top:16px;padding-bottom:12px}
+
+/* phone bottom navigation is az-nav; the tablet one is the designed tablet variant: three or four items, a white box when picked */
+.az-nav a{cursor:pointer}
+.navt{height:97px;flex:none;display:flex;justify-content:center;gap:8px;padding:20px;background:linear-gradient(rgba(0,175,214,.12),rgba(0,175,214,.12)),var(--white)}
+.navt a{width:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:var(--r-8);padding:8px;font:var(--t-body-regular);color:var(--OnPrimaryContainer);cursor:pointer}
+.navt a[aria-current="page"]{background:var(--white);font:var(--t-body-medium)}
+.navdot{position:relative}
+.navdot::after{content:attr(data-n);position:absolute;top:-4px;right:-10px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--Tertiary);color:#fff;font:var(--t-small);display:grid;place-items:center}
+
+/* ---------- lists and rows ---------- */
+.list{display:flex;flex-direction:column;gap:12px}
+.list--8{gap:8px}
+.cap{font:var(--t-body-title);color:var(--OnSurfaceVariant);display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
+.cap small{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.cap .lnk{font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+.meta{font:var(--t-subtext-regular);color:var(--neutralSecondary);line-height:16px}
+.sub{font:var(--t-body-regular);color:var(--neutralSecondary);line-height:18px}
+.sci{font-style:italic}
+.lnk{font:var(--t-body-medium);color:var(--OnPrimaryContainer);display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+@media (hover:hover){.lnk:hover{text-decoration:underline}}
+.pick{outline:none}
+.tab .pick[aria-current="true"],.tab .pick[aria-selected="true"]{box-shadow:0 0 0 1.5px var(--Primary)}
+
+/* species row (list card, 48 thumbnail) */
+.sprow{width:100%;background:var(--white);border-radius:var(--r-8);padding:12px;display:flex;align-items:center;gap:12px;text-align:left}
+.thumb{width:48px;height:48px;border-radius:var(--r-4);background:var(--neutral05);display:grid;place-items:center;color:var(--Outline);flex:none}
+.sprow__t{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.sprow__t b{font:var(--t-minor-medium);line-height:20px;color:var(--OnSurfaceVariant);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sprow__t > span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tab .pane--w300 .sprow__n > span,.tab .pane--w320 .sprow__n > span,.sidebar .sprow__n > span{white-space:normal;text-align:right;max-width:52px;line-height:14px}
+.sprow__n{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.sprow__n b{font:var(--t-minor-title);color:var(--OnSurface)}
+.sprow__n > span{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.sprow__n--none b{color:var(--neutralSecondary)}
+
+/* species header and the level chips */
+.sphead{background:var(--white);padding:4px 16px 16px;display:flex;flex-direction:column;gap:12px;flex:none}
+.tab .sphead{padding:0 20px 16px}
+.facts{display:flex;flex-wrap:wrap;gap:4px 16px;font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.facts b{font:var(--t-body-title)}
+.az-chips{flex:none;position:relative;z-index:1}
+.az-chip{cursor:pointer}
+@media (hover:hover){.az-chip:not([aria-selected="true"]):hover{background:var(--SurfaceVariant)}}
+.tab .az-chips{padding:12px 20px}
+
+/* diet card: a plain Antz fill (no food photo) */
+.dcard{width:100%;border-radius:var(--r-12);padding:16px;display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--OnPrimaryContainer);color:var(--white);min-height:124px}
+.dcard--later{background:var(--displaybgSecondary);color:var(--OnSurfaceVariant)}
+.dcard--ended{background:var(--SurfaceVariant);color:var(--OnSurfaceVariant)}
+.dcard__tags{display:flex;gap:8px;min-height:24px;align-items:center}
+.dcard__name{font:var(--t-medium);line-height:24px}
+.dcard__kind{font:var(--t-body-regular);line-height:18px;opacity:.92}
+.dcard__foot{margin-top:auto;padding-top:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.dcard__chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:var(--r-8);background:rgba(0,0,0,.22);font:var(--t-body-medium)}
+.dcard--later .dcard__chip,.dcard--ended .dcard__chip{background:var(--white)}
+.dcard__id{font:var(--t-body-medium);opacity:.85}
+.pill-on-dark{background:var(--OnBackground);color:var(--OnSurface)}
+.tab .dcard.pick[aria-current="true"]{box-shadow:0 0 0 2px var(--white),0 0 0 3.5px var(--Primary)}
+
+/* place card (site, section, enclosure): the site card shape, with the diets set there */
+.place{background:var(--white);border-radius:var(--r-8);overflow:hidden}
+.place__top{display:flex;align-items:center;gap:12px;padding:12px}
+.place__t{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.place__t b{font:var(--t-minor-medium)}
+.place__d{width:100%;display:flex;align-items:center;gap:8px;padding:12px;border-top:1px solid var(--neutral05);text-align:left}
+@media (hover:hover){.place__d:hover{background:var(--Surface)}}
+.place__d .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.place__d .t b{font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+.place__none{padding:12px;border-top:1px solid var(--neutral05);font:var(--t-body-regular);color:var(--neutralSecondary)}
+.tab .place__d[aria-current="true"]{background:var(--Surface);box-shadow:inset 3px 0 0 var(--Primary)}
+
+/* animal card (az-animal) on white, with its diet under it */
+.acard{background:var(--white);border-radius:var(--r-12);overflow:hidden}
+.acard .az-animal{background:var(--white)}
+.phblock{position:absolute;inset:0;background:var(--neutral05);display:grid;place-items:center;color:var(--Outline)}
+.az-photo__sex{z-index:1}
+
+/* diet page header: the Figma Diet Details header, a plain Antz fill */
+.dhead{background:var(--OnPrimaryContainer);color:var(--white);flex:none}
+.dhead__bar{display:flex;align-items:center;gap:8px;height:var(--topbar-h);padding:0 16px}
+.tab .dhead__bar{padding:0 20px}
+.dhead__bar .az-iconbtn{color:var(--white)}
+@media (hover:hover){.dhead__bar .az-iconbtn:hover{background:rgba(255,255,255,.12)}}
+.dhead__bar b{flex:1;font:var(--t-medium)}
+.dhead__who{padding:0 16px 20px;display:flex;flex-direction:column;gap:8px}
+.tab .dhead__who{padding:0 20px 20px}
+.dhead__name{font:var(--t-major-medium);line-height:30px}
+.dhead__sub{font:var(--t-body-regular);line-height:20px;opacity:.9}
+.dhead__tags{display:flex;gap:8px;flex-wrap:wrap}
+.dfacts{background:var(--white);padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px 12px;border-bottom:1px solid var(--neutral05)}
+.tab .pane--fill .dfacts{padding:16px 20px;grid-template-columns:repeat(4,minmax(0,1fr))}
+.dfacts > div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.dfacts > div > span{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.dfacts b{font:var(--t-body-medium);line-height:18px}
+.dfacts b .sub{display:block;margin-top:2px;font:var(--t-subtext-regular)}
+.dfacts .lnk{font:var(--t-body-medium)}
+.az-tabs{flex:none}
+.az-tab{cursor:pointer;white-space:nowrap}
+
+/* day pills (Figma: Full week | M T W T F S S) */
+.days{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:12px 16px;background:var(--white);border-bottom:1px solid var(--neutral05);flex:none}
+.tab .days{padding:12px 20px}
+.days button{height:36px;min-width:36px;padding:0 10px;border-radius:var(--r-8);background:var(--displaybgSecondary);font:var(--t-body-medium);color:var(--OnPrimaryContainer);flex:none}
+.days button[aria-pressed="true"]{background:var(--OnPrimaryContainer);color:var(--white)}
+
+/* phone diet lines: a band per feed time, one row per item, amount at the right */
+.band{background:var(--white);border-radius:var(--r-8);overflow:hidden}
+.band__h{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--displaybgPrimary);font:var(--t-body-title);color:var(--OnPrimaryContainer)}
+.band__h .az-i{color:var(--OnPrimaryContainer)}
+.band__h small{margin-left:auto;font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.drow{width:100%;display:flex;align-items:flex-start;gap:12px;padding:12px;border-top:1px solid var(--neutral05);text-align:left}
+.band__h + .drow{border-top:0}
+@media (hover:hover){button.drow:hover{background:var(--Surface)}}
+.drow .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.drow .t b{font:var(--t-minor-medium);line-height:20px}
+.drow .t > span{font:var(--t-body-regular);color:var(--neutralSecondary);line-height:18px}
+.drow .q{font:var(--t-minor-title);color:var(--OnSurfaceVariant);white-space:nowrap;text-align:right;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.drow .act{flex:none;align-self:center}
+.dayl{display:flex;gap:4px}
+.dayl i{font:var(--t-subtext-title);font-style:normal;color:var(--OutlineVariant);width:12px;text-align:center}
+.dayl i.on{color:var(--OnPrimaryContainer)}
+/* the Kitchen change marks: an amber row, "was …", NEW, a stopped item struck through */
+.drow.chg,.dtab tr.chg td{background:rgba(255,232,110,.18)}
+.drow.stop,.dtab tr.stop td{background:rgba(233,51,83,.05)}
+.was{display:block;font:var(--t-subtext-regular);color:var(--neutralSecondary);margin-top:2px}
+.new{display:inline-flex;margin-left:6px;padding:2px 6px;border-radius:var(--r-4);background:var(--status-positive-bg);color:var(--status-positive-fg);font:var(--t-subtext-title);vertical-align:2px}
+.gone{text-decoration:line-through;color:var(--neutralSecondary)}
+.stopped{display:inline-flex;margin-left:6px;padding:2px 6px;border-radius:var(--r-4);background:var(--status-negative-bg);color:var(--status-negative-fg);font:var(--t-subtext-title);vertical-align:2px}
+
+/* tablet diet table: the live Kitchen table (Time | Day | Item | Daily amt) */
+.dtab-wrap{background:var(--white);border-radius:var(--r-8);overflow:hidden}
+.dtab{width:100%;border-collapse:collapse;font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.dtab th{background:var(--displaybgPrimary);font:var(--t-body-medium);text-align:left;padding:12px;color:var(--OnPrimaryContainer);white-space:nowrap}
+.dtab td{padding:12px;border-top:1px solid var(--neutral05);vertical-align:top;line-height:18px}
+.dtab td.tm{font:var(--t-body-title);white-space:nowrap;border-right:1px solid var(--neutral05);background:var(--white)!important}
+.dtab td.dy{white-space:nowrap;border-right:1px solid var(--neutral05)}
+.dtab td.it b{font:var(--t-body-medium)}
+.dtab td.it .gar{color:var(--neutralSecondary);font-style:italic}
+.dtab td.amt{white-space:nowrap;font:var(--t-body-medium)}
+.dtab td.act{width:1%;white-space:nowrap}
+.dtab tr.click{cursor:pointer}
+@media (hover:hover){.dtab tr.click:hover td:not(.tm){background:var(--Surface)}}
+
+/* nutrition */
+.nutri{background:var(--white);border-radius:var(--r-8);overflow:hidden}
+.nutri__h{padding:10px 12px;background:var(--displaybgPrimary);font:var(--t-body-title);color:var(--OnPrimaryContainer)}
+.nutri__rows{display:grid;grid-template-columns:1fr}
+.tab .pane--fill .nutri__rows{grid-template-columns:1fr 1fr}
+.nutri__r{display:flex;justify-content:space-between;gap:12px;padding:12px;border-top:1px solid var(--neutral05);font:var(--t-body-regular)}
+.nutri__r:first-child{border-top:0}
+.tab .pane--fill .nutri__r:nth-child(2){border-top:0}
+.tab .pane--fill .nutri__r:nth-child(odd){border-right:1px solid var(--neutral05)}
+.nutri__r b{font:var(--t-body-title)}
+.nutri__r.zero{color:var(--Outline)}
+.nutri__r.zero b{font-weight:500}
+
+/* notes (the yellow note card) */
+.note{background:var(--notes);border-radius:var(--r-8);padding:12px;display:flex;flex-direction:column;gap:6px}
+.note b{font:var(--t-body-title)}
+.note p{margin:0;font:var(--t-body-regular);line-height:20px}
+
+/* empty: one line in the middle */
+.empty1{flex:1;min-height:240px;display:grid;place-items:center;text-align:center;padding:24px;font:var(--t-medium);color:var(--OnSurfaceVariant)}
+.empty1 small{display:block;margin-top:8px;font:var(--t-body-regular);color:var(--neutralSecondary)}
+.nodiet{background:var(--white);border-radius:var(--r-8);padding:16px;font:var(--t-body-regular);color:var(--neutralSecondary);text-align:center}
+
+/* search row inside a pane */
+.az-searchrow{flex:none}
+.tab .az-searchrow{padding:12px 20px}
+.az-search input{flex:1;min-width:0;border:0;background:none;outline:none;font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.az-search input::placeholder{color:var(--neutralSecondary)}
+.az-search .az-i{color:var(--OnSurfaceVariant)}
+.az-counttabs{flex:none}
+.az-counttab{flex:1;cursor:pointer}
+.az-segment{cursor:pointer}
+.segrow{background:var(--white);padding:12px 16px;display:flex;flex:none}
+.tab .segrow{padding:12px 20px}
+.segrow .az-segment{width:100%}
+.segrow .az-segment button{flex:1;text-align:center;padding:10px 12px}
+
+/* history: the week strip and the change rows */
+.week{background:var(--white);padding:4px 16px 12px;display:flex;flex-direction:column;gap:8px;flex:none;border-bottom:1px solid var(--neutral05)}
+.tab .week{padding:4px 20px 12px}
+.week__h{display:flex;align-items:center;gap:4px;font:var(--t-body-title)}
+.week__h > span{flex:1}
+.week__d{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.week__d button{height:52px;border-radius:var(--r-8);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font:var(--t-subtext-regular);color:var(--OnSurfaceVariant)}
+.week__d button b{font:var(--t-body-title)}
+.week__d button i{width:5px;height:5px;border-radius:50%;background:transparent}
+.week__d button i.on{background:var(--Primary)}
+.week__d button.today b{color:var(--OnSurface)}
+.week__d button[aria-pressed="true"]{background:var(--OnPrimaryContainer);color:var(--white)}
+.week__d button[aria-pressed="true"] b{color:var(--white)}
+.week__d button[aria-pressed="true"] i.on{background:var(--white)}
+.week__d button:disabled{opacity:.35;cursor:default}
+.chrow{width:100%;background:var(--white);border-radius:var(--r-8);padding:12px;display:flex;flex-direction:column;gap:6px;text-align:left}
+.chrow__top{display:flex;align-items:center;gap:8px}
+.chrow__top .meta{margin-left:auto}
+.chrow b{font:var(--t-minor-medium);line-height:20px}
+.chrow .sub{line-height:18px}
+.dayhead{font:var(--t-body-title);color:var(--OnSurfaceVariant);margin-top:8px}
+.dayhead:first-child{margin-top:0}
+.dayhead small{font:var(--t-body-regular);color:var(--neutralSecondary);margin-left:6px}
+.cnt{font:var(--t-minor-title);color:var(--OnSurface)}
+
+/* record (request and change) sections: rows on a field fill, icon + caption + content */
+.rhead{background:var(--white);padding:16px;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid var(--neutral05);flex:none}
+.tab .rhead{padding:16px 20px}
+.rhead__t{font:var(--t-medium);line-height:26px}
+.rhead__cat{display:flex;align-items:center;gap:8px;font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+.rsec{background:var(--Surface);border-radius:var(--r-8);display:flex;flex-direction:column}
+.rsec__r{display:flex;gap:12px;padding:12px;border-top:1px solid var(--neutral05);align-items:flex-start}
+.rsec__r:first-child{border-top:0}
+.rsec__r > .az-i{color:var(--OnPrimaryContainer);margin-top:2px}
+.rsec__r .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.rsec__r .t > span{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.rsec__r .t b{font:var(--t-body-medium);line-height:20px}
+.rsec__r .t p{margin:0;font:var(--t-body-regular);line-height:20px}
+.secttl{font:var(--t-minor-medium);color:var(--OnSurfaceVariant);display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.secttl small{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.files{display:flex;flex-wrap:wrap;gap:8px}
+.file{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:var(--r-8);background:var(--white);font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+.act-list{background:var(--white);border-radius:var(--r-8);padding:12px 12px 0}
+.az-tl__dot{background:var(--Background);color:var(--OnPrimaryContainer)}
+.az-tl__dot.ok{background:var(--OnBackground);color:var(--OnSurface)}
+.az-tl__dot.bad{background:var(--status-negative-bg);color:var(--Error)}
+.az-tl__dot.wait{background:var(--status-pending-bg);color:var(--moderateSecondary)}
+.az-tl__text p{margin:4px 0 0;padding:8px 10px;border-radius:var(--r-8);background:var(--notes);font:var(--t-body-regular);line-height:20px}
+.az-composer{border-radius:var(--r-8);box-shadow:none;padding:0 0 12px;background:none}
+.az-composer input{flex:1;height:44px;border-radius:22px;border:0;background:var(--displaybgPrimary);padding:0 16px;font:var(--t-body-regular);color:var(--OnSurfaceVariant);outline:none;min-width:0}
+.az-composer .send{width:44px;height:44px;border-radius:50%;background:var(--Primary);color:var(--white);display:grid;place-items:center;flex:none}
+.az-statusbar{flex:none}
+.az-statusbar__actions{flex-wrap:wrap}
+.tab .az-statusbar{padding:16px 20px}
+.tab .az-statusbar__actions .az-btn{height:var(--btn-decision-h)}
+.az-btn{cursor:pointer}
+.az-btn--ghost{background:var(--white);color:var(--Error);border:1px solid var(--OutlineVariant);font:var(--t-minor-medium)}
+.az-btn[disabled]{cursor:default}
+.az-card--request{width:100%;text-align:left;cursor:pointer}
+.az-reqhead__title{font:var(--t-minor-medium);line-height:20px}
+.az-card--request .az-desc b{font:var(--t-minor-medium);display:block;margin-bottom:4px;color:var(--OnSurfaceVariant)}
+.az-flag{font-size:16px;letter-spacing:-1px}
+.az-flag--low{background:var(--Outline)}
+.az-strip{flex-wrap:wrap}
+.az-strip--neutral{background:var(--neutral05);color:var(--OnSurfaceVariant)}
+.az-strip--cancelled{background:var(--status-cancelled-bg);color:var(--Tertiary)}
+.az-strip--pending{background:var(--status-awaiting-bg);color:var(--status-awaiting-fg)}
+
+/* stats on home */
+.az-stats{background:none;padding:0}
+.az-stat{text-align:left;width:100%}
+.az-stat__label{line-height:16px}
+.tab .az-stats--2{grid-template-columns:repeat(4,1fr)}
+
+/* ---------- sheets: bottom sheet on the phone, side sheet on the iPad, the form in a window ---------- */
+.az-scrim{z-index:20;cursor:default}
+.az-sheet{max-height:88%;cursor:auto}
+.az-sheet__title .az-iconbtn{margin-right:-6px}
+.az-sheet__title > span{min-width:0}
+.az-sheet__title small{display:block;font:var(--t-body-regular);color:var(--neutralSecondary);margin-top:6px}
+.az-sheet__body{flex:1;min-height:0}
+.az-sheet__foot .az-btn{flex:1}
+.side-scrim{position:absolute;inset:0;z-index:20;background:var(--scrim);display:flex;justify-content:flex-end}
+.side{width:440px;max-width:90%;height:100%;background:var(--white);display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(0,0,0,.12);animation:sidein .22s ease-out}
+.side .az-sheet__title{padding:20px}
+.side .az-sheet__body{padding:16px 20px}
+@keyframes sidein{from{transform:translateX(40px);opacity:.6}to{transform:none;opacity:1}}
+.modal-scrim{position:absolute;inset:0;z-index:15;background:var(--scrim);display:grid;place-items:center;padding:32px}
+.modal{width:min(720px,100%);height:100%;background:var(--Background);border-radius:var(--r-16);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.sidebar-scrim{position:absolute;inset:0;z-index:12;background:var(--scrim)}
+.sidebar{position:absolute;left:12px;top:12px;bottom:109px;width:320px;z-index:13;border-radius:var(--r-12);box-shadow:4px 0 24px rgba(0,0,0,.15);animation:sidebarin .2s ease-out}
+@keyframes sidebarin{from{transform:translateX(-24px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.side,.sidebar{animation:none}}
+
+/* form */
+.az-section{gap:16px}
+.az-section__title{justify-content:space-between}
+.az-section__title small{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.az-input{width:100%;text-align:left;cursor:pointer}
+.az-input input,.az-input textarea{flex:1;min-width:0;border:0;background:none;outline:none;font:var(--t-minor-regular);color:var(--OnSurfaceVariant);height:100%}
+.az-input textarea{resize:none;line-height:22px;padding:0}
+.az-input--text{cursor:text}
+.az-textarea{height:auto}
+.az-input:focus-within{border-color:var(--Outline)}
+.az-input[aria-disabled="true"]{background:var(--SurfaceVariant);color:var(--Outline);cursor:default}
+.az-seg > span{cursor:pointer}
+.az-pickrow{width:100%;text-align:left;cursor:pointer}
+.az-pickrow .lnk{flex:none}
+.az-option{width:100%;text-align:left;cursor:pointer}
+.az-option > span:not(.az-i){flex:1}
+.az-option small{display:block;font:var(--t-body-regular);color:var(--neutralSecondary);margin-top:4px}
+.az-checkrow{width:100%;cursor:pointer;text-align:left}
+.daychips{display:flex;flex-wrap:wrap;gap:8px}
+.daychips button{height:40px;min-width:44px;padding:0 12px;border-radius:var(--r-8);border:1px solid var(--OutlineVariant);background:var(--white);font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+.daychips button[aria-pressed="true"]{background:var(--OnPrimaryContainer);border-color:var(--OnPrimaryContainer);color:var(--white)}
+.qty{display:flex;gap:8px;align-items:center}
+.qty .az-input{flex:1;width:auto;min-width:0}
+.az-sheet__body .stepb,.side .stepb{background:var(--white);border:1px solid var(--OutlineVariant)}
+.daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.daygrid span{height:40px;border-radius:var(--r-8);display:grid;place-items:center;font:var(--t-body-medium);background:var(--white);color:var(--Outline)}
+.daygrid span.on{background:var(--OnPrimaryContainer);color:var(--white)}
+.nw{white-space:nowrap}
+.qty .stepb{width:56px;height:56px;border-radius:var(--r-8);background:var(--Background);display:grid;place-items:center;color:var(--OnPrimaryContainer);flex:none}
+.hint{font:var(--t-body-regular);color:var(--neutralSecondary);line-height:20px}
+.az-actionbar{border-top:1px solid var(--neutral05)}
+.az-actionbar .hint{text-align:center}
+.az-actionbar--row{flex-direction:row;align-items:center}
+.az-actionbar--row .az-btn{width:auto;flex:1}
+.itemchips{display:flex;flex-wrap:wrap;gap:8px}
+.itemchips button{height:40px;padding:0 14px;border-radius:var(--r-8);background:var(--white);border:1px solid var(--OutlineVariant);font:var(--t-body-medium);color:var(--OnSurfaceVariant)}
+.itemchips button.warn{border-color:var(--moderateSecondary);background:rgba(252,244,174,.4)}
+.itemchips button[aria-pressed="true"]{border-color:var(--Primary);background:var(--Surface);color:var(--OnSurface)}
+
+/* toast */
+.az-toast{z-index:40;left:50%;right:auto;transform:translate(-50%,8px);width:max-content;max-width:calc(100% - 32px);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.az-toast.on{opacity:1;transform:translate(-50%,0)}
+.phone .az-toast{bottom:96px}
+.tab .az-toast{bottom:113px}
+.az-fab{cursor:pointer;z-index:5}
+.phone .az-fab{bottom:24px}
+.hsec{display:flex;flex-direction:column;gap:12px;min-width:0}
+.homecols{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.tab-l .homecols{grid-template-columns:repeat(3,1fr)}
+.tab .pane--w320 .az-counttab__in{padding:0 10px}
+
+/* audit fixes: weights stay at 600 or less; every tap target at least 44 tall without moving the layout */
+.az-warnline b,.az-hintline b,.note b,.az-desc b{font-weight:600}
+.az-topswitch{min-height:44px}
+.lnk{padding-block:12px;margin-block:-12px}
+.az-search input{height:100%}
+.segrow .az-segment button{padding:12px 8px}
+.az-unit{min-height:44px;padding:0 4px 0 8px}
+
+/* ---------- Home: the Antz Home build in the frame ---------- */
+.homefr{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#F5F4F1;z-index:1}
+.homefr[hidden],.app[hidden]{display:none}
+.pane--w420{flex:0 0 420px}
+
+/* ---------- Diet: the Dietician's requests row ---------- */
+.reqsum{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--white);border-bottom:1px solid var(--neutral05);flex:none;min-height:64px}
+.tab .reqsum{padding:12px 20px}
+.reqsum__ic{width:40px;height:40px;border-radius:var(--r-8);background:var(--OnBackground);color:var(--OnSurface);display:grid;place-items:center;flex:none}
+.reqsum .grow{display:flex;flex-direction:column;gap:4px}
+.reqsum b{font:var(--t-minor-medium)}
+.reqsum .cnt{font:var(--t-medium);color:var(--OnSurface)}
+.reqsum > .az-i:last-child{color:var(--OnSurfaceVariant)}
+.az-tabs a.az-tab{text-decoration:none}
+.dcards{display:flex;flex-direction:column;gap:12px}
+.tab .pane--fill .dcards{display:grid;grid-template-columns:1fr 1fr}
+
+/* ---------- Help Desk card (as the Help Desk app): number, category, site, flag · title, what, who · last comment · status strip ---------- */
+.list--16{gap:16px}
+.hdcard{width:100%;background:var(--white);border-radius:var(--r-12);box-shadow:var(--e-cards);overflow:hidden;display:flex;flex-direction:column;text-align:left}
+.hdcard__top{display:flex;align-items:flex-start;gap:12px;padding:12px 0 12px 12px;border-bottom:1px solid var(--neutral05)}
+.hdcard__top .grow{display:flex;flex-direction:column;gap:4px}
+.hdcard__id{font:var(--t-minor-title);color:var(--OnSecondaryContainer)}
+.hdcard__cat{font:var(--t-body-title);color:var(--neutralSecondary)}
+.hdcard__site{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.hdcard__body{display:flex;flex-direction:column;gap:6px;padding:12px}
+.hdcard__t{font:var(--t-minor-title);line-height:20px;color:var(--OnSurfaceVariant)}
+.hdcard__d{font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hdcard__by{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font:var(--t-body-regular);color:var(--neutralSecondary);margin-top:2px}
+.hdcard__by b{font:var(--t-body-title);color:var(--OnPrimaryContainer)}
+.hdcard__files{display:inline-flex;align-items:center;gap:2px;margin-left:auto;color:var(--OnSurfaceVariant)}
+.hdcard__cmt{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--neutral05);color:var(--OnSurfaceVariant)}
+.hdcard__cmt > span:last-child{display:flex;flex-direction:column;gap:4px;min-width:0}
+.hdcard__cmt i{font:italic 400 14px/20px var(--font);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.hdcard__cmt small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.hdcard .az-strip{margin:0 2px 2px}
+.hdcard .az-flag{margin-top:0}
+.az-flag .az-i{color:var(--white)}
+.az-strip--awaiting{background:var(--status-awaiting-bg);color:var(--status-awaiting-fg)}
+.az-strip--awaiting > .az-i{color:var(--moderateSecondary)}
+.az-countline{margin:0}
+.hdtools{display:flex;gap:4px}
+.hdtools .az-iconbtn{color:var(--OnSurface)}
+.az-iconbtn.on{background:var(--OnBackground)}
+
+/* ---------- request record: the white header (number in the bar; category and flag; the date; requester with call and chat) ---------- */
+.rhead__row{display:flex;align-items:center;gap:12px;margin-right:-16px}
+.tab .rhead__row{margin-right:-20px}
+.rhead__catn{flex:1;min-width:0;font:var(--t-minor-medium);color:var(--OnSurfaceVariant)}
+.rhead__who{display:flex;align-items:center;gap:8px}
+.rhead__who .grow{display:flex;flex-direction:column}
+.rhead__who .az-iconbtn{color:var(--OnPrimaryContainer);background:var(--displaybgPrimary);width:40px;height:40px}
+.person{display:flex;align-items:center;gap:8px}
+.person > span:last-child{display:flex;flex-direction:column;gap:2px}
+.person b{font:var(--t-body-medium)}
+.person span span{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.az-tl__dot .az-avatar{width:36px;height:36px;font:var(--t-body-medium)}
+.az-tl__text p.plain{background:none;padding:0;margin-top:2px;color:var(--OnSurfaceVariant)}
+.az-statusbar__actions.stack{flex-direction:column}
+.az-statusbar b{font:var(--t-minor-title)}
+.az-warnline .lnk{flex:none;align-self:center}
+
+/* ---------- New Request (Help Desk form) ---------- */
+.az-section__title .az-i{color:var(--OnSurfaceVariant)}
+.az-section__title .az-req{color:var(--Tertiary);margin-left:2px}
+.az-picked .grow{display:flex;flex-direction:column;gap:2px}
+.az-site--picked .grow{display:flex;flex-direction:column}
+.prio{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font:600 20px/1 var(--font);color:var(--white);background:var(--Secondary);flex:none}
+.prio--high{background:var(--Tertiary);font-size:16px;letter-spacing:-1px}
+.prio--emergency{background:var(--Error)}
+.az-upload{width:100%;cursor:pointer;border:0}
+.file .az-iconbtn{margin-right:-6px}
+.az-statusbar__actions.stack .az-btn{flex:none;width:100%}
+
+/* ---------- round 3: species photos, the species sheet, the Figma Diet Details ---------- */
+.thumb{overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.az-photo > img{background:var(--neutral05)}
+/* the photo header of a species */
+.sphero{position:relative;height:184px;flex:none;background-size:cover;background-position:center;display:flex;align-items:flex-end;padding:16px;color:var(--white)}
+.tab .sphero{height:168px;padding:16px 20px}
+.sphero__t{display:flex;flex-direction:column;gap:6px;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.sphero__t b{font:var(--t-major-medium);line-height:28px}
+.sphero__t > span{font:var(--t-body-regular)}
+.sphero__x{position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.45);color:var(--white);display:grid;place-items:center}
+.sphead{padding-top:12px}
+/* the phone's species bottom sheet */
+.spsheet{width:100%;height:92%;background:var(--white);border-radius:var(--r-16) var(--r-16) 0 0;overflow:hidden;display:flex;flex-direction:column;animation:sheetup .24s ease-out}
+.spsheet__body{flex:1;min-height:0;overflow-y:auto;background:var(--Background);overscroll-behavior:contain}
+@keyframes sheetup{from{transform:translateY(24px);opacity:.7}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.spsheet{animation:none}}
+/* the diet header on the species photo (Figma Diet Details) */
+.dhead--photo{background-size:cover;background-position:center}
+.dhead__sub b{font-weight:600}
+.dhead__tags{align-items:center}
+.dhead__chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:var(--r-8);background:rgba(255,255,255,.18);color:var(--white);font:var(--t-body-medium)}
+.dhead__bar .az-iconbtn + .az-iconbtn{margin-left:-4px}
+/* the Figma table: a band row, then item and its days on the left, the amount on the right */
+.ftab{display:flex;flex-direction:column;gap:2px}
+.ftab__h{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:var(--r-8) var(--r-8) 0 0;background:var(--displaybgSecondary);font:var(--t-body-title);color:var(--OnPrimaryContainer)}
+.ftab__h > span:first-child{display:flex;align-items:center;gap:6px}
+.ftab__h > span:last-child{font:var(--t-body-medium);color:var(--OnSurfaceVariant)}
+.ftab__r{display:grid;grid-template-columns:1fr 96px;gap:2px;width:100%;text-align:left;min-height:64px}
+.ftab__r:last-child .ftab__i{border-radius:0 0 0 var(--r-8)}.ftab__r:last-child .ftab__q{border-radius:0 0 var(--r-8) 0}
+.ftab__i{background:var(--OnBackground);padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0}
+.ftab__i b{font:var(--t-body-medium);color:var(--OnSurfaceVariant);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ftab__q{background:var(--white);display:grid;place-items:center;font:var(--t-body-medium);color:var(--OnSurfaceVariant);text-align:center;padding:0 6px}
+@media (hover:hover){.ftab__r:hover .ftab__i{background:var(--SecondaryContainer)}}
+.ftab__i .dayl i{width:10px;font:var(--t-small)}
+/* Meal details and Quantity (Figma sheets) */
+.qcard{background:var(--OnBackground);border-radius:var(--r-8);padding:14px 16px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px 12px}
+.qcard > span{font:var(--t-minor-medium);color:var(--OnPrimaryContainer)}
+.qcard > b{font:var(--t-medium);color:var(--OnPrimaryContainer)}
+.qcard small{grid-column:1/-1;font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.mcard{background:var(--white);border-radius:var(--r-8);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.mcard__k{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.mcard__n{font:var(--t-minor-title);color:var(--OnPrimaryContainer);margin-top:-6px}
+.mcard__chip{display:inline-flex;align-self:flex-start;align-items:center;border-radius:var(--r-8);background:var(--displaybgSecondary);font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.mcard__chip > *{padding:8px 10px}
+.mcard__chip > * + *{border-left:1px solid var(--OutlineVariant)}
+.mcard__chip b{font:var(--t-body-title)}
+/* Diet info (Figma): the diet with its species' photo */
+.dinfo{display:flex;align-items:center;gap:12px;background:var(--white);border-radius:var(--r-8);padding:12px}
+.dinfo img{width:72px;height:72px;border-radius:var(--r-8);object-fit:cover;flex:none}
+.dinfo > span{display:flex;flex-direction:column;gap:4px}
+.dinfo b{font:var(--t-medium);color:var(--OnPrimaryContainer)}
+.dinfo > span > span{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.az-sheet__title > span .az-i{vertical-align:-4px;margin-right:4px}
+.dietrow .sprow__t > span{white-space:normal}
+.mcard__n + .mcard__chip{margin-top:-2px}
+.sphero,.dhead--photo{background-position:center 30%}
+.dhead__chip{height:36px}
+
+/* ---------- round 4: site cards in the site switch, certification and notes as the web, the iPad diet popup ---------- */
+button.az-site{width:100%;text-align:left;cursor:pointer}
+.az-site .grow{display:flex;flex-direction:column;min-width:0}
+.az-site__thumb{display:grid;place-items:center;color:var(--Outline)}
+.az-site[aria-checked="true"]{background:var(--Surface)}
+.certs{display:grid;gap:8px}
+.tab .certs--2{grid-template-columns:1fr 1fr}
+.cert{display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--r-8);background:var(--white)}
+.cert > span{display:flex;flex-direction:column;gap:4px;min-width:0}
+.cert b{font:var(--t-body-title);color:var(--OnSurfaceVariant)}
+.cert small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.cert--ok{background:var(--OnBackground)}.cert--ok > .az-i{color:var(--Primary)}
+.cert--bad{background:var(--status-negative-bg)}.cert--bad > .az-i{color:var(--Error)}.cert--bad b{color:var(--Error)}
+.cert--none > .az-i{color:var(--Outline)}
+.notes{background:var(--white);border-radius:var(--r-8);padding:0 12px;overflow:hidden}
+.notes__r{display:grid;grid-template-columns:104px minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--neutral05)}
+.notes__r:first-child{border-top:0}
+.notes__r > span{font:var(--t-body-regular);color:var(--neutralSecondary);line-height:20px}
+.notes__r p{margin:0;font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant);white-space:pre-wrap}
+.notes__r p i{display:block;margin-top:2px;color:var(--neutralSecondary)}
+.notes__r--remark{background:var(--notes);margin:0 -12px;padding:12px}
+.modal.modal--diet{width:min(780px,100%);height:auto;max-height:100%}
+.dhead--photo .dhead__name,.dhead--photo .dhead__sub,.dhead--photo .dhead__bar b{text-shadow:0 1px 3px rgba(0,0,0,.4)}
+
+/* ---------- round 4b: clearer, brighter overlays and pickers; department questions ---------- */
+.az-scrim,.side-scrim,.modal-scrim{background:rgba(31,65,91,.36)}
+.az-scrim.over,.side-scrim.over,.pick-scrim.over{background:rgba(31,65,91,.10)}
+.pick-scrim{position:absolute;inset:0;z-index:20;background:rgba(31,65,91,.36);display:grid;place-items:center;padding:32px}
+.pickcard{width:min(460px,100%);max-height:80%;background:var(--white);border-radius:var(--r-16);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(31,65,91,.28);animation:popin .18s ease-out}
+.pickcard .az-sheet__title{padding:20px}
+.pickcard .az-sheet__body{padding:12px 20px 20px;background:var(--white)}
+@keyframes popin{from{transform:scale(.97);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.pickcard{animation:none}}
+.az-sheet__title{color:var(--OnSecondaryContainer)}
+.az-option{color:var(--OnSecondaryContainer);background:var(--white)}
+@media (hover:hover){.az-option:not([disabled]):hover{border-color:var(--Outline)}}
+.az-option[aria-checked="true"]{border-width:1.5px}
+.az-option small{color:var(--OnSurfaceVariant)}
+.dopt{align-items:center}
+.dopt > span:nth-child(2){flex:1;display:flex;flex-direction:column;gap:4px}
+.dopt b{font:var(--t-minor-medium)}
+.dopt__ic{width:44px;height:44px;border-radius:var(--r-8);background:var(--OnPrimaryContainer);color:var(--white);display:grid;place-items:center;flex:none}
+.dopt--locked{background:var(--SurfaceVariant);cursor:not-allowed}
+.dopt--locked .dopt__ic{background:var(--Outline)}
+.dopt--locked > .az-i{color:var(--Outline)}
+.sub{color:var(--OnSurfaceVariant)}
+.itemrow{display:flex;gap:8px;align-items:center}
+.itemrow__q{width:96px;flex:none}
+.swrow{justify-content:space-between;gap:12px;padding:12px 16px}
+.amt-green{color:var(--Primary);font:var(--t-body-title)}
+.az-option > .dopt__ic{flex:none}
+.az-sheet__body > *{flex-shrink:0}
+.az-upload > .az-i{font-style:normal}
+.az-option > span.dopt__ic{flex:none}
+
+/* ---------- round 4c: a page colour the content stands out on; the day switch fits the screen ---------- */
+.pane,.modal,.spsheet__body{background:var(--displaybgSecondary)}
+.tab .main{background:var(--OutlineVariant)}
+.dcard--later{background:var(--white);color:var(--OnSurfaceVariant)}
+.dcard--later .dcard__chip,.dcard--ended .dcard__chip{background:var(--displaybgSecondary)}
+.ftab__h{background:var(--white);border-bottom:1px solid var(--neutral05)}
+.dayseg{background:var(--white);padding:10px 16px;border-bottom:1px solid var(--neutral05);flex:none}
+.dayseg .az-seg{height:44px}
+.dayseg .az-seg > span{flex:1;min-width:0;cursor:pointer}
+.dayseg .az-seg > span.wide{flex:2.4}
+
+/* ---------- round 4d: no light-green fills on content (owner, 31 Oct): white surfaces, colour only for status and the chosen item ---------- */
+.ftab__i,.ftab__q{background:var(--white)}
+.ftab__r + .ftab__r .ftab__i,.ftab__r + .ftab__r .ftab__q{box-shadow:inset 0 1px 0 var(--neutral05)}
+.ftab{gap:0;border-radius:var(--r-8);overflow:hidden}
+.ftab__r{gap:0}
+.ftab__q{border-left:1px solid var(--neutral05);font:var(--t-body-title);color:var(--OnSecondaryContainer)}
+.ftab__i b{font:var(--t-minor-medium);color:var(--OnSecondaryContainer)}
+.ftab__h{color:var(--OnSecondaryContainer)}
+@media (hover:hover){.ftab__r:hover .ftab__i,.ftab__r:hover .ftab__q{background:var(--displaybgPrimary)}}
+.cert--ok,.cert--none{background:var(--white)}
+.cert--ok b{color:var(--OnSecondaryContainer)}
+.rsec{background:var(--white)}
+.qcard{background:var(--white)}
+.qcard > span,.qcard > b{color:var(--OnSecondaryContainer)}
+.reqsum__ic{background:var(--OnPrimaryContainer);color:var(--white)}
+.band__h{background:var(--white);border-bottom:1px solid var(--neutral05)}
+.nutri__h{background:var(--white);border-bottom:1px solid var(--neutral05)}
+.dtab th{background:var(--white);border-bottom:1px solid var(--neutral05)}
+
+/* ---------- round 4e: diet cards one by one, white; the active one is told by the green "Currently active" badge (owner, 31 Oct) ---------- */
+.tab .pane--fill .dcards{display:flex;flex-direction:column}
+.dcard,.dcard--later{background:var(--white);color:var(--OnSurfaceVariant)}
+.dcard__name{color:var(--OnSecondaryContainer)}
+.dcard__kind{opacity:1;color:var(--OnSurfaceVariant)}
+.dcard__chip,.dcard--later .dcard__chip{background:var(--displaybgSecondary);color:var(--OnPrimaryContainer)}
+.dcard--ended{background:var(--SurfaceVariant)}
+.dcard--ended .dcard__name{color:var(--OnSurfaceVariant)}
+.dcard{min-height:0}
+
+/* ---------- round 4f: blur behind every overlay (owner: "background blur has to be more"); an overlay on another adds none ---------- */
+.modal-scrim,.pick-scrim,.side-scrim,.az-scrim{-webkit-backdrop-filter:blur(12px) saturate(.9);backdrop-filter:blur(12px) saturate(.9)}
+.pick-scrim.over,.side-scrim.over,.az-scrim.over{-webkit-backdrop-filter:none;backdrop-filter:none}
+
+/* ---------- round 4g: the iPad cleaned like the phone ---------- */
+.tab .sphead{padding:14px 20px 14px}
+.sphead{padding-top:14px}
+.restline{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:var(--r-8);background:var(--white);text-align:left;font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.restline b{font:var(--t-body-medium);color:var(--OnPrimaryContainer);flex:none}
+.restline--static{flex-direction:column;align-items:flex-start;gap:4px}
+.restline--static > span:first-child{font:var(--t-body-medium);color:var(--OnSurfaceVariant)}
+.az-search--card{background:var(--white)}
+.ftab--wide .ftab__h{display:grid;grid-template-columns:1fr 1fr 120px;gap:0}
+.ftab--wide .ftab__h > span:last-child{text-align:center}
+.ftab--wide .ftab__r{grid-template-columns:1fr 1fr 120px}
+.ftab__g{background:var(--white);display:flex;align-items:center;padding:10px 12px;font:var(--t-body-regular);color:var(--OnSurfaceVariant);border-left:1px solid var(--neutral05)}
+.ftab__r + .ftab__r .ftab__g{box-shadow:inset 0 1px 0 var(--neutral05)}
+@media (hover:hover){.ftab__r:hover .ftab__g{background:var(--displaybgPrimary)}}
+.tab .empty1{min-height:320px}
+
+/* ---------- round 4h: forms in sheets (owner: "clean up this"): white body, one-field amount, one-row days, side-by-side selects, a clear warning ---------- */
+.az-sheet__body--form{background:var(--white);gap:20px;padding:20px 16px}
+.side .az-sheet__body--form{padding:20px}
+.az-sheet__body--form .az-input{background:var(--white);border-color:var(--OutlineVariant)}
+@media (hover:hover){.az-sheet__body--form .az-input:hover{border-color:var(--Outline)}}
+.az-sheet__body--form .az-two{gap:12px}
+.az-sheet__body--form .az-two .az-input{padding:0 12px}
+/* the amount: − value unit + in one field */
+.qtyf{height:var(--field-h);display:flex;align-items:center;border:1px solid var(--OutlineVariant);border-radius:var(--r-8);background:var(--white);overflow:hidden}
+.qtyf:focus-within{border-color:var(--OnPrimaryContainer)}
+.qtyf__b{width:56px;height:100%;display:grid;place-items:center;color:var(--OnPrimaryContainer);flex:none}
+@media (hover:hover){.qtyf__b:hover{background:var(--displaybgPrimary)}}
+.qtyf__b:first-child{border-right:1px solid var(--OutlineVariant)}.qtyf__b:last-child{border-left:1px solid var(--OutlineVariant)}
+.qtyf input{flex:1;min-width:0;height:100%;border:0;outline:none;background:none;text-align:right;padding:0 6px 0 12px;font:var(--t-medium);color:var(--OnSecondaryContainer)}
+.qtyf__u{height:100%;padding:0 12px 0 0;display:flex;align-items:center;gap:2px;font:var(--t-minor-medium);color:var(--OnPrimaryContainer)}
+.qtyf__u[disabled]{cursor:default}
+.qtyf--off{padding:0 16px;color:var(--neutralSecondary);font:var(--t-body-regular);background:var(--SurfaceVariant)}
+/* the days: Daily, then one letter per day, in one row */
+.dsel{display:flex;gap:4px;padding:4px;border-radius:var(--r-8);background:var(--displaybgSecondary)}
+.dsel button{flex:1;min-width:0;height:44px;border-radius:6px;font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+.dsel button.dsel__all{flex:2}
+@media (hover:hover){.dsel button:hover{background:rgba(255,255,255,.6)}}
+.dsel button[aria-pressed="true"]{background:var(--OnPrimaryContainer);color:var(--white)}
+/* a warning people notice: Antz yellow with dark text */
+.az-warnline{background:var(--status-pending-bg);color:var(--OnTertiaryContainer);font:var(--t-body-regular);line-height:20px;padding:12px;align-items:center}
+.az-warnline > .az-i{color:var(--moderateSecondary)}
+.az-warnline b{font-weight:600}
+.az-btn--ghost{gap:6px}
+/* the day switch: segments the full height of the bar */
+.dayseg .az-seg{padding:0;gap:2px;height:44px}
+.dayseg .az-seg > span{border-radius:var(--r-8)}
+.dsel button{display:grid;place-items:center;text-align:center;padding:0}
+.az-sheet__foot .az-btn--outline{flex:0 0 auto;width:auto;padding:0 24px}
+.az-sheet__foot .az-btn{white-space:nowrap}
+
+/* ---------- round 5: cadence tag, both certifications in one row, Raise request as a FAB, class chips + diet switch ---------- */
+.cadtag{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;padding:3px 8px;border-radius:var(--r-4);background:var(--displaybgSecondary);font:var(--t-subtext-title);color:var(--OnPrimaryContainer)}
+.cadtag .az-i{color:var(--OnPrimaryContainer)}
+.dtab td.dy .cadtag{white-space:nowrap}
+.certs--2{grid-template-columns:1fr 1fr}
+.cert{align-items:flex-start;gap:10px;padding:10px 12px}
+.cert > .az-i{margin-top:2px}
+.cert > span{gap:2px}
+.cert small{font:var(--t-subtext-regular);color:var(--neutralSecondary);line-height:16px}
+.cert b{font:var(--t-body-title);line-height:18px;color:var(--OnSecondaryContainer);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cert--bad b{color:var(--Error)}
+.cert--none b{color:var(--OnSurfaceVariant)}
+.dfab{position:absolute;right:16px;bottom:20px;z-index:6;cursor:pointer;white-space:nowrap}
+.tab .dfab{right:20px;bottom:24px}
+.has-fab .pane__body .body{padding-bottom:96px}
+.az-searchrow--stack{flex-direction:column;align-items:stretch;gap:10px}
+.az-segment--sm{align-self:flex-start;padding:3px}
+.az-segment--sm button{padding:8px 12px;font:var(--t-body-medium)}
+.nextf{display:flex;flex-wrap:wrap;gap:8px}
+.nextf span{padding:6px 10px;border-radius:var(--r-8);background:var(--displaybgSecondary);font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+
+/* ---------- round 5b: no zoom on tapping a field (iPhone Safari zooms into text under 16 px); certification switches fit ---------- */
+@media (pointer:coarse){input,textarea,select{font-size:16px!important}}
+.az-searchrow--stack .az-segment--sm{max-width:100%;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
+.az-segment--sm button{white-space:nowrap;flex:none}
+.az-segment--sm button{min-height:40px;padding:0 14px;display:inline-flex;align-items:center}
+
+/* ---------- round 6: one filter button instead of stacked chips and switches; the list head; mixes; prep · cut on the phone; the Apple sheet ---------- */
+.az-filterbtn{position:relative;flex:none;cursor:pointer}
+.az-filterbtn.on{background:var(--OnPrimaryContainer);color:var(--white)}
+.fbadge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--Tertiary);color:var(--white);font:var(--t-small);display:grid;place-items:center}
+.lhead{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:2px}
+.lhead__n{font:var(--t-body-title);color:var(--OnSecondaryContainer);margin-right:4px}
+.fchip{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 8px 0 12px;border-radius:var(--r-8);background:var(--OnPrimaryContainer);color:var(--white);font:var(--t-body-medium)}
+.fopts{display:flex;flex-wrap:wrap;gap:8px}
+.fopt{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:var(--r-8);border:1px solid var(--OutlineVariant);background:var(--white);font:var(--t-body-medium);color:var(--OnSecondaryContainer)}
+.fopt small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.fopt[aria-checked="true"]{background:var(--OnPrimaryContainer);border-color:var(--OnPrimaryContainer);color:var(--white)}
+.fopt[aria-checked="true"] small{color:rgba(255,255,255,.75)}
+.mixtag{display:inline-flex;margin-left:6px;padding:1px 6px;border-radius:var(--r-4);background:var(--OnPrimaryContainer);color:var(--white);font:var(--t-small);letter-spacing:.4px;vertical-align:2px}
+.ftab__s{font:var(--t-body-regular);color:var(--OnSurfaceVariant);line-height:18px}
+.ftab__i{gap:4px}
+.mcard__chip{flex-wrap:wrap}
+/* the Apple-style sheet (iPad Diet Details): slides up, a grab handle, rounded top, the page behind blurred */
+.bs-scrim{position:absolute;inset:0;z-index:15;display:flex;align-items:flex-end;justify-content:center;background:rgba(31,65,91,.32);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.bsheet{position:relative;width:100%;height:calc(100% - 44px);border-radius:16px 16px 0 0;overflow:hidden;background:var(--displaybgSecondary);box-shadow:0 -8px 32px rgba(0,0,0,.18);display:flex;flex-direction:column;animation:bsup .34s cubic-bezier(.2,.8,.2,1);transition:transform .22s ease-out;will-change:transform}
+.tab-l .bsheet{width:calc(100% - 120px)}
+.bsheet > .pane{flex:1;min-height:0;border-radius:0}
+.bsheet__grab{position:absolute;left:0;right:0;top:0;height:22px;z-index:3;display:grid;place-items:center;cursor:grab;touch-action:none}
+.bsheet__grab i{width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.85);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.bsheet .dhead__bar{padding-top:10px}
+@keyframes bsup{from{transform:translateY(100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.bsheet{animation:none;transition:none}}
+
+/* ---------- motion (Antz Design · Motion): one set everywhere ---------- */
+:root{--ease-out:cubic-bezier(.2,.8,.2,1);--ease-in:cubic-bezier(.4,0,1,1)}
+@keyframes fadein{from{opacity:0}}
+@keyframes fadeout{to{opacity:0}}
+@keyframes sheetup{from{transform:translateY(100%)}}
+@keyframes sheetdown{to{transform:translateY(100%)}}
+@keyframes sidein2{from{transform:translateX(100%)}}
+@keyframes sideout{to{transform:translateX(100%)}}
+@keyframes popin2{from{opacity:0;transform:scale(.96)}}
+@keyframes popout{to{opacity:0;transform:scale(.96)}}
+@keyframes infwd{from{opacity:0;transform:translateX(32px)}}
+@keyframes inback{from{opacity:0;transform:translateX(-32px)}}
+@keyframes swap{from{opacity:.35;transform:translateY(6px)}}
+/* overlays come in: the dim fades, the sheet slides or pops */
+.az-scrim,.side-scrim,.pick-scrim,.modal-scrim,.bs-scrim{animation:fadein .22s var(--ease-out)}
+.az-scrim.over,.side-scrim.over,.pick-scrim.over{animation:none}
+.az-sheet{animation:sheetup .3s var(--ease-out)}
+.spsheet{animation:sheetup .32s var(--ease-out)}
+.side{animation:sidein2 .28s var(--ease-out)}
+.pickcard{animation:popin2 .2s var(--ease-out)}
+.modal{animation:popin2 .22s var(--ease-out)}
+.bsheet{animation:sheetup .34s var(--ease-out)}
+/* …and leave the same way */
+.out{animation:fadeout .21s var(--ease-in) forwards;pointer-events:none}
+.out .az-sheet,.out .spsheet,.out .bsheet{animation:sheetdown .21s var(--ease-in) forwards}
+.out .side{animation:sideout .21s var(--ease-in) forwards}
+.out .pickcard,.out .modal{animation:popout .18s var(--ease-in) forwards}
+/* a new screen: the phone slides it in from the side it comes from; the iPad cross-fades */
+.in-fwd{animation:infwd .28s var(--ease-out)}
+.in-back{animation:inback .28s var(--ease-out)}
+.in-fade{animation:fadein .2s var(--ease-out)}
+.swap{animation:swap .22s var(--ease-out)}
+/* sliding highlights */
+.az-seg,.az-segment,.az-tabs{position:relative}
+.hl{position:absolute;left:0;top:0;width:0;height:0;opacity:0;pointer-events:none;border-radius:var(--r-8);background:var(--Primary);transition:left .26s var(--ease-out),width .26s var(--ease-out),top .26s var(--ease-out),opacity .15s;z-index:0}
+.az-segment > .hl{border-radius:var(--r-full)}
+.hl--line{border-radius:2px 2px 0 0;background:var(--Primary)}
+.az-seg > span,.az-segment > button,.az-tabs > .az-tab{position:relative;z-index:1}
+.az-seg > span[aria-selected="true"],.az-segment > button[aria-selected="true"]{background:transparent!important;transition:color .2s}
+.az-tabs > .az-tab[aria-selected="true"]{border-bottom:1px solid var(--OutlineVariant);padding-bottom:16px}
+/* press feedback and calm colour changes */
+.az-btn,.az-fab,.az-chip,.fopt,.fchip,.az-option,.az-site,.az-pickrow,.daychips button,.dsel button,.az-iconbtn,.az-filterbtn{transition:background-color .16s,color .16s,border-color .16s,transform .12s}
+.az-btn:active,.az-fab:active,.fopt:active,.fchip:active,.az-option:active,.az-filterbtn:active{transform:scale(.97)}
+.sprow,.dcard,.hdcard,.chrow,.place__d,.ftab__r,.reqsum{transition:transform .12s,background-color .16s}
+.sprow:active,.dcard:active,.hdcard:active,.chrow:active,.reqsum:active{transform:scale(.985)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+.dtable{display:flex;flex-direction:column;gap:12px}
+.fchip{height:36px}
+
+/* ---------- round 7: iPad columns edge to edge (Apple split view): one page colour, a hairline between columns, no grey frame ---------- */
+.tab .main,.tab .main[class]{gap:0;padding:0;background:var(--displaybgSecondary)}
+.tab .pane{border-radius:0}
+.tab .pane + .pane{box-shadow:inset 1px 0 0 rgba(31,65,91,.12)}
+
+/* ---------- round 7b: the Figma Diet Details table: band rows carry the header, roomy white rows with gaps, bands fold ---------- */
+.fbands{display:flex;flex-direction:column}
+.fband{display:grid;grid-template-columns:minmax(0,1fr) 104px;align-items:center;width:100%;min-height:44px;padding:16px 0 10px;text-align:left;color:var(--OnSecondaryContainer);cursor:pointer}
+.fbands > .fband:first-child{padding-top:4px}
+.fband__t{display:flex;align-items:center;gap:6px;font:var(--t-body-title)}
+.fband__t .az-i:last-child{color:var(--OnSurfaceVariant)}
+.fband__c{font:var(--t-body-regular);color:var(--OnSurfaceVariant);padding-left:16px}
+.fband__c--q{text-align:center;padding-left:0}
+.frows{display:flex;flex-direction:column;gap:2px;border-radius:var(--r-8);overflow:hidden}
+.frow{display:grid;grid-template-columns:minmax(0,1fr) 104px;gap:2px;width:100%;min-height:76px;text-align:left}
+.frow > span{background:var(--white);transition:background-color .16s}
+.frow__i{padding:14px 16px;display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0}
+.frow__i b{font:var(--t-minor-medium);line-height:20px;color:var(--OnSecondaryContainer)}
+.frow__s{font:var(--t-body-regular);line-height:18px;color:var(--OnSurfaceVariant)}
+.frow__g{padding:14px 16px;display:flex;align-items:center;font:var(--t-body-regular);line-height:18px;color:var(--OnSurfaceVariant)}
+.frow__q{display:grid;place-items:center;padding:0 8px;text-align:center;font:var(--t-minor-title);color:var(--OnSecondaryContainer)}
+@media (hover:hover){.frow:hover > span{background:var(--displaybgPrimary)}}
+.frow:active > span{background:var(--displaybgSecondary)}
+.fbands--wide .fband,.fbands--wide .frow{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 128px}
+.dtable{gap:0}
+
+/* ---------- round 8: the list toggle; the form as a page; Which diet sheet; the entity page; What should change ---------- */
+.ltoggle{margin-bottom:2px;overflow-x:auto;scrollbar-width:none}
+.ltoggle .az-segment{background:var(--white)}
+/* the form is a page; on the iPad its content sits in a column */
+.tab .form-page .body{max-width:760px;margin:0 auto;width:100%}
+.tab .form-page .pane__foot .az-actionbar{max-width:760px;margin:0 auto;width:100%;border-top:0}
+.tab .form-page .pane__foot{background:var(--white);border-top:1px solid var(--neutral05)}
+.tab .form-page .az-searchrow{justify-content:center}
+.tab .form-page .az-searchrow .az-search{max-width:728px}
+/* a bottom sheet on the iPad: centred, not full width */
+.az-sheet--wide{max-width:720px;margin:0 auto;max-height:80%}
+.sheet-chips{margin:-16px -16px 4px;position:sticky;top:-16px;z-index:2}
+/* a chosen thing (Selected box) and the For which animals field */
+.ebox{border-radius:var(--r-8);background:var(--displaybgSecondary);padding:0 4px 4px}
+.ebox__h{display:flex;align-items:center;justify-content:space-between;padding:10px 8px 8px;font:var(--t-body-medium);color:var(--OnSecondaryContainer)}
+.ebox__h button{font:var(--t-body-medium);color:var(--OnPrimaryContainer);min-height:32px;padding:0 4px}
+.ebox__c{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:6px;background:var(--white)}
+.ebox__c .grow{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ebox__c b{font:var(--t-minor-medium);color:var(--OnSecondaryContainer)}
+.ebox__c small{font:var(--t-body-regular);color:var(--OnSurfaceVariant);line-height:18px}
+.eav{width:40px;height:40px;border-radius:50%;background:var(--displaybgSecondary);color:var(--OnPrimaryContainer);display:grid;place-items:center;flex:none}
+.ebox__c .eav{background:var(--Background)}
+.whobtn{width:100%;display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 12px;border:1px solid var(--OutlineVariant);border-radius:var(--r-8);background:var(--white);text-align:left}
+.whobtn .grow{display:flex;flex-direction:column;gap:4px;min-width:0}
+.whobtn b{font:var(--t-minor-medium);color:var(--OnSecondaryContainer)}
+.whobtn small{font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.whobtn > .az-i:last-child{color:var(--OnSurfaceVariant)}
+/* the entity page */
+.esite{width:100%;display:flex;align-items:center;gap:12px;min-height:56px;padding:0 16px;border-radius:var(--r-8);background:var(--Primary);color:var(--white);font:var(--t-minor-medium);text-align:left}
+.esite--fixed{background:var(--OnPrimaryContainer)}
+.erow{width:100%;display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--r-8);background:var(--white);text-align:left}
+.erow .grow{display:flex;flex-direction:column;gap:6px;min-width:0}
+.erow b{font:var(--t-minor-medium);color:var(--OnSecondaryContainer)}
+.erow.on{box-shadow:inset 0 0 0 1.5px var(--Primary)}
+.erow > .az-i:last-child{color:var(--OnSurfaceVariant)}.erow.on > .az-i:last-child{color:var(--Primary)}
+.echips{display:flex;flex-wrap:wrap;gap:6px}
+.echip{padding:3px 8px;border-radius:var(--r-4);background:var(--displaybgSecondary);font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.epick{width:100%;text-align:left;border-radius:var(--r-12)}
+.entfoot{display:flex;flex-direction:column;gap:2px;min-width:0}
+.entfoot b{font:var(--t-body-title);color:var(--OnSecondaryContainer);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entfoot small{font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.az-actionbar--row .az-btn{flex:0 0 auto;width:auto;padding:0 32px}
+/* what should change: the Diet Details rows; the Kitchen marks on the item tile; an add row under each band */
+.fband--static{cursor:default}
+.az-section .fbands{margin-top:-4px}
+.frow--chg .frow__i,.frow--chg .frow__q{background:rgba(255,232,110,.22)}
+.frow--stop .frow__i,.frow--stop .frow__q{background:rgba(233,51,83,.05)}
+.frow .was{margin-top:0}
+.frow-add{display:flex;align-items:center;gap:8px;width:100%;min-height:48px;padding:0 16px;background:var(--white);font:var(--t-body-medium);color:var(--addPrimary)}
+@media (hover:hover){.frow-add:hover{background:var(--displaybgPrimary)}}
+.az-section .frows{border:1px solid var(--neutral05);background:var(--displaybgSecondary)}
+.chgcount{padding:4px 10px;border-radius:var(--r-full);background:var(--status-pending-bg);color:var(--OnTertiaryContainer);font:var(--t-body-medium)}
+
+.frow--chg .frow__i,.frow--chg .frow__q{background:#FFF7D1}
+.frow--stop .frow__i,.frow--stop .frow__q{background:#FDF1F3}
+.phone .az-section .az-seg > span{font:var(--t-subtext-title);padding:0 4px;text-align:center}
+.ebox__h button{min-height:36px;padding:0 6px}
+.az-two > *{min-width:0}.az-input input[type="date"]{min-width:0;width:100%}
+
+/* the list's toggle sits at the end of its row, the count at the start */
+.ltoggle{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ltoggle__n{font:var(--t-body-title);color:var(--OnSecondaryContainer);white-space:nowrap;flex:none}
+.ltoggle .az-segment{flex:none}
+.phone .ltoggle--4 .ltoggle__n{display:none}.phone .ltoggle--4{justify-content:flex-end}
+
+/* ---------- round 9: species sheet with search; the entity page on white with proper cards ---------- */
+.sheet-search{background:var(--white);position:sticky;top:-16px;z-index:2;box-shadow:0 0 0 8px var(--Background)}
+button.sprow{cursor:pointer}
+.sprow[aria-checked="true"]{box-shadow:inset 0 0 0 1.5px var(--Primary)}
+.sprow > .az-i{color:var(--OnSurfaceVariant);flex:none}.sprow[aria-checked="true"] > .az-i{color:var(--Primary)}
+.ent-page,.ent-page .pane__body{background:var(--white)}
+.ent-page .az-searchrow{border-bottom:1px solid var(--neutral05)}
+.pcard{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.pcard .grow{display:flex;flex-direction:column;gap:4px;min-width:0}
+.pcard b{font:var(--t-minor-medium);color:var(--OnSecondaryContainer)}
+.pcard .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .thumb{color:var(--OnPrimaryContainer);background:var(--displaybgSecondary)}
+.pcard-btn{width:100%;display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--r-8);border:1px solid var(--OutlineVariant);background:var(--white);text-align:left}
+.pcard-btn > .az-i{color:var(--OnSurfaceVariant);flex:none}
+.pcard-btn.on{border-color:var(--Primary);background:var(--Surface)}.pcard-btn.on > .az-i{color:var(--Primary)}
+.ebox__card{padding:12px;border-radius:6px;background:var(--white);display:flex}
+.ebox .acard{border-radius:6px}
+.ent-page .acard,.az-sheet .acard{border:1px solid var(--OutlineVariant)}
+.ent-page .ebox{border:1px solid var(--OutlineVariant)}

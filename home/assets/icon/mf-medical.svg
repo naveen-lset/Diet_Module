@@ -1,0 +1,16 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="home_health">
+<mask id="mask0_0_40" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="50" height="50">
+<rect id="Bounding box" width="50" height="50" fill="#D9D9D9"/>
+</mask>
+<g mask="url(#mask0_0_40)">
+<path id="home_health_2" d="M21.4375 36.4444H28.5625V30.4722H34.5V23.3056H28.5625V17.3333H21.4375V23.3056H15.5V30.4722H21.4375V36.4444ZM6 46V17.3333L25 3L44 17.3333V46H6ZM10.75 41.2222H39.25V19.7222L25 8.97222L10.75 19.7222V41.2222Z" fill="url(#paint0_linear_0_40)"/>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_40" x1="9.04994" y1="7.40925" x2="53.506" y2="26.9985" gradientUnits="userSpaceOnUse">
+<stop stop-color="#00D6C9"/>
+<stop offset="1" stop-color="#37BD69"/>
+</linearGradient>
+</defs>
+</svg>

@@ -1,0 +1,12 @@
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Cloudflare Wrangler and Node
+.wrangler/
+node_modules/
+
+# Local working notes, kept out of the repo
+HANDOFF_*.md

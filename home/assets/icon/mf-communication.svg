@@ -1,0 +1,16 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="chat">
+<mask id="mask0_0_7" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="50" height="50">
+<rect id="Bounding box" width="50" height="50" fill="#D9D9D9"/>
+</mask>
+<g mask="url(#mask0_0_7)">
+<path id="chat_2" d="M12.5 29.1667H29.1667V25H12.5V29.1667ZM12.5 22.9167H37.5V18.75H12.5V22.9167ZM12.5 16.6667H37.5V12.5H12.5V16.6667ZM4.16667 45.8333V8.33333C4.16667 7.1875 4.57465 6.2066 5.39062 5.39062C6.2066 4.57465 7.1875 4.16667 8.33333 4.16667H41.6667C42.8125 4.16667 43.7934 4.57465 44.6094 5.39062C45.4254 6.2066 45.8333 7.1875 45.8333 8.33333V33.3333C45.8333 34.4792 45.4254 35.4601 44.6094 36.276C43.7934 37.092 42.8125 37.5 41.6667 37.5H12.5L4.16667 45.8333ZM8.33333 35.7813L10.7813 33.3333H41.6667V8.33333H8.33333V35.7813Z" fill="url(#paint0_linear_0_7)"/>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_0_7" x1="7.5109" y1="8.4392" x2="54.1305" y2="31.6848" gradientUnits="userSpaceOnUse">
+<stop stop-color="#00D6C9"/>
+<stop offset="1" stop-color="#37BD69"/>
+</linearGradient>
+</defs>
+</svg>
