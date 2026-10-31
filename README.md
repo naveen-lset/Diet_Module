@@ -88,9 +88,26 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
 - Don't name a new class `.thumb`: the species photos already use it.
 - The look follows Antz Design: Inter only, Antz type sizes, weights up to 600, 44 px tap targets.
 
+## Branches
+
+| Branch | Holds |
+|---|---|
+| `main` | Stable code: what is live on Cloudflare. Only merged into, never committed to directly. |
+| `develop` | Ongoing work. Feature branches start here and merge back here. |
+| `feature/<short-name>` | One change each, e.g. `feature/diet-filters`. Fixes use `fix/<short-name>`. |
+
+```bash
+git checkout develop && git pull
+git checkout -b feature/diet-filters
+# ...work and commit...
+git push -u origin feature/diet-filters
+```
+
+Open a pull request from `feature/diet-filters` into `develop`. When a round is approved, open a pull request from `develop` into `main`, merge it, and deploy from `main`.
+
 ## Deploy
 
-The site is deployed to the Cloudflare Pages project `antz-diet-module`. Deploy a clean copy, so git and local files are not published:
+The site is deployed to the Cloudflare Pages project `antz-diet-module`, from `main`. Deploy a clean copy, so git and local files are not published:
 
 ```bash
 rsync -a --exclude '.git' --exclude '.DS_Store' --exclude 'HANDOFF_*.md' ./ ../deploy-diet-module/
