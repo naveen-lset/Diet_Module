@@ -78,9 +78,10 @@ function paneDietHome({ cls = '', cur = null } = {}) {
   }
   const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="sp-q" placeholder="Search species or taxonomy ID" value="${esc(S.spQ)}" oninput="S.spQ=this.value;render()" aria-label="Search species"></label></div>`;
   const list = speciesFor(S.spTab), clsChips = chips('spCls', [['all', 'All'], ...CLASSES.map(c => [c, c]), ['Other', 'Other']], c => speciesFor(S.spTab, c).length);
+  /* a species card: photo, name, scientific name, animal count, and its diet count big in a tile */
   const rows = list.length ? list.map(s => { const all = slotsOf(s.id).length;
-    return speciesRow(s, { href: `#/diets/${s.id}`, current: cur === s.id, sub: `${s.cls} · ${plural(spAnimals(s.id, S.site).length, 'animal')}`,
-      end: `<span class="sprow__n${all ? '' : ' sprow__n--none'}"><b>${all ? activeDiets(s.id) : '–'}</b><span>${all ? 'Active diets' : 'No diet'}</span></span>` }); }).join('') : empty1('No species here');
+    return speciesRow(s, { href: `#/diets/${s.id}`, current: cur === s.id, sub: plural(spAnimals(s.id, S.site).length, 'animal'),
+      end: `<span class="sprow__n${all ? '' : ' sprow__n--none'}"><b>${all ? activeDiets(s.id) : 0}</b><span>Diets</span></span>` }); }).join('') : empty1('No species here');
   return pane(`${cls} pane--home`, top, head + search + clsChips + `<div class="body">${listToggle('spTab', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified'], ['without', 'No diet']])}<div class="list list--8">${rows}</div></div>`, '', 'home');
 }
 
