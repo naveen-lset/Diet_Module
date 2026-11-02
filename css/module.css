@@ -884,3 +884,9 @@ button.sprow{cursor:pointer}
 .ebox .acard{border-radius:6px}
 .ent-page .acard,.az-sheet .acard{border:1px solid var(--OutlineVariant)}
 .ent-page .ebox{border:1px solid var(--OutlineVariant)}
+
+/* ---------- round 11: the Diet wise card: a diet avatar, the name, the kind, the species count and the ID ---------- */
+.davatar{width:44px;height:44px;border-radius:var(--r-full);background:var(--OnPrimaryContainer);color:var(--white);display:grid;place-items:center;flex:none}
+.dfoot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.dfoot__n{font:var(--t-subtext-title);line-height:16px;color:var(--OnSurfaceVariant)}
+.did{flex:none;padding:2px 6px;border-radius:var(--r-4);background:var(--neutral05);color:var(--neutralSecondary);font:var(--t-subtext-regular);line-height:16px}

@@ -23,7 +23,7 @@ const usesOf = id => D.assigns.filter(a => a.diet === id && !ended(a) && atSite(
 /* Diet wise lists diets, one card each however many species share it; the card stands for its first matching use */
 function dietsFor(kind, cert = S.dCert) {
   const q = S.dQ.trim().toLowerCase(), seen = new Set();
-  return D.assigns.filter(a => !ended(a) && atSite(a, S.site) && spAnimals(a.sp, S.site).length && (kind === 'all' || slotKind(a) === kind) && (cert === 'all' || (cert === 'cert') === isCert(a)) && (!q || [diet(a.diet).name, species(a.sp).name, scopeText(a)].some(x => x.toLowerCase().includes(q))))
+  return D.assigns.filter(a => !ended(a) && atSite(a, S.site) && spAnimals(a.sp, S.site).length && (kind === 'all' || slotKind(a) === kind) && (cert === 'all' || (cert === 'cert') === isCert(a)) && (!q || [diet(a.diet).name, diet(a.diet).id, species(a.sp).name, scopeText(a)].some(x => x.toLowerCase().includes(q))))
     .sort((x, y) => (y.sp === diet(y.diet).sp) - (x.sp === diet(x.diet).sp))
     .filter(a => !seen.has(a.diet) && seen.add(a.diet))
     .sort((x, y) => species(x.sp).name.localeCompare(species(y.sp).name) || LEVELS.indexOf(x.level) - LEVELS.indexOf(y.level) || kindRank(x) - kindRank(y));
@@ -41,11 +41,10 @@ function homeTab(k) {
   if (b) b.scrollTop = Math.min(b.scrollTop, r ? r.offsetHeight : 0);
   S.land = k; go('#/diets'); swapFx('.pane--home .list');
 }
-/* one diet in the Diet wise list: its name, the species it is given to and where, when, and how many species */
+/* one diet in the Diet wise list: a diet avatar, its name, its kind, how many species get it, and its ID */
 function dietRow(a, current) {
-  const d = diet(a.diet), uses = usesOf(d.id), sps = [...new Set(uses.map(u => u.sp))];
-  const where = [...new Set(uses.map(u => u.level === 'species' ? 'Species-wide' : `${LEVEL[u.level]} · ${targetName(u)}`))].join(', ');
-  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(sps.map(id => species(id).name).join(', '))} · ${esc(where)}</span><span class="meta">${esc(slotText(a))} · ${plural(sps.length, 'species', 'species')}</span></span></a>`;
+  const d = diet(a.diet), n = new Set(usesOf(d.id).map(u => u.sp)).size;
+  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotKind(a))}</span><span class="dfoot"><span class="dfoot__n">${n} species</span><span class="did">${esc(d.id)}</span></span></span></a>`;
 }
 /* the filters, in one sheet (the design system's Search and filter): Diet wise = kind + certification; Species wise = class + diet status */
 const FILTERS = {
@@ -72,7 +71,7 @@ function paneDietHome({ cls = '', cur = null } = {}) {
   const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true }), head = myRequestsRow() + dietTabs(tab);
   const chips = (key, opts, count) => `<div class="az-chips" role="tablist">${opts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l} - ${count(k)}</button>`).join('')}</div>`;
   if (tab === 'diets') {
-    const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species or place" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label></div>`;
+    const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species, place or ID" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label></div>`;
     const list = dietsFor(S.dKind);
     return pane(`${cls} pane--home`, top, head + search + chips('dKind', [['all', 'All'], ...KINDS.map(k => [k, k])], k => dietsFor(k).length)
       + `<div class="body">${listToggle('dCert', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']])}<div class="list list--8">${list.length ? list.map(a => dietRow(a, !!cur && (by('assigns', cur) || {}).diet === a.diet)).join('') : empty1('No diet here')}</div></div>`, '', 'home');
