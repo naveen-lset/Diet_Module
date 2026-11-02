@@ -938,14 +938,6 @@ button.sprow{cursor:pointer}
 .az-iconbtn::after{content:"";position:absolute;inset:-4px}
 .az-chip::after{content:"";position:absolute;inset:-6px 0}
 
-/* Diet wise grouped by species: the heading stays under the tabs while its diets scroll */
-.lgrp{display:flex;flex-direction:column;gap:8px}
-.lgroup{position:sticky;top:46px;z-index:2;display:flex;align-items:center;gap:8px;margin:4px calc(-1 * var(--gutter-phone)) 0;padding:8px var(--gutter-phone);background:var(--displaybgSecondary)}
-.tab .lgroup{margin:4px -16px 0;padding:8px 16px}
-.lgroup .thumb{width:28px;height:28px;border-radius:var(--r-full)}
-.lgroup b{flex:1;min-width:0;font:var(--t-body-title);line-height:20px;color:var(--OnSurfaceVariant);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lgroup > span:last-child{font:var(--t-subtext-regular);line-height:16px;color:var(--OnSurfaceVariant)}
-
 /* a species: who eats what, and level chips that wrap so Animal is never off screen */
 .cover{display:flex;flex-wrap:wrap;align-items:center;gap:0 6px;font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant)}
 .cover__k{font:var(--t-body-title);line-height:20px;margin-right:4px}
