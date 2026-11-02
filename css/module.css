@@ -483,7 +483,6 @@ body.fill .device{position:fixed;top:env(safe-area-inset-top,0px);right:env(safe
 .dhead--photo{background-size:cover;background-position:center}
 .dhead__sub b{font-weight:600}
 .dhead__tags{align-items:center}
-.dhead__chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:var(--r-8);background:rgba(255,255,255,.18);color:var(--white);font:var(--t-body-medium)}
 .dhead__bar .az-iconbtn + .az-iconbtn{margin-left:-4px}
 /* the Figma table: a band row, then item and its days on the left, the amount on the right */
 .ftab{display:flex;flex-direction:column;gap:2px}
@@ -519,7 +518,7 @@ body.fill .device{position:fixed;top:env(safe-area-inset-top,0px);right:env(safe
 .dietrow .sprow__t > span{white-space:normal}
 .mcard__n + .mcard__chip{margin-top:-2px}
 .sphero,.dhead--photo{background-position:center 30%}
-.dhead__chip{height:36px}
+
 
 /* ---------- round 4: site cards in the site switch, certification and notes as the web, the iPad diet popup ---------- */
 button.az-site{width:100%;text-align:left;cursor:pointer}
@@ -892,3 +891,41 @@ button.sprow{cursor:pointer}
 .dfoot{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .dfoot__n{font:var(--t-subtext-title);line-height:16px;color:var(--OnSurfaceVariant)}
 .did{flex:none;padding:2px 6px;border-radius:var(--r-4);background:var(--neutral05);color:var(--neutralSecondary);font:var(--t-subtext-regular);line-height:16px}
+
+/* ---------- round 12: Diet Details "Applied to": every level and place one diet is set on, each with its animals ---------- */
+.apply{background:var(--white);border-radius:var(--r-8);display:flex;flex-direction:column}
+.apply__h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 12px 4px}
+.apply__h b{font:var(--t-body-title);line-height:20px;color:var(--OnSurfaceVariant)}
+.apply__h span{font:var(--t-subtext-regular);line-height:16px;color:var(--neutralSecondary)}
+.apply__r{width:100%;min-height:56px;display:flex;align-items:center;gap:12px;padding:12px;border-top:1px solid var(--neutral05);text-align:left;cursor:pointer}
+.apply__h + .apply__r{border-top:0}
+.apply__r > .az-i{color:var(--OnPrimaryContainer);flex:none}
+.apply__r .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.apply__r .t b{font:var(--t-body-title);line-height:20px;color:var(--OnSurfaceVariant)}
+.apply__r .t span{font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.apply__r .t small{font:var(--t-subtext-regular);line-height:16px;color:var(--neutralSecondary)}
+.apply__n{display:inline-flex;align-items:center;gap:2px;flex:none;font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+
+/* ---------- round 12: the diet table as the Kitchen table: one bordered table, its head in the Kitchen table grey-teal, thin grid lines ---------- */
+.mtab-wrap{background:var(--white);border:1px solid var(--SurfaceVariant);border-radius:var(--r-8);overflow:hidden}
+.mtab{width:100%;border-collapse:collapse;font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant)}
+.mtab th{background:#C1D3D0;font:var(--t-body-medium);line-height:20px;text-align:left;padding:12px;white-space:nowrap}
+.mtab td{padding:12px;border-top:1px solid var(--SurfaceVariant);vertical-align:top}
+.mtab th,.mtab td{border-right:1px solid var(--SurfaceVariant)}
+.mtab th:last-child,.mtab td:last-child{border-right:0}
+.mtab tbody tr{cursor:pointer;outline:none}
+.mtab__band td{background:var(--displaybgPrimary);cursor:default}
+.mtab__band td > span{display:flex;align-items:center;gap:6px;font:var(--t-body-title);line-height:20px;color:var(--OnPrimaryContainer)}
+.mtab__t{font:var(--t-body-medium);line-height:20px;white-space:nowrap;cursor:default}
+.mtab__d{width:64px;color:var(--neutralSecondary);cursor:default}
+.mtab--wide .mtab__d{width:auto;white-space:nowrap}
+.mtab__i b{font:var(--t-body-medium);line-height:20px}
+.mtab__s{margin-left:6px;font:var(--t-subtext-regular);line-height:20px;color:var(--neutralSecondary)}
+.mtab__s--i{font-style:italic}
+.mtab .mixtag{background:var(--neutral05);color:var(--OnSurfaceVariant);font:var(--t-subtext-regular);line-height:16px;vertical-align:1px}
+.ingr{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.ingr > span{display:flex;flex-direction:column;gap:2px;padding:4px 8px;border:1px solid var(--OutlineVariant);border-radius:6px;background:rgba(0,0,0,.02)}
+.ingr b{font:var(--t-body-medium);line-height:20px;color:var(--OnSurface)}
+.ingr small{font:var(--t-subtext-regular);line-height:16px;color:var(--neutralSecondary)}
+.mtab__q{width:1%;white-space:nowrap;font:var(--t-body-medium);line-height:20px}
+.mtab--wide th,.mtab--wide td{padding:12px 16px}
