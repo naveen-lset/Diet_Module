@@ -149,27 +149,37 @@ function notesBlock(d) {
 function paneDiet(asgId, { cls = '', back = '', close = '' } = {}) {
   const a = by('assigns', asgId);
   if (!a) return pane(cls, '', empty1('Diet not found'));
-  const d = diet(a.diet), n = followersOf(a).length, now = isNow(a);
+  const d = diet(a.diet), now = isNow(a);
   const lead = close ? '' : back ? `<button class="az-iconbtn" onclick="${back === 'history' ? `goBack('#/diets')` : `go('${back}')`}" aria-label="Back">${I('arrow_back')}</button>` : '';
   const head = `<div class="dhead dhead--photo" style="background-image:${shade},url('${spPhoto(a.sp)}')"><div class="dhead__bar">${lead}<b>Diet Details</b>${iconBtn('info', 'Diet info', `dietInfoSheet('${a.id}')`)}${iconBtn('history', 'History of this diet', `dietHistorySheet('${a.id}')`)}${close ? iconBtn('close', 'Close', `go('${close}')`) : ''}</div>
-    <div class="dhead__who"><span class="dhead__name">${esc(d.name)}</span><span class="dhead__sub">Diet type : <b>${esc(slotKind(a))}${a.group ? ` · ${esc(a.group.label)}` : ''}</b> · ${esc(a.level === 'species' ? 'Species-wide' : `${LEVEL[a.level]} · ${targetName(a)}`)}</span>
-    <span class="dhead__tags"><button class="dhead__chip" onclick="dietAnimalsSheet('${a.id}')">${I('pets', 18)}${plural(n, 'animal')}</button>${now ? '<span class="az-pill pill-on-dark">Currently active</span>' : ended(a) ? pill('neutral', 'Ended') : `<span class="az-pill pill-on-dark">${esc(slotWhen(a))}</span>`}</span></div></div>`;
+    <div class="dhead__who"><span class="dhead__name">${esc(d.name)}</span><span class="dhead__sub">Diet type : <b>${esc(slotKind(a))}${a.group ? ` · ${esc(a.group.label)}` : ''}</b></span>
+    <span class="dhead__tags">${now ? '<span class="az-pill pill-on-dark">Currently active</span>' : ended(a) ? pill('neutral', 'Ended') : `<span class="az-pill pill-on-dark">${esc(slotWhen(a))}</span>`}</span></div></div>`;
   /* the day switch: the design system's segmented control, always the width of the screen */
   const days = true ? `<div class="dayseg"><div class="az-seg" role="tablist" aria-label="Day">${thumb()}${[[null, 'Full Week'], ...DAYS.map((x, i) => [i, x[0]])].map(([i, l]) => `<span role="tab" tabindex="0" class="${i == null ? 'wide' : ''}" aria-selected="${S.day === i}" aria-label="${i == null ? 'Full week' : DAYS[i]}" onclick="S.day=${i};render();swapFx('.dtable')" onkeydown="if(event.key==='Enter'){S.day=${i};render();swapFx('.dtable')}">${l}</span>`).join('')}</div></div>` : '';
   const groups = dietGroups(d, S.day, 'itemSheet');
-  const body = certLine(d) + `<div class="dtable">${linesFigma(groups, isTab(), S.day == null, d.id)}</div>` + notesBlock(d);
+  const body = appliedTo(a) + certLine(d) + `<div class="dtable">${mealTable(groups, isTab(), S.day == null)}</div>` + notesBlock(d);
   const fab = canRaise(me()) && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="go('#/new?dept=diet&asg=${a.id}')">${I('add_circle')}Raise request</button>` : '';
   return pane(cls + (fab ? ' has-fab' : ''), head + days, `<div class="body">${body}</div>`, '', `diet-${asgId}`).replace(/<\/section>$/, `${fab}</section>`);
 }
-/* Figma "Diet Info": the diet with its species' photo, then where, when, the animals, sharing, open requests, its ID and nutrition */
+/* where one diet is applied: every species, level and place it is set on, broad to narrow, each with the animals that eat it there */
+const LVL_IC = { species: 'pets', site: 'location_on', section: 'grid_view', enclosure: 'fence', animal: 'cruelty_free' };
+const useText = x => x.level === 'species' ? `Species-wide · ${species(x.sp).name}` : `${LEVEL[x.level]} · ${targetName(x)}`;
+function appliedTo(a) {
+  const d = diet(a.diet), uses = D.assigns.filter(x => x.diet === d.id && !ended(x))
+    .sort((x, y) => (y.sp === d.sp) - (x.sp === d.sp) || species(x.sp).name.localeCompare(species(y.sp).name) || LVL_RANK(x) - LVL_RANK(y));
+  const many = new Set(uses.map(x => x.sp)).size > 1, n = x => followersOf(x).length, total = uses.reduce((t, x) => t + n(x), 0);
+  const row = x => { const more = [x.level !== 'species' && many ? species(x.sp).name : '', targetPath(x), slotKind(x) !== slotKind(a) ? slotText(x) : ''].filter(Boolean).join(' · ');
+    return `<button class="apply__r" onclick="dietAnimalsSheet('${x.id}')"${x.id === a.id ? ' aria-current="true"' : ''}>${I(LVL_IC[x.level])}<span class="t"><b>${x.level === 'species' ? 'Species-wide' : LEVEL[x.level]}</b><span>${esc(x.level === 'species' ? species(x.sp).name : targetName(x))}</span>${more ? `<small>${esc(more)}</small>` : ''}</span><span class="apply__n">${plural(n(x), 'animal')}${I('chevron_right', 20)}</span></button>`; };
+  return `<div class="apply"><div class="apply__h"><b>Applied to</b><span>${plural(total, 'animal')}</span></div>${uses.map(row).join('')}</div>`;
+}
+/* Figma "Diet Info": the diet with its species' photo, then when, sharing, open requests, its ID and nutrition (where and the animals are on the page) */
 function dietInfoSheet(id) {
   const a = by('assigns', id), d = diet(a.diet), sp = species(a.sp), others = sharedWith(d.id, a.sp), open = openOnSlot(a).filter(r => visibleTo(r, me()));
   const r = (icon, k, v) => `<div class="rsec__r">${I(icon)}<span class="t"><span>${k}</span>${v}</span></div>`;
   const nut = nutrition(d), groups = [...new Set(nut.map(x => x.group))];
   openSheet(() => ({ title: 'Diet info', body: `<div class="dinfo"><img src="${spPhoto(a.sp)}" alt=""><span><b>${esc(d.name)}</b><span>${esc(slotKind(a))} · ${esc(sp.name)}</span></span></div>
-    <div class="rsec">${r('location_on', 'For', `<b>${a.group ? `${esc(sp.name)} ${a.group.kind === 'age' ? 'aged' : 'of'} ${esc(a.group.label)}` : a.level === 'species' ? `${esc(sp.name)} · Species-wide` : `${esc(LEVEL[a.level])} · ${esc(targetName(a))}`}</b>${targetPath(a) ? `<p>${esc(targetPath(a))}</p>` : ''}`)}
+    <div class="rsec">${a.group ? r('location_on', 'For', `<b>${esc(sp.name)} ${a.group.kind === 'age' ? 'aged' : 'of'} ${esc(a.group.label)}</b>`) : ''}
       ${r('event', 'When', `<b>${esc(!a.start && !a.end ? 'All year' : slotWhen(a))}</b>`)}
-      ${r('pets', 'Animals', `<button class="lnk" onclick="dietAnimalsSheet('${a.id}')">${plural(followersOf(a).length, 'animal')}${I('chevron_right', 18)}</button>`)}
       ${others.length ? r('share', 'Shared with', others.map(o => { const oa = D.assigns.find(x => x.diet === d.id && x.sp === o.id && !ended(x)); return `<a class="lnk" href="#/diets/${o.id}/${oa.id}">${esc(o.name)}${I('chevron_right', 18)}</a>`; }).join('')) : ''}
       ${open.length ? r('assignment', open.length === 1 ? 'Open request' : 'Open requests', open.map(x => `<a class="lnk" href="#/requests/${x.id}">${x.id} · ${esc(stateOf(x).label)}</a>`).join('')) : ''}
       ${r('tag', 'Diet ID', `<p>${d.id}</p>`)}</div>
@@ -178,7 +188,7 @@ function dietInfoSheet(id) {
 /* Figma "Animals using this Diet": the diet and its count, then the animals */
 function dietAnimalsSheet(id) {
   const a = by('assigns', id), list = followersOf(a), d = diet(a.diet);
-  openSheet(() => ({ title: 'Animals on this diet', sub: `${esc(d.name)} · ${list.length}`, body: list.length ? list.map(x => animalCard(x)).join('') : '<div class="nodiet">No animal is on this diet</div>' }), SH.length > 0);
+  openSheet(() => ({ title: 'Animals on this diet', sub: `${esc(d.name)} · ${esc(useText(a))} · ${list.length}`, body: list.length ? list.map(x => animalCard(x)).join('') : '<div class="nodiet">No animal is on this diet</div>' }), SH.length > 0);
 }
 /* Figma "Meal details": the time, the amount, the item with its preparation and cut, the days */
 function itemSheet(dietId, f, it) {

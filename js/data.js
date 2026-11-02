@@ -142,6 +142,8 @@ const ASSIGN_RAW = t => [
   ['D-320', 161818, 'species', null], ['D-321', 161818, 'section', 905],
   ['D-331', 195022, 'species', null],
   ['D-340', 132735, 'species', null, addDays(t, -400), addDays(t, -18)], ['D-263', 132735, 'species', null], ['D-341', 132735, 'section', 164],
+  /* one diet set at more than one level: a section or enclosure inside a broader diet goes back to the species' year-round diet */
+  ['D-310', 150254, 'section', 162], ['D-310', 150254, 'enclosure', 19992], ['D-273', 135332, 'enclosure', 15229],
 ];
 
 /* nutrients per 100 g as fed (ml counts as g; an egg is 50 g):
