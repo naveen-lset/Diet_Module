@@ -1024,3 +1024,7 @@ button.pipe__c{cursor:pointer}
 .pipe__new{padding:2px 6px;border-radius:var(--r-4);background:var(--status-positive-bg);color:var(--status-positive-fg);font:var(--t-subtext-title);line-height:16px}
 .pipe__p{font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant)}
 .pipe__why{color:var(--neutralSecondary)}
+
+/* ---------- round 15: iPad split screens as left and right containers (owner, 2 Nov): two rounded panels with a gap, on a light canvas ---------- */
+.tab .main[class]:has(> .pane + .pane){gap:12px;padding:12px;background:#E9EFEE}
+.tab .main:has(> .pane + .pane) > .pane{border-radius:var(--r-16);overflow:hidden;box-shadow:0 1px 3px rgba(31,65,91,.1),0 0 0 1px rgba(31,65,91,.06)}
