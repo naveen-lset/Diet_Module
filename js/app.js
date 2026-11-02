@@ -2,7 +2,7 @@
 // Home › Modules › Diet opens #/diets (and #/history); Home › Modules › Help Desk opens #/requests (and #/new). No bottom navigation:
 // each module goes back to Home from its first screen. URL options: ?f=phone|portrait|landscape, ?as=hydar|suresh|manoj, ?fill.
 
-const STORE = 'antz-diet-module-v8';   // bump whenever the demo data changes (v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
+const STORE = 'antz-diet-module-v9';   // bump whenever the demo data changes (v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
 const AS = { hydar: 'u-hydar', suresh: 'u-suresh', manoj: 'u-manoj' };
 const FRAMES = { phone: 'phone', portrait: 'tab-p', landscape: 'tab-l' };
 function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: TODAY, D, S: { user: S.user, frame: S.frame, site: S.site } })); } catch (e) {} }
