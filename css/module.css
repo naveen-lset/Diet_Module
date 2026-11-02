@@ -905,14 +905,16 @@ button.sprow{cursor:pointer}
 .apply__n{display:inline-flex;align-items:center;gap:2px;flex:none;font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
 
 /* ---------- round 12: the diet table as the Kitchen table: one bordered table, its head in the Kitchen table grey-teal, thin grid lines ---------- */
-.mtab-wrap{background:var(--white);border:1px solid var(--SurfaceVariant);border-radius:var(--r-8);overflow:hidden}
+/* the table's edge in the design system's outline, so it never melts into the page colour (owner, 2 Nov) */
+.mtab-wrap{background:var(--white);border:1px solid var(--OutlineVariant);border-radius:var(--r-8);overflow:hidden}
 .mtab{width:100%;border-collapse:collapse;font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant)}
 .mtab th{background:#C1D3D0;font:var(--t-body-medium);line-height:20px;text-align:left;padding:12px;white-space:nowrap}
 .mtab td{padding:12px;border-top:1px solid var(--SurfaceVariant);vertical-align:top}
 .mtab th,.mtab td{border-right:1px solid var(--SurfaceVariant)}
 .mtab th:last-child,.mtab td:last-child{border-right:0}
 .mtab tbody tr{outline:none}
-.mtab__band td{background:var(--displaybgPrimary);cursor:default}
+/* the time rows: a light teal well apart from the page colour */
+.mtab__band td{background:color-mix(in srgb,var(--displaybgPrimary) 55%,var(--white));cursor:default}
 .mtab__band td > span{display:flex;align-items:center;gap:6px;font:var(--t-body-title);line-height:20px;color:var(--OnPrimaryContainer)}
 .mtab__t{font:var(--t-body-medium);line-height:20px;white-space:nowrap;cursor:default}
 .mtab__d{width:64px;color:var(--neutralSecondary);cursor:default}
