@@ -47,10 +47,10 @@ function homeTab(k) {
   if (b) b.scrollTop = Math.min(b.scrollTop, r ? r.offsetHeight : 0);
   S.land = k; go('#/diets'); swapFx('.pane--home .list');
 }
-/* one diet in the Diet wise list: a diet avatar, its name, its kind, how many species share it (when more than one; the list is grouped by species), and its ID */
+/* one diet in the Diet wise list: a diet avatar, its name, its kind, how many species get it, and its ID */
 function dietRow(a, current) {
   const d = diet(a.diet), n = new Set(usesOf(d.id).map(u => u.sp)).size;
-  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotKind(a))}</span><span class="dfoot">${n > 1 ? `<span class="dfoot__n">Shared · ${n} species</span>` : '<span></span>'}<span class="did">${esc(d.id)}</span></span></span></a>`;
+  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotKind(a))}</span><span class="dfoot"><span class="dfoot__n">${n} species</span><span class="did">${esc(d.id)}</span></span></span></a>`;
 }
 /* the filters, in one sheet (the design system's Search and filter): Diet wise = kind + certification; Species wise = class + diet status */
 const FILTERS = {
@@ -78,10 +78,7 @@ function paneDietHome({ cls = '', cur = null } = {}) {
   const chips = (key, opts, count) => `<div class="az-chips" role="tablist">${opts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l} - ${count(k)}</button>`).join('')}</div>`;
   if (tab === 'diets') {
     const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species, place or ID" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label></div>`;
-    const list = dietsFor(S.dKind), on = (by('assigns', cur) || {}).diet;
-    /* grouped under species headings that stay under the tabs while their diets scroll (audit, 2 Nov) */
-    const rows = [...new Set(list.map(a => a.sp))].map(sp => { const as = list.filter(a => a.sp === sp);
-      return `<div class="lgrp"><div class="lgroup">${spThumb(species(sp))}<b>${esc(species(sp).name)}</b><span>${plural(as.length, 'diet')}</span></div>${as.map(a => dietRow(a, !!cur && on === a.diet)).join('')}</div>`; }).join('');
+    const list = dietsFor(S.dKind), on = (by('assigns', cur) || {}).diet, rows = list.map(a => dietRow(a, !!cur && on === a.diet)).join('');
     const none = S.dQ.trim() && !dietsFor(S.dKind, 'all').length;
     return pane(`${cls} pane--home`, top, head + search + chips('dKind', [['all', 'All'], ...KINDS.map(k => [k, k])], k => dietsFor(k).length)
       + `<div class="body">${none ? '' : listToggle('dCert', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']])}<div class="list list--8">${rows || (none ? noMatch(S.dQ, "S.dQ=''") : empty1('No diet here'))}</div></div>`, '', 'home');
