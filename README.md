@@ -30,7 +30,7 @@ Open http://127.0.0.1:8766/
 
 Example: http://127.0.0.1:8766/?f=landscape&as=suresh
 
-The controls above the device frame (Frame · Viewing as · Home · Reset demo data) are prototype tools, not part of the app.
+The controls above the device frame (Frame · Viewing as · Home · Reset demo data · Copy to Figma) are prototype tools, not part of the app. **Copy to Figma** loads Figma's capture script (mcp.figma.com) on first use, copies the screen in the frame as editable Figma layers, and opens its bar (Entire screen · Select element); paste with Cmd+V in Figma.
 
 ## Demo people
 
