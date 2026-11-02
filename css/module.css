@@ -1010,24 +1010,25 @@ span.cover__p{color:var(--neutralSecondary);cursor:default}
 .nbig small{display:block;margin-top:4px;font:var(--t-body-regular);color:var(--neutralSecondary)}
 /* four tabs fit the phone */
 .dtabs .az-tab{padding-left:4px;padding-right:4px;white-space:nowrap}
-/* History as a stepper: one white card; filled circles with a tick for done steps, a ring with a dot for the latest, empty rings to come;
+/* History as a stepper: one white card; 24 px circles (owner: 32 was too big): filled with a tick for done steps, a ring with a dot for the latest, empty rings to come;
    the line between them green up to the latest step, grey after it */
 .steps{background:var(--white);border-radius:var(--r-8);padding:16px 16px 8px;display:flex;flex-direction:column}
-.step{position:relative;display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:14px;padding-bottom:20px;width:100%;text-align:left;align-items:start}
+.step{position:relative;display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:12px;padding-bottom:18px;width:100%;text-align:left;align-items:start}
 button.step{cursor:pointer}
-.step::before{content:"";position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--Primary)}
+.step::before{content:"";position:absolute;left:11px;top:24px;bottom:0;width:2px;background:var(--Primary)}
 .step--grey::before{background:var(--OutlineVariant)}
 .step--last{padding-bottom:8px}.step--last::before{display:none}
-.step__m{width:32px;height:32px;border-radius:var(--r-full);display:grid;place-items:center;box-sizing:border-box}
+.step__m{width:24px;height:24px;border-radius:var(--r-full);display:grid;place-items:center;box-sizing:border-box}
+.step__m .az-i{font-size:16px;width:16px;height:16px}
 .step__m--done{background:var(--Primary);color:var(--white)}
 .step__m--now{background:var(--white);border:2px solid var(--Primary)}
-.step__m--now i{width:12px;height:12px;border-radius:var(--r-full);background:var(--Primary)}
+.step__m--now i{width:8px;height:8px;border-radius:var(--r-full);background:var(--Primary)}
 .step__m--todo{background:var(--white);border:2px solid var(--OutlineVariant)}
-.step__t{display:flex;flex-direction:column;gap:2px;min-width:0;padding-top:5px}
+.step__t{display:flex;flex-direction:column;gap:2px;min-width:0;padding-top:1px}
 .step__t b{font:var(--t-minor-medium);line-height:22px;color:var(--OnSurfaceVariant)}
 .step__t span{font:var(--t-body-regular);line-height:20px;color:var(--neutralSecondary)}
 .step__t small{font:var(--t-subtext-regular);line-height:16px;color:var(--neutralSecondary)}
-.step__w{display:flex;flex-direction:column;align-items:flex-end;gap:2px;padding-top:5px;white-space:nowrap}
+.step__w{display:flex;flex-direction:column;align-items:flex-end;gap:2px;padding-top:1px;white-space:nowrap}
 .step__w b{font:var(--t-body-title);line-height:22px;color:var(--OnSurfaceVariant)}
 .step__w span{font:var(--t-body-regular);line-height:20px;color:var(--neutralSecondary)}
 
