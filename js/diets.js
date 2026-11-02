@@ -165,22 +165,88 @@ function notesBlock(d) {
   return `<div class="notes">${rows.map(([k, v]) => `<div class="notes__r"><span>${k}</span><p>${v}</p></div>`).join('')}
     ${d.remark ? `<div class="notes__r notes__r--remark"><span>Remark</span><p>${esc(d.remark)}</p></div>` : ''}${why ? `<div class="notes__r"><span>Change reason</span><p>${why}</p></div>` : ''}</div>`;
 }
-/* the diet header's shade: darker behind the name so it reads on a bright photo (audit, 2 Nov) */
-const dshade = 'linear-gradient(180deg,rgba(0,0,0,.45) 0%,rgba(0,0,0,.14) 30%,rgba(0,0,0,.42) 52%,rgba(0,0,0,.72) 100%)';
+/* the diet header's wallpaper: hand-drawn food and animal doodles packed close on a soft tint, as WhatsApp's chat background, in place of the
+   species photo (owner, 2 Nov). Thin line drawings on a 24 grid in three sizes; one 260 px tile, built once: each doodle is dropped at random and
+   kept where it doesn't touch the others, then copied over the edges so the tile joins with no seam. Small rings, dots and stars fill the gaps */
+const DOODLES = {
+  apple: '<path d="M12 7.2c-2-1.5-5.8-1-6.4 2.6-.6 3.8 1.8 8.2 4.1 8.2.9 0 1.4-.5 2.3-.5s1.4.5 2.3.5c2.3 0 4.7-4.4 4.1-8.2C17.8 6.2 14 5.7 12 7.2z"/><path d="M12 7.2c0-1.5.5-2.7 1.6-3.4"/><path d="M12.9 5.1c1.4-.3 2.6.3 3.2 1.3-1.4.4-2.6-.1-3.2-1.3z"/>',
+  carrot: '<path d="M16.5 7.5c-3 0-9.6 6.8-11.5 12 5.2-1.9 12-8.5 12-11.5z"/><path d="M9 13.2l1.6 1.6M11.6 10.8l1.4 1.4M7.2 16.4l1.3 1.3"/><path d="M16.5 7.5l1-4M16.5 7.5l3.8-1.6M16.5 7.5l4 1"/>',
+  banana: '<path d="M4.5 14.5c3.6 3.6 10.2 3 13.6-3.4.7-1.3.8-2.7.6-3.6"/><path d="M4.5 14.5c4.4.9 9.6-1.4 12.6-6.6"/><path d="M18.7 7.5l.9-1.7M4.5 14.5l-1.1.4"/>',
+  fish: '<path d="M4 12c2.4-3.6 8.6-5 12.4 0-3.8 5-10 3.6-12.4 0z"/><path d="M16.4 12l4-3.2v6.4z"/><path d="M9.8 9.4c.9 1.6.9 3.6 0 5.2"/><circle cx="7.3" cy="11.3" r=".6"/>',
+  egg: '<path d="M12 4c3 0 5.4 4.6 5.4 8.5S15 19.6 12 19.6s-5.4-3.2-5.4-7.1S9 4 12 4z"/><path d="M9.6 9.2c.4-1.1 1-2 1.7-2.5"/>',
+  leaf: '<path d="M5 19C5 10.5 10.6 5 19 5c0 8.4-5.5 14-14 14z"/><path d="M5 19l8.4-8.4M9.6 14.4l-.2-3M12 12l3 .2"/>',
+  paw: '<circle cx="6.8" cy="10.4" r="1.6"/><circle cx="10.2" cy="7.2" r="1.6"/><circle cx="14.2" cy="7.2" r="1.6"/><circle cx="17.6" cy="10.4" r="1.6"/><path d="M8.6 16.6c0-2.6 1.6-4.6 3.6-4.6s3.6 2 3.6 4.6c0 1.6-1.4 2.2-2.3 1.8-.9-.4-1.8-.4-2.6 0-.9.4-2.3-.2-2.3-1.8z"/>',
+  bone: '<path d="M8.2 10.2h7.6M8.2 13.8h7.6"/><circle cx="6.6" cy="9.8" r="1.8"/><circle cx="6.6" cy="14.2" r="1.8"/><circle cx="17.4" cy="9.8" r="1.8"/><circle cx="17.4" cy="14.2" r="1.8"/>',
+  grapes: '<circle cx="10" cy="9.4" r="1.8"/><circle cx="14" cy="9.4" r="1.8"/><circle cx="8" cy="12.8" r="1.8"/><circle cx="12" cy="12.8" r="1.8"/><circle cx="16" cy="12.8" r="1.8"/><circle cx="10" cy="16.2" r="1.8"/><circle cx="14" cy="16.2" r="1.8"/><circle cx="12" cy="19.4" r="1.6"/><path d="M12 7.6V4.2M12 5.4c1.4-1.4 3.4-1.4 4.4-.4-1.4 1.4-3.4 1.4-4.4.4z"/>',
+  melon: '<path d="M4 9.5a8 8 0 0 0 16 0z"/><path d="M6.6 9.5a5.4 5.4 0 0 0 10.8 0"/><path d="M10 12.4v.8M12 13.6v.8M14 12.4v.8"/>',
+  corn: '<path d="M12 4.2c2.3 0 3.6 3.4 3.6 7.6s-1.3 7.6-3.6 7.6-3.6-3.4-3.6-7.6S9.7 4.2 12 4.2z"/><path d="M12 4.6v14.6M8.7 9h6.6M8.5 12.6h7M8.8 16.2h6.4"/><path d="M8.6 14.4c-1.8.8-2.8 2.6-2.8 5.4 1.8 0 3.4-.8 4.4-2.4M15.4 14.4c1.8.8 2.8 2.6 2.8 5.4-1.8 0-3.4-.8-4.4-2.4"/>',
+  bowl: '<path d="M4 11.4h16c0 4.4-3.6 7.6-8 7.6s-8-3.2-8-7.6z"/><path d="M9.6 8.6c-.6-.8.6-1.6 0-2.6M12.6 8.6c-.6-.8.6-1.6 0-2.6M8 19.4h8"/>',
+  drop: '<path d="M12 4c2.8 3.8 5 6.6 5 9.4a5 5 0 0 1-10 0C7 10.6 9.2 7.8 12 4z"/><path d="M9.6 13.6c0 1.2.8 2.2 1.8 2.4"/>',
+  feather: '<path d="M18.4 4.4C10.6 5.4 6.4 11 6 19.6"/><path d="M18.4 4.4c-.8 6-4.8 10.2-10.4 11.2M11.2 10.4l-2.6-.6M13.6 7.8l-2.4-.8M14.2 12.4l-1.4 1.8"/>',
+  peas: '<path d="M4 15.2c4-6 11-8 16-7-3 6-10 9-16 7z"/><circle cx="9" cy="13.4" r="1.3"/><circle cx="12.4" cy="11.8" r="1.3"/><circle cx="15.8" cy="10.4" r="1.3"/>',
+  worm: '<path d="M4.4 14.2c1.4-2.8 3.4-2.8 4.8 0s3.4 2.8 4.8 0 3.4-2.8 4.8 0"/><circle cx="19.6" cy="13.4" r="1.2"/><path d="M6.8 11.4v1.2M11.6 15.6v1.2M16.4 11.4v1.2"/>',
+  cherry: '<circle cx="8" cy="16.4" r="2.8"/><circle cx="16" cy="17.2" r="2.8"/><path d="M8 13.6c1-3.8 3-6.8 6-9M16 14.4c-.4-3.8-1-6.8-2-9.8M14 4.6c1.4-.6 3 0 4 1-1.4.6-3 .4-4-1z"/>',
+  seed: '<path d="M12 4.4c2.6 1.8 3.8 4.6 3.8 7.6S14.6 18 12 19.6C9.4 18 8.2 15 8.2 12S9.4 6.2 12 4.4z"/><path d="M12 7.6v8.8"/>',
+  tortoise: '<path d="M4.4 15.4c0-4.4 3.4-7.6 7.6-7.6s7.6 3.2 7.6 7.6z"/><path d="M8 15.4l1.6-3.6h4.8l1.6 3.6M9.6 11.8 12 8.1l2.4 3.7"/><path d="M19.6 14c1.2-.4 2.4.2 2.6 1.4-.8.6-1.8.6-2.6.1"/><path d="M6.6 15.4v2.4M10 15.4v2.4M14 15.4v2.4M17.4 15.4v2.4"/>',
+  bird: '<path d="M5.6 13.6c0-3 2.6-5 5.6-5 1 0 1.8-1 1.8-2.4S14 3.8 15.4 3.8s2.4 1 2.4 2.4c0 .8-.3 1.4-.8 1.9l2.4.8-2.4.8c-.6 2.6-1 4.4-2.8 5.8-1.6 1.2-3.6 1.4-5.6 1.4-1.8 0-3-1.4-3-3.3z"/><path d="M10 17.1v3.3M13.6 17.1v3.3M8.6 20.4h2.8M12.2 20.4h2.8M8.4 12.4c1.4.4 3 .2 4.4-.8"/><circle cx="15.6" cy="6" r=".5"/>',
+  monkey: '<circle cx="12" cy="12" r="6"/><circle cx="5" cy="11.4" r="2"/><circle cx="19" cy="11.4" r="2"/><path d="M8.6 13.4c0-2 1.5-3.2 3.4-3.2s3.4 1.2 3.4 3.2-1.5 3.4-3.4 3.4-3.4-1.4-3.4-3.4z"/><circle cx="10.2" cy="9.6" r=".5"/><circle cx="13.8" cy="9.6" r=".5"/><path d="M11 14.4c.6.5 1.4.5 2 0"/>',
+  rabbit: '<path d="M9.4 9.6C8.4 6 8.4 3 9.8 3s2 3 1.6 6.4M14.6 9.6C15.6 6 15.6 3 14.2 3s-2 3-1.6 6.4"/><path d="M6.8 14.8c0-3 2.3-5.2 5.2-5.2s5.2 2.2 5.2 5.2-2.3 5.2-5.2 5.2-5.2-2.2-5.2-5.2z"/><circle cx="10.2" cy="13.6" r=".5"/><circle cx="13.8" cy="13.6" r=".5"/><path d="M11.2 15.8h1.6l-.8.8z"/>',
+  butterfly: '<path d="M12 8.4v9.2M12 10.2C10 6.2 5 5.2 5 9.2s4 4 7 3M12 10.2c2-4 7-5 7-1s-4 4-7 3M12 13.2c-2 0-5 1-5 4s3 2 5-1M12 13.2c2 0 5 1 5 4s-3 2-5-1M12 8.4l-1.4-2.4M12 8.4l1.4-2.4"/>',
+  pineapple: '<path d="M12 9c3 0 4.6 2.6 4.6 5.6S15 20.2 12 20.2s-4.6-2.6-4.6-5.6S9 9 12 9z"/><path d="M9.2 12.2l5.6 5.6M14.8 12.2l-5.6 5.6"/><path d="M12 9V5.4M12 7.2 9.4 4.8M12 7.2l2.6-2.4M12 5.8l-1.4-2.6M12 5.8l1.4-2.6"/>',
+  strawberry: '<path d="M12 8c3.4 0 6 1.2 6 3.8 0 3.6-3.4 8.2-6 8.2s-6-4.6-6-8.2C6 9.2 8.6 8 12 8z"/><path d="M9 8.2l1.4-2.6L12 7.4l1.6-1.8L15 8.2M9.4 12v.6M12 14v.6M14.6 12v.6M10.6 16.4v.6M13.4 16.4v.6"/>',
+  broccoli: '<path d="M10.4 20v-5.6M13.6 20v-5.6M10.4 20h3.2"/><path d="M7 14.4a2.8 2.8 0 0 1 .8-5.4 3.2 3.2 0 0 1 5.6-2 2.8 2.8 0 0 1 4.6 2.2 2.6 2.6 0 0 1-1 5.2z"/>',
+  scale: '<path d="M5 19.4h14l-1.6-8.2H6.6z"/><circle cx="12" cy="15.2" r="2.2"/><path d="M12 15.2l1.2-1.2M8 11.2V9.2h8v2M12 9.2V7.4"/>',
+  clock: '<circle cx="12" cy="12" r="7.4"/><path d="M12 7.8V12l3 2M12 4.6V3.4M10.6 3.4h2.8"/>',
+  cutlery: '<path d="M8 4v6.4c0 1-.8 1.8-1.8 1.8M8 4v6.4c0 1 .8 1.8 1.8 1.8M8 12.2V20M6.2 4v5M9.8 4v5"/><path d="M16 4c1.8 0 2.8 2 2.8 4.2S17.6 12 16 12s-2.8-1.6-2.8-3.8S14.2 4 16 4zM16 12v8"/>',
+  cricket: '<path d="M6.6 13c0-2.4 2.2-4 5-4s5 1.6 5 4-2.2 3.6-5 3.6-5-1.2-5-3.6z"/><circle cx="18.4" cy="11.4" r="1.6"/><path d="M19.6 10.2c1-1.4 1.6-3 1.6-4.6M18.8 9.9c0-1.6-.4-3-1.4-4.2M8.6 16l-2 3M11.6 16.6v2.8M14.6 16l2 3M8 10.2 5.6 7.8"/>',
+  snail: '<path d="M3.6 18.2h12.6c2.4 0 3.8-1.6 3.8-3.6"/><path d="M14 18.2a5 5 0 1 0-5-5c0 2 1.6 3.6 3.6 3.6s3.4-1.6 3.4-3.6-1.4-2.6-2.6-2.6-2 1-2 2"/><path d="M18.6 14.8c.2-1.6.8-3 1.6-4M19.8 14.4c.6-1 1.4-1.6 2.2-1.8"/>',
+  hay: '<path d="M4 19.4h16M7 19.4c0-4 1-7 3-9M11 19.4c0-5 1-9 3-12M15 19.4c0-3 1-6 3-7M9.6 19.4c-.4-3-1.6-5-3.6-6"/>',
+  flower: '<circle cx="12" cy="12" r="2.6"/><path d="M12 9.4c-1.6-1.8-1.6-4 0-5.4 1.6 1.4 1.6 3.6 0 5.4zM12 14.6c-1.6 1.8-1.6 4 0 5.4 1.6-1.4 1.6-3.6 0-5.4zM9.4 12c-1.8-1.6-4-1.6-5.4 0 1.4 1.6 3.6 1.6 5.4 0zM14.6 12c1.8-1.6 4-1.6 5.4 0-1.4 1.6-3.6 1.6-5.4 0z"/>',
+};
+const DOODLE_FILL = {
+  ring: '<circle cx="12" cy="12" r="5"/>', dot: '<circle cx="12" cy="12" r="2.4"/>', plus: '<path d="M12 7v10M7 12h10"/>',
+  star: '<path d="M12 5l2 4.4 4.8.5-3.6 3.2 1 4.7-4.2-2.4-4.2 2.4 1-4.7-3.6-3.2 4.8-.5z"/>', spark: '<path d="M12 4c.6 4.4 3.6 7.4 8 8-4.4.6-7.4 3.6-8 8-.6-4.4-3.6-7.4-8-8 4.4-.6 7.4-3.6 8-8z"/>',
+  heart: '<path d="M12 18s-6-3.6-6-7.6C6 8 7.6 6.6 9.4 6.6c1.2 0 2.1.6 2.6 1.5.5-.9 1.4-1.5 2.6-1.5 1.8 0 3.4 1.4 3.4 3.8 0 4-6 7.6-6 7.6z"/>', wave: '<path d="M4 12c2-3 4-3 6 0s4 3 6 0 3-2 4-1"/>',
+};
+/* as WhatsApp's dark wallpaper, some shapes are filled among the outlines */
+const FILLED = ['heart', 'leaf', 'paw', 'drop', 'flower', 'star', 'dot', 'strawberry', 'apple', 'egg', 'cherry'];
+let DOODLE_SVG = '';
+function doodleSvg() {
+  if (DOODLE_SVG) return DOODLE_SVG;
+  const W = 260, pts = [], big = ['tortoise', 'bird', 'monkey', 'rabbit', 'butterfly', 'pineapple', 'broccoli', 'scale', 'fish', 'bowl', 'melon', 'corn', 'grapes', 'cherry', 'banana', 'carrot', 'apple', 'snail'];
+  const mid = Object.keys(DOODLES).filter(k => !big.includes(k)), small = Object.keys(DOODLE_FILL); let seed = 9;
+  const rnd = () => (seed = seed * 16807 % 2147483647) / 2147483647, pick = a => a[Math.floor(rnd() * a.length)];
+  const gap = (a, b) => Math.min(Math.abs(a - b), W - Math.abs(a - b)), free = (x, y, sz, pad) => pts.every(p => Math.hypot(gap(p.x, x), gap(p.y, y)) > (p.sz + sz) / 2 + pad);
+  /* big first, then medium, then small fillers until no gap is left, as WhatsApp's wallpaper */
+  /* the drawings are smaller than their boxes, so the boxes may overlap a little (a negative pad) and the drawings still don't touch */
+  [[big, 32, 8, 22, -3, 20], [mid, 21, 7, 220, -3, 20], [small, 6, 5, 900, 0, 180]].forEach(([set, min, span, n, pad, tilt]) => {
+    for (let k = 0, got = 0; k < 30000 && got < n; k++) { const sz = min + rnd() * span, x = rnd() * W, y = rnd() * W;
+      if (free(x, y, sz, pad)) { const g = pick(set); pts.push({ x, y, sz, r: Math.round((rnd() - .5) * tilt * 2), g, f: FILLED.includes(g) && rnd() < .5 }); got++; } }
+  });
+  const use = (p, x, y) => `<use${p.f ? ' class="f"' : ''} href="#dd-${p.g}" x="${(x - p.sz / 2).toFixed(1)}" y="${(y - p.sz / 2).toFixed(1)}" width="${p.sz.toFixed(1)}" height="${p.sz.toFixed(1)}"${p.r ? ` transform="rotate(${p.r} ${x.toFixed(1)} ${y.toFixed(1)})"` : ''}/>`;
+  const all = pts.flatMap(p => [-W, 0, W].flatMap(dx => [-W, 0, W].map(dy => [p.x + dx, p.y + dy])).filter(([x, y]) => x > -p.sz && x < W + p.sz && y > -p.sz && y < W + p.sz).map(([x, y]) => use(p, x, y))).join('');
+  /* one line weight whatever the doodle's size */
+  const syms = Object.entries({ ...DOODLES, ...DOODLE_FILL }).map(([k, v]) => `<symbol id="dd-${k}" viewBox="0 0 24 24">${v.replace(/<(path|circle)/g, '<$1 vector-effect="non-scaling-stroke"')}</symbol>`).join('');
+  return (DOODLE_SVG = `<svg class="dhead__dd" aria-hidden="true"><defs>${syms}<pattern id="dd-food" width="${W}" height="${W}" patternUnits="userSpaceOnUse"><g class="dhead__ddg">${all}</g></pattern></defs><rect width="100%" height="100%" fill="url(#dd-food)"/></svg>`);
+}
+/* Diet Details in tabs (owner, 2 Nov): what to feed; what it gives; where it is used; what happened to it */
+const DTABS = [['ov', 'Overview'], ['nu', 'Nutrition'], ['ap', 'Applied to'], ['hi', 'History']];
 function paneDiet(asgId, { cls = '', back = '', close = '', wide = isTab() } = {}) {
   const a = by('assigns', asgId);
   if (!a) return pane(cls, '', empty1('Diet not found'));
   const d = diet(a.diet), [tone, state] = dietStatus(a), when = !ended(a) && !a.group ? slotWhen(a) : '';
+  if (S.dTabFor !== asgId) { S.dTab = 'ov'; S.dTabFor = asgId; }
   const lead = close ? '' : back ? `<button class="az-iconbtn" onclick="${back === 'history' ? `goBack('#/diets')` : `go('${back}')`}" aria-label="Back">${I('arrow_back')}</button>` : '';
-  const head = `<div class="dhead dhead--photo" style="background-image:${dshade},url('${spPhoto(a.sp)}')"><div class="dhead__bar">${lead}<b>Diet Details</b>${iconBtn('info', 'Diet info', `dietInfoSheet('${a.id}')`)}${iconBtn('history', 'History of this diet', `dietHistorySheet('${a.id}')`)}${close ? iconBtn('close', 'Close', `go('${close}')`) : ''}</div>
-    <div class="dhead__who"><span class="dhead__name">${esc(d.name)}</span><span class="dhead__sub">Diet type : <b>${esc(slotKind(a))}${a.group ? ` · ${esc(a.group.label)}` : ''}</b>${when ? ` · ${esc(when)}` : ''}</span>
-    <span class="dhead__tags"><span class="az-pill ${tone === 'positive' ? 'pill-on-dark' : 'pill-on-dark--muted'}">${esc(state)}</span></span></div></div>`;
+  const head = `<div class="dhead dhead--doodle">${doodleSvg()}<div class="dhead__bar">${lead}<b>Diet Details</b>${iconBtn('info', 'Diet info', `dietInfoSheet('${a.id}')`)}${close ? iconBtn('close', 'Close', `go('${close}')`) : ''}</div>
+    <div class="dhead__card"><span class="davatar">${I('restaurant')}</span><span class="dhead__t"><span class="dhead__name">${esc(d.name)}</span><span class="dhead__sub">Diet type : <b>${esc(slotKind(a))}${a.group ? ` · ${esc(a.group.label)}` : ''}</b>${when ? ` · ${esc(when)}` : ''}</span>
+    <span class="dhead__tags">${pill(tone, state)}</span></span></div></div>`;
+  const tabs = `<div class="az-tabs dtabs" role="tablist">${thumb(true)}${DTABS.map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${S.dTab === k}" onclick="S.dTab='${k}';render()">${l}</button>`).join('')}</div>`;
   /* the day switch: the design system's segmented control, right above the table it changes and pinned while the table scrolls (audit, 2 Nov) */
   const days = true ? `<div class="dayseg"><div class="az-seg" role="tablist" aria-label="Day">${thumb()}${[[null, 'Full Week'], ...DAYS.map((x, i) => [i, x[0]])].map(([i, l]) => `<span role="tab" tabindex="0" class="${i == null ? 'wide' : ''}" aria-selected="${S.day === i}" aria-label="${i == null ? 'Full week' : DAYS[i]}" onclick="S.day=${i};render();swapFx('.dtable')" onkeydown="if(event.key==='Enter'){S.day=${i};render();swapFx('.dtable')}">${l}</span>`).join('')}</div></div>` : '';
   const groups = dietGroups(d, S.day, 'itemSheet');
-  const body = appliedTo(a) + certLine(d) + days + `<div class="dtable">${mealTable(groups, wide, S.day == null)}</div>` + nutriLine(d, a) + notesBlock(d);
-  const fab = canRaise(me()) && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="raisePick('${a.id}')">${I('add_circle')}<span class="dfab__t">Raise request</span></button>` : '';
-  return pane(cls + (fab ? ' has-fab' : ''), head, `<div class="body">${body}</div>`, '', `diet-${asgId}`).replace(/<\/section>$/, `${fab}</section>`);
+  const body = S.dTab === 'nu' ? nutriTab(d) : S.dTab === 'ap' ? appliedTo(a) : S.dTab === 'hi' ? historyTab(a, d) : days + `<div class="dtable">${mealTable(groups, wide, S.day == null)}</div>` + notesBlock(d);
+  const fab = S.dTab === 'ov' && canRaise(me()) && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="raisePick('${a.id}')">${I('add_circle')}<span class="dfab__t">Raise request</span></button>` : '';
+  return pane(cls + (fab ? ' has-fab' : ''), head + tabs, `<div class="body">${body}</div>`, '', `diet-${asgId}`).replace(/<\/section>$/, `${fab}</section>`);
 }
 /* where one diet is applied: every species, level and place it is set on, broad to narrow, each with the animals that eat it there */
 const LVL_IC = { species: 'pets', site: 'location_on', section: 'grid_view', enclosure: 'fence', animal: 'cruelty_free' };
@@ -203,23 +269,51 @@ function raisePick(id) {
   openSheet(() => ({ title: 'Which place?', sub: esc(diet(a.diet).name), pick: true,
     body: uses.map(x => `<button class="az-option" onclick="closeAll();go('#/new?dept=diet&asg=${x.id}')"><span>${esc(useText(x))}<small>${esc([pathNamed(x), plural(followersOf(x).length, 'animal')].filter(Boolean).join(' · '))}</small></span>${I('chevron_right')}</button>`).join('') }));
 }
-/* a short nutrition line on the page, per animal a day; it opens the full list in Diet info (audit, 2 Nov) */
-function nutriLine(d, a) {
-  const nut = nutrition(d), pick = ['Energy', 'Protein', 'Fat', 'Calcium'].map(k => nut.find(x => x.name === k)).filter(Boolean);
-  return pick.length ? `<button class="nline" onclick="dietInfoSheet('${a.id}')"><span class="nline__h">Nutrition · per animal a day</span><span class="nline__v">${pick.map(x => `<span>${x.name} <b>${nutriText(x)}</b></span>`).join('')}</span>${I('chevron_right', 20)}</button>` : '';
+/* Nutrition: energy as one big number, then each group as Diet info had it, with the calcium to phosphorus ratio under the minerals */
+function nutriTab(d) {
+  const nut = nutrition(d), e = nut.find(x => x.name === 'Energy'), ca = nut.find(x => x.name === 'Calcium'), p = nut.find(x => x.name === 'Phosphorus');
+  const groups = [...new Set(nut.map(x => x.group))], rows = g => nut.filter(x => x.group === g && x !== e).map(x => `<div class="nutri__r${x.v ? '' : ' zero'}"><span>${x.name}</span><b>${nutriText(x)}</b></div>`).join('')
+    + (g === 'Minerals' && ca && p && p.v ? `<div class="nutri__r"><span>Calcium : Phosphorus</span><b>${(ca.v / p.v).toFixed(2)} : 1</b></div>` : '');
+  return (e ? `<div class="nbig"><span class="nbig__ic">${I('bolt', 24, true)}</span><span><b>${nutriText(e)}</b><small>per animal, per day</small></span></div>` : '')
+    + groups.map(g => rows(g) ? `<div class="nutri"><div class="nutri__h">${g}</div><div class="nutri__rows">${rows(g)}</div></div>` : '').join('');
 }
-/* Figma "Diet Info": the diet with its species' photo, then when, sharing, open requests, its ID and nutrition (where and the animals are on the page) */
+/* History as a stepper (owner, 2 Nov, from their reference): one white card, the steps oldest first on one line. Done steps are filled with a
+   tick, the latest is a ring with a dot (where the diet is now), steps still to come are empty rings: a missing certification, the end of a dated diet.
+   The line is coloured up to the latest step. Each step: what on the left, the date and time on the right; a change opens to its lines */
+function historyTab(a, d) {
+  const who = id => `${youName(id)}, ${esc(user(id).title)}`, steps = [], todo = [];
+  const hist = changesIn({ dietId: d.id });
+  /* within a day: created, then changes, then the certifications (they carry no time), then the end */
+  if (d.made && !hist.some(h => h.created && h.diet === d.id)) steps.push({ at: `${d.made.at}T09:00`, o: 0, t: 'Diet created', p: esc(useText(dietUses(d.id)[0] || a)), w: who(d.made.by), day: true });
+  if (d.cert) steps.push({ at: `${d.cert.at}T00:00`, o: 2, t: 'Certified by the dietitian', w: who(d.cert.by), day: true });
+  if (d.kcert) steps.push({ at: `${d.kcert.at}T00:00`, o: 3, t: 'Certified by Kitchen', w: who(d.kcert.by), day: true });
+  hist.forEach(h => steps.push({ at: h.at, o: h.created ? 0 : 1, t: h.created ? 'Diet created' : HTYPE[h.type], p: `${esc(changeSummary(h))}${h.reason ? ` · ${esc(h.reason)}` : ''}`, w: `${who(h.by)}${h.req ? ` · ${h.req}` : ''}`, open: h.id }));
+  steps.sort((x, y) => x.at.slice(0, 10).localeCompare(y.at.slice(0, 10)) || x.o - y.o || x.at.localeCompare(y.at));
+  if (!d.cert) todo.push({ t: 'Certified by the dietitian', p: 'Waiting' });
+  if (!d.kcert) todo.push({ t: 'Certified by Kitchen', p: 'Waiting' });
+  if (a.end && !a.recur && !ended(a)) todo.push({ at: `${a.end}T23:59`, t: 'Diet ends', p: esc(useText(a)), day: true });
+  if (ended(a)) steps.push({ at: `${a.end}T23:59`, o: 4, t: 'Diet ended', p: esc(useText(a)), day: true });
+  if (!steps.length && !todo.length) return '<div class="nodiet">No history yet</div>';
+  const all = steps.map((x, i) => ({ ...x, st: i === steps.length - 1 ? 'now' : 'done' })).concat(todo.map(x => ({ ...x, st: 'todo' })));
+  const row = (x, i) => {
+    const mark = x.st === 'done' ? I('check', 18) : x.st === 'now' ? '<i></i>' : '';
+    const when = x.at ? `<span class="step__w"><b>${fmtDayY(x.at.slice(0, 10))}</b>${x.day ? '' : `<span>${fmtTime(x.at)}</span>`}</span>` : '';
+    const inner = `<span class="step__m step__m--${x.st}">${mark}</span><span class="step__t"><b>${x.t}</b>${x.p ? `<span>${x.p}</span>` : ''}${x.w ? `<small>${x.w}</small>` : ''}</span>${when}`;
+    const line = i < all.length - 1 ? ` step--${all[i + 1].st === 'todo' ? 'grey' : 'on'}` : ' step--last';
+    return x.open ? `<button class="step pick${line}" onclick="changeSheet('${x.open}')">${inner}</button>` : `<div class="step${line}">${inner}</div>`;
+  };
+  return `<div class="steps">${all.map(row).join('')}</div>`;
+}
+/* Figma "Diet Info": the diet with its species' photo, then when, sharing, open requests and its ID (nutrition, places and history have their tabs) */
 function dietInfoSheet(id) {
   const a = by('assigns', id), d = diet(a.diet), sp = species(a.sp), others = sharedWith(d.id, a.sp), open = openOnSlot(a).filter(r => visibleTo(r, me()));
   const r = (icon, k, v) => `<div class="rsec__r">${I(icon)}<span class="t"><span>${k}</span>${v}</span></div>`;
-  const nut = nutrition(d), groups = [...new Set(nut.map(x => x.group))];
   openSheet(() => ({ title: 'Diet info', body: `<div class="dinfo"><img src="${spPhoto(a.sp)}" alt=""><span><b>${esc(d.name)}</b><span>${esc(slotKind(a))} · ${esc(sp.name)}</span></span></div>
     <div class="rsec">${a.group ? r('location_on', 'For', `<b>${esc(sp.name)} ${a.group.kind === 'age' ? 'aged' : 'of'} ${esc(a.group.label)}</b>`) : ''}
       ${r('event', 'When', `<b>${esc(!a.start && !a.end ? 'All year' : slotWhen(a))}</b>`)}
       ${others.length ? r('share', 'Shared with', others.map(o => { const oa = D.assigns.find(x => x.diet === d.id && x.sp === o.id && !ended(x)); return `<a class="lnk" href="#/diets/${o.id}/${oa.id}">${esc(o.name)}${I('chevron_right', 18)}</a>`; }).join('')) : ''}
       ${open.length ? r('assignment', open.length === 1 ? 'Open request' : 'Open requests', open.map(x => `<a class="lnk" href="#/requests/${x.id}">${x.id} · ${esc(stateOf(x).label)}</a>`).join('')) : ''}
-      ${r('tag', 'Diet ID', `<p>${d.id}</p>`)}</div>
-    <p class="cap">Nutrition · per animal, per day</p>${groups.map(g => `<div class="nutri"><div class="nutri__h">${g}</div><div class="nutri__rows">${nut.filter(x => x.group === g).map(x => `<div class="nutri__r${x.v ? '' : ' zero'}"><span>${x.name}</span><b>${nutriText(x)}</b></div>`).join('')}</div></div>`).join('')}` }));
+      ${r('tag', 'Diet ID', `<p>${d.id}</p>`)}</div>` }));
 }
 /* Figma "Animals using this Diet": the diet and its count, then the animals */
 function dietAnimalsSheet(id) {
@@ -236,12 +330,6 @@ function itemSheet(dietId, f, it) {
       ${l.cad ? `<span class="mcard__k">Repeats</span><b class="mcard__n">${cadText(l.cad)}</b><span class="mcard__k">Next feeds</span><span class="nextf">${nextFeeds(l, 3).map(s => `<span>${wday(s)} ${fmtDay(s)}</span>`).join('')}</span>`
         : `<span class="mcard__k">Days</span><b class="mcard__n">${daysText(l.days ?? EVERY_DAY)}</b>`}</div>` }));
 }
-/* the diet's own history: every change to it, newest first; a change opens over the list */
-function dietHistorySheet(id) {
-  const a = by('assigns', id), d = diet(a.diet), list = changesIn({ dietId: d.id });
-  openSheet(() => ({ title: 'History of this diet', sub: esc(d.name), body: list.length ? list.map(h => changeRow(h, { noDiet: true, sheet: true })).join('') : '<div class="nodiet">No change since it was set</div>' }));
-}
-
 /* ---------- Diet per device ---------- */
 function vDiets(parts) {
   const spId = parts[1] ? +parts[1] : null, asgId = parts[2] || null;
