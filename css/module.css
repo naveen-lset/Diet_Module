@@ -886,11 +886,9 @@ button.sprow{cursor:pointer}
 .ent-page .ebox{border:1px solid var(--OutlineVariant)}
 
 /* ---------- round 11: the Diet wise card: a diet avatar, the name, the kind, the species count and the ID ---------- */
-.davatar{width:44px;height:44px;border-radius:var(--r-full);background:var(--k,var(--Primary));color:var(--white);display:grid;place-items:center;flex:none}
-/* the kinds' colours: Year-round green, Seasonal blue, Time-bound orange, Age gold, Weight red */
+.davatar{width:44px;height:44px;border-radius:var(--r-full);background:color-mix(in srgb,var(--k,var(--Primary)) 16%,var(--white));color:color-mix(in srgb,var(--k,var(--Primary)) 82%,#000);display:grid;place-items:center;flex:none}
+/* the kinds' colours, as a light tint with the icon in a deeper shade: Year-round green, Seasonal blue, Time-bound orange, Age gold, Weight red */
 .k-yr{--k:var(--Primary)}.k-sea{--k:var(--addPrimary)}.k-tb{--k:var(--Tertiary)}.k-age{--k:var(--moderateSecondary)}.k-wt{--k:var(--Error)}
-.kdot{flex:none;width:8px;height:8px;border-radius:var(--r-full);background:var(--k);margin-right:6px}
-.az-chip[aria-selected="true"] .kdot{box-shadow:0 0 0 1.5px var(--white)}
 .dfoot{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .dfoot__n{font:var(--t-subtext-title);line-height:16px;color:var(--OnSurfaceVariant)}
 .did{flex:none;padding:2px 6px;border-radius:var(--r-4);background:var(--neutral05);color:var(--neutralSecondary);font:var(--t-subtext-regular);line-height:16px}
