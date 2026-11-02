@@ -858,11 +858,12 @@ button.az-site{width:100%;text-align:left;cursor:pointer}
 .ebox__h button{min-height:36px;padding:0 6px}
 .az-two > *{min-width:0}.az-input input[type="date"]{min-width:0;width:100%}
 
-/* the list's toggle sits at the end of its row, the count at the start */
-.ltoggle{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.ltoggle__n{font:var(--t-body-title);color:var(--OnSecondaryContainer);white-space:nowrap;flex:none}
-.ltoggle .az-segment{flex:none}
-.phone .ltoggle--4 .ltoggle__n{display:none}.phone .ltoggle--4{justify-content:flex-end}
+/* the list's toggle is as wide as the cards under it; its options share the width */
+.ltoggle{display:flex}
+.ltoggle .az-segment{flex:1;min-width:0}
+.ltoggle .az-segment button{flex:1 1 0;justify-content:center;padding:0 8px}
+/* Diet scrolls as one page; Diet wise | Species wise stays pinned under the top bar */
+.pane--home .az-tabs{position:sticky;top:0;z-index:3}
 
 /* ---------- round 9: species sheet with search; the entity page on white with proper cards ---------- */
 .sheet-search{background:var(--white);position:sticky;top:-16px;z-index:2;box-shadow:0 0 0 8px var(--Background)}
