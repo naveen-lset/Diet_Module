@@ -1027,6 +1027,7 @@ button.pipe__c{cursor:pointer}
 
 /* ---------- round 15: iPad split screens as Apple's (owner, 2 Nov): left and right float as rounded panels on a light canvas,
    a gap between them, lifted by a soft shadow with no outline ---------- */
-/* the canvas: the design system's background primary (owner, 2 Nov: not grey, not a gradient); the shadows tinted teal */
-.tab .main[class]:has(> .pane + .pane){gap:10px;padding:10px;background:var(--displaybgPrimary)}
+/* the canvas: background primary's teal, a step deeper so the panels (on the page colour) stand apart from it (owner, 2 Nov: not grey, not a gradient,
+   not the same as the panels); the shadows tinted teal */
+.tab .main[class]:has(> .pane + .pane){gap:10px;padding:10px;background:hsl(170 36% 84%)}
 .tab .main:has(> .pane + .pane) > .pane{border-radius:24px;overflow:hidden;box-shadow:0 10px 28px rgba(0,109,53,.1),0 2px 6px rgba(0,109,53,.05)}
