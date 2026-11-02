@@ -446,7 +446,6 @@ body.fill .device{position:fixed;top:env(safe-area-inset-top,0px);right:env(safe
 .person span span{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
 .az-tl__dot .az-avatar{width:36px;height:36px;font:var(--t-body-medium)}
 .az-tl__text p.plain{background:none;padding:0;margin-top:2px;color:var(--OnSurfaceVariant)}
-.az-statusbar__actions.stack{flex-direction:column}
 .az-statusbar b{font:var(--t-minor-title)}
 .az-warnline .lnk{flex:none;align-self:center}
 
@@ -460,7 +459,6 @@ body.fill .device{position:fixed;top:env(safe-area-inset-top,0px);right:env(safe
 .prio--emergency{background:var(--Error)}
 .az-upload{width:100%;cursor:pointer;border:0}
 .file .az-iconbtn{margin-right:-6px}
-.az-statusbar__actions.stack .az-btn{flex:none;width:100%}
 
 /* ---------- round 3: species photos, the species sheet, the Figma Diet Details ---------- */
 .thumb{overflow:hidden}
@@ -913,7 +911,7 @@ button.sprow{cursor:pointer}
 .mtab td{padding:12px;border-top:1px solid var(--SurfaceVariant);vertical-align:top}
 .mtab th,.mtab td{border-right:1px solid var(--SurfaceVariant)}
 .mtab th:last-child,.mtab td:last-child{border-right:0}
-.mtab tbody tr{cursor:pointer;outline:none}
+.mtab tbody tr{outline:none}
 .mtab__band td{background:var(--displaybgPrimary);cursor:default}
 .mtab__band td > span{display:flex;align-items:center;gap:6px;font:var(--t-body-title);line-height:20px;color:var(--OnPrimaryContainer)}
 .mtab__t{font:var(--t-body-medium);line-height:20px;white-space:nowrap;cursor:default}
@@ -929,3 +927,68 @@ button.sprow{cursor:pointer}
 .ingr small{font:var(--t-subtext-regular);line-height:16px;color:var(--neutralSecondary)}
 .mtab__q{width:1%;white-space:nowrap;font:var(--t-body-medium);line-height:20px}
 .mtab--wide th,.mtab--wide td{padding:12px 16px}
+
+/* ---------- round 13: the audit of 2 Nov ---------- */
+/* text meets 4.5 : 1: the design system's meta grey one step darker; the selected tab and the strip time in readable colours */
+:root{--neutralSecondary:#6B7775}
+.az-tab[aria-selected="true"]{color:var(--OnSurface)}
+.az-strip__time{color:var(--neutralSecondary)}
+/* 44 px touch areas around the design system's 36 px icon buttons and 32 px chips; they look the same */
+.az-iconbtn,.az-chip{position:relative}
+.az-iconbtn::after{content:"";position:absolute;inset:-4px}
+.az-chip::after{content:"";position:absolute;inset:-6px 0}
+
+/* Diet wise grouped by species: the heading stays under the tabs while its diets scroll */
+.lgrp{display:flex;flex-direction:column;gap:8px}
+.lgroup{position:sticky;top:46px;z-index:2;display:flex;align-items:center;gap:8px;margin:4px calc(-1 * var(--gutter-phone)) 0;padding:8px var(--gutter-phone);background:var(--displaybgSecondary)}
+.tab .lgroup{margin:4px -16px 0;padding:8px 16px}
+.lgroup .thumb{width:28px;height:28px;border-radius:var(--r-full)}
+.lgroup b{flex:1;min-width:0;font:var(--t-body-title);line-height:20px;color:var(--OnSurfaceVariant);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lgroup > span:last-child{font:var(--t-subtext-regular);line-height:16px;color:var(--OnSurfaceVariant)}
+
+/* a species: who eats what, and level chips that wrap so Animal is never off screen */
+.cover{display:flex;flex-wrap:wrap;align-items:center;gap:0 6px;font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant)}
+.cover__k{font:var(--t-body-title);line-height:20px;margin-right:4px}
+.cover__p{font:inherit;display:inline-flex;align-items:center;gap:4px;min-height:32px;color:var(--OnPrimaryContainer);cursor:pointer;position:relative}
+.cover__p::after{content:"";position:absolute;inset:-6px -3px}
+span.cover__p{color:var(--neutralSecondary);cursor:default}
+.cover__p b{font-weight:600}
+.cover__dot{color:var(--Outline)}
+.az-chips--wrap{flex-wrap:wrap;gap:8px;overflow:visible}
+
+/* one diet row everywhere: its state and its animals at the foot */
+.dfoot__tags{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+.dietrow--ended{opacity:.72}
+.davatar--s{width:36px;height:36px}
+
+/* Diet Details: the day switch right above the table, pinned while the table scrolls; the nutrition line */
+.body > .dayseg{position:sticky;top:0;z-index:3;margin:0 calc(-1 * var(--gutter-phone));padding:8px var(--gutter-phone)}
+.tab .body > .dayseg{margin:0 -16px;padding:8px 16px}
+.tab .pane--fill .body > .dayseg{margin:0 calc(-1 * var(--gutter-tablet));padding:8px var(--gutter-tablet)}
+.nline{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:12px;background:var(--white);border-radius:var(--r-8);text-align:left;cursor:pointer}
+.nline__h{font:var(--t-body-title);line-height:20px;color:var(--OnSurfaceVariant)}
+.nline__v{grid-column:1;display:flex;flex-wrap:wrap;gap:2px 14px;font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant)}
+.nline__v b{font-weight:600}
+.nline > .az-i{grid-column:2;grid-row:1 / span 2;color:var(--OnSurfaceVariant)}
+.pill-on-dark--muted{background:rgba(255,255,255,.88);color:var(--OnSurfaceVariant)}
+.dfab{transition:padding .2s,width .2s}
+.dfab.dfab--mini{width:48px;padding:0;gap:0;justify-content:center}
+.dfab--mini .dfab__t{display:none}
+
+/* the Kitchen table everywhere: tappable lines, the change marks, "+ Add item" under each time */
+.mtab tr.tap{cursor:pointer}
+.mtab tr.chg > .mtab__i,.mtab tr.chg > .mtab__q{background:rgba(255,232,110,.3)}
+.mtab tr.stop > .mtab__i,.mtab tr.stop > .mtab__q{background:rgba(233,51,83,.06)}
+.mtab__a{width:1%;white-space:nowrap}
+.mtab__add td{padding:0}
+.mtab__add button{width:100%;min-height:44px;display:flex;align-items:center;gap:6px;padding:0 12px;font:var(--t-body-medium);color:var(--OnSurface);cursor:pointer}
+.mtab .new,.mtab .stopped{margin-left:6px;vertical-align:1px}
+
+/* an empty list says why and offers the way out */
+.empty1 > div{display:flex;flex-direction:column;align-items:center}
+.empty1__btn{display:inline-flex;align-items:center;gap:8px;width:auto;margin-top:16px;padding:0 20px}
+
+/* New Request: the priority says what it is */
+.prio-pick{position:relative;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 6px 0 4px;border-radius:var(--r-full);background:var(--displaybgSecondary);font:var(--t-body-medium);color:var(--OnSurfaceVariant);cursor:pointer}
+.prio-pick .prio{width:28px;height:28px;font-size:14px}
+.prio-pick::after{content:"";position:absolute;inset:-4px}

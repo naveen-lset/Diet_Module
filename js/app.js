@@ -70,8 +70,14 @@ function render() {
   render.last = location.hash; render.done = true;
   if (SH.length) drawOverlay();
   positionThumbs($('.device'));
+  fabFit();
   drawStage();
 }
+/* Raise request shrinks to its icon once the diet is scrolled, so it never sits over the amounts (audit, 2 Nov) */
+function fabFit(b) {
+  (b ? [b] : [...document.querySelectorAll('.has-fab > .pane__body')]).forEach(x => { const f = x.parentElement.querySelector(':scope > .dfab'); if (f) f.classList.toggle('dfab--mini', x.scrollTop > 120); });
+}
+document.addEventListener('scroll', e => { if (e.target instanceof Element && e.target.matches('.has-fab > .pane__body')) fabFit(e.target); }, true);
 
 /* ---------- prototype controls: outside the device, not part of the app ---------- */
 function drawStage() {

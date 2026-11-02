@@ -33,7 +33,7 @@ function setSlot(id) { const d = S.draft; d.slot = id; d.w = wOf(by('assigns', i
 
 /* ---------- the draft ---------- */
 function initDraft(q) {
-  const editId = q.get('edit'), asg = q.get('asg'), dq = q.get('dept'), key = [S.user, editId || 'new', asg || '', dq || ''].join(':');
+  const editId = q.get('edit'), asg = q.get('asg'), dq = q.get('dept'), spq = +q.get('sp') || null, kq = q.get('kind'), key = [S.user, editId || 'new', asg || '', dq || '', spq || '', kq || ''].join(':');
   if (S.draft && S.draft.key === key) return S.draft;
   const blank = { key, edit: null, dept: null, f: {}, title: '', titleEdited: false, text: '', site: null, approver: null, prio: 'normal', files: [],
     kind: 'items', sp: null, level: 'species', ref: null, w: {}, slot: null, base: null, changes: [], diet: null,
@@ -51,6 +51,7 @@ function initDraft(q) {
   if (dq && deptsFor(me()).some(x => x.id === dq)) setDept(dq, false);
   const a = asg && by('assigns', asg);
   if (a && d.dept === 'diet') { d.sp = a.sp; d.slot = a.id; d.w = wOf(a); setTarget(d); }
+  else if (spq && d.dept === 'diet' && by('species', spq)) { d.sp = spq; if (KTABS.some(([k]) => k === kq)) d.kind = kq; setTarget(d); }
   return d;
 }
 const asReq = d => ({ kind: d.kind, sp: d.sp, level: d.level, ref: d.ref, slot: byDiet(d) ? d.slot : null, base: d.base, changes: d.changes, diet: d.diet, start: d.start, end: d.endMode === 'open' ? null : d.end, date: d.date, feeds: d.feeds });
@@ -92,12 +93,13 @@ function deptSheet() {
 }
 function pickReqSite(v) { S.draft.site = +v; closeAll(); render(); }
 function pickApprover(v) { S.draft.approver = v; closeAll(); render(); }
+const askFields = d => `<span class="az-label">What are you requesting?</span>
+    <label class="az-input az-input--text"><input id="f-title" placeholder="Title" value="${esc(titleOf(d))}" oninput="S.draft.title=this.value;S.draft.titleEdited=true;redrawFoot()" aria-label="Title"></label>
+    <label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="4" placeholder="Description / Justification" oninput="S.draft.text=this.value;redrawFoot()" aria-label="Description or justification">${esc(d.text)}</textarea></label>`;
 function requestDetails(d) {
   const deptName = d.dept ? dept(d.dept).name : '';
   return section('category', 'Request Details', `${select('Requesting to', deptName, 'deptSheet()', { placeholder: 'Select Department', disabled: !!d.edit })}
-    <span class="az-label">What are you requesting?</span>
-    <label class="az-input az-input--text"><input id="f-title" placeholder="Title" value="${esc(titleOf(d))}" oninput="S.draft.title=this.value;S.draft.titleEdited=true;redrawFoot()" aria-label="Title"></label>
-    <label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="4" placeholder="Description / Justification" oninput="S.draft.text=this.value;redrawFoot()" aria-label="Description or justification">${esc(d.text)}</textarea></label>
+    ${d.dept === 'diet' ? '' : askFields(d)}
     <div class="az-field"><span class="az-label">Requested by</span>${personCard(S.user)}</div>
     ${d.site ? `<div class="az-field"><span class="az-label">Requesting Site</span><div class="az-site az-site--picked"><span class="az-site__thumb" style="display:grid;place-items:center;color:var(--Outline)">${I('location_on', 20)}</span><span class="grow"><span class="az-site__name">${esc(by('sites', d.site).name)}</span></span>${d.dept === 'diet' && d.sp ? '' : `<button class="az-iconbtn" onclick="S.draft.site=null;render()" aria-label="Remove site">${I('cancel')}</button>`}</div></div>`
       : select('Requesting Site', '', `optionSheet('Requesting Site',D.sites.map(s=>[s.id,s.name]),S.draft.site,'pickReqSite')`, { placeholder: 'Choose site', icon: 'add_circle' })}
@@ -139,7 +141,7 @@ function dietPick(d) {
   const slots = d.sp ? slotsOf(d.sp) : [], s = slotOn(d);
   const seg = `<div class="az-seg" role="tablist">${thumb()}${KTABS.map(([k, l]) => `<span role="tab" tabindex="0" aria-selected="${d.kind === k}" onclick="pickKind('${k}')" onkeydown="if(event.key==='Enter')pickKind('${k}')">${l}</span>`).join('')}</div>`;
   if (d.kind === 'skip') return section('restaurant', 'Diet', seg + speciesSelect(d) + (d.sp ? whoField(d) + `<div class="az-hintline">${I('restaurant', 18)}<span>Diet now: ${currentDiet(d) ? `<button class="lnk" onclick="dietSheet('${currentDiet(d).diet.id}')">${esc(currentDiet(d).diet.name)}</button>` : 'no diet'}</span></div>` + dupNote(d) : ''));
-  if (!d.sp || !slots.length) return section('restaurant', 'Diet', seg + speciesSelect(d) + (d.sp ? `<div class="az-hintline">${I('info', 18)}<span>${esc(species(d.sp).name)} has no diet yet.</span></div>` : ''));
+  if (!d.sp || !slots.length) return section('restaurant', 'Diet', seg + speciesSelect(d) + (d.sp ? `<div class="az-hintline">${I('info', 18)}<span>${esc(species(d.sp).name)} has no diet yet.${d.kind === 'diet' ? ' Pick a diet below to give it.' : ' Use Change diet to give it one.'}</span></div>` : ''));
   const which = s ? pickedBox('Selected diet', 'restaurant', esc(diet(s.diet).name), `${esc(slotKind(s))} · ${esc(slotWhere(s))} · ${plural(followersOf(s).length, 'animal')}`, 'clearSlot()', `<button class="lnk" onclick="dietSheet('${s.diet}')">View</button>`)
     : `<div class="az-field"><span class="az-label">Which diet? <span class="az-req">*</span></span><button class="az-input az-input--select az-input--placeholder" onclick="dietPickSheet()"><span class="grow">Choose diet</span>${I('keyboard_arrow_down')}</button></div>`;
   return section('restaurant', 'Diet', seg + speciesSelect(d) + which + (s ? whoField(d) + dupNote(d) : ''));
@@ -228,14 +230,10 @@ const changeOf = (d, f, it) => d.changes.find(x => x.op !== 'add' && x.feed === 
 const addsAt = (d, f) => d.changes.filter(c => c.op === 'add' && c.feed === f);
 function itemsSec(d) {
   const base = diet(d.base), feeds = [...new Set([...base.meals.map(m => m.feed), ...d.changes.filter(c => c.op === 'add').map(c => c.feed)])].sort((a, b) => a - b);
-  const row = (r, js) => `<button class="frow${r.cls ? ' frow--' + r.cls : ''}" onclick="${js}"><span class="frow__i"><b>${r.name}${r.nameWas || ''}</b>${r.mix || r.gar || r.garWas ? `<span class="frow__s">${r.mix || r.gar}${r.garWas || ''}</span>` : ''}${dayMark(r)}${r.day.includes('class="was"') ? r.day.slice(r.day.indexOf('<span class="was">')) : ''}</span><span class="frow__q">${r.amt}</span></button>`;
-  const bands = feeds.map(f => {
-    const m = base.meals.find(x => x.feed === f) || { items: [] };
-    const rows = m.items.map(i => row(lineRow(i, changeOf(d, f, i.item)), `lineSheet(${f},${i.item})`)).concat(addsAt(d, f).map(c => row(lineRow(null, c), `addSheet(${f},${c.to})`)));
-    return `<div class="fband fband--static"><span class="fband__t">${I('schedule', 18)}${bandText(feed(f))}</span><span class="fband__c fband__c--q">${f === feeds[0] ? 'Daily amt' : ''}</span></div><div class="frows">${rows.join('')}<button class="frow-add" onclick="addSheet(${f})">${I('add', 20)}Add item</button></div>`;
-  }).join('');
+  const groups = feeds.map(f => { const m = base.meals.find(x => x.feed === f) || { items: [] };
+    return { feed: f, rows: m.items.map(i => ({ ...lineRow(i, changeOf(d, f, i.item)), click: `lineSheet(${f},${i.item})` })).concat(addsAt(d, f).map(c => ({ ...lineRow(null, c), click: `addSheet(${f},${c.to})` }))) }; });
   const n = d.changes.length;
-  return `<section class="az-section"><h2 class="az-section__title">${I('edit_note', 20)}<span class="grow">What should change<span class="az-req">*</span></span>${n ? `<span class="chgcount">${plural(n, 'change')}</span>` : ''}</h2><div class="fbands">${bands}</div></section>`;
+  return `<section class="az-section"><h2 class="az-section__title">${I('edit_note', 20)}<span class="grow">What should change<span class="az-req">*</span></span>${n ? `<span class="chgcount">${plural(n, 'change')}</span>` : ''}</h2>${mealTable(groups, isTab(), true, { add: f => `addSheet(${f})` })}</section>`;
 }
 function setChange(c) { const d = S.draft; d.changes = d.changes.filter(x => !(c.op !== 'add' && x.op !== 'add' && x.feed === c.feed && x.item === c.item) && !(c.op === 'add' && x.op === 'add' && x.feed === c.feed && x.to === c.to)); d.changes.push(c); d.changes.sort((a, b) => a.feed - b.feed); closeAll(); render(); }
 function undoChange(f, it) { const d = S.draft; d.changes = d.changes.filter(x => !(x.op !== 'add' && x.feed === f && x.item === it)); closeAll(); render(); }
@@ -314,8 +312,9 @@ function chooseItem(id) {
 }
 /* which new diet */
 function dietSec(d) {
-  const list = D.diets.filter(x => x.sp === d.sp && x.id !== d.base);
-  const pick = list.length ? list.map(x => `<button class="az-pickrow" role="radio" aria-checked="${d.diet === x.id}" onclick="S.draft.diet='${x.id}';render()"><span class="az-pickrow__t"><b>${esc(x.name)}</b><span>${KINDTYPE[x.type]}</span></span><span class="lnk" onclick="event.stopPropagation();dietSheet('${x.id}')">View</span>${I(d.diet === x.id ? 'radio_button_checked' : 'radio_button_unchecked', 24, d.diet === x.id)}</button>`).join('') : `<div class="az-hintline">${I('info', 18)}<span>There is no other diet for ${esc(species(d.sp).name)} yet.</span></div>`;
+  const own = D.diets.filter(x => x.sp === d.sp && x.id !== d.base), cls = species(d.sp).cls;
+  const list = own.length ? own : D.diets.filter(x => D.assigns.some(a => a.diet === x.id && !ended(a))).sort((x, y) => (species(y.sp).cls === cls) - (species(x.sp).cls === cls) || x.name.localeCompare(y.name));
+  const pick = list.length ? list.map(x => `<button class="az-pickrow" role="radio" aria-checked="${d.diet === x.id}" onclick="S.draft.diet='${x.id}';render()"><span class="az-pickrow__t"><b>${esc(x.name)}</b><span>${KINDTYPE[x.type]}${own.length ? '' : ` · ${esc(species(x.sp).name)}`}</span></span><span class="lnk" onclick="event.stopPropagation();dietSheet('${x.id}')">View</span>${I(d.diet === x.id ? 'radio_button_checked' : 'radio_button_unchecked', 24, d.diet === x.id)}</button>`).join('') : `<div class="az-hintline">${I('info', 18)}<span>There is no other diet for ${esc(species(d.sp).name)} yet.</span></div>`;
   return section('swap_horiz', 'Which new diet?', pick + (d.diet ? `<p class="cap">What changes</p>${linesView(dietDiffGroups(diet(d.base), diet(d.diet)))}` : ''), true);
 }
 /* no diet: which day, which feeds */
@@ -358,7 +357,9 @@ const attachSec = d => section('attach_file', 'Add Attachments If Any', `${d.fil
 /* priority sits at the top right, as the Help Desk app: the Antz flag */
 function prioSheet() { optionSheet('Priority', Object.entries(PRIO).map(([k, [, l]]) => [k, l, PRI_TEXT[k]]), S.draft.prio, 'pickFormPrio'); }
 function pickFormPrio(v) { S.draft.prio = v; closeAll(); render(); }
-function formFoot(d) { const e = err(d); return `<div class="az-actionbar"><button class="az-btn"${e ? ' disabled' : ''} onclick="submitDraft()">${d.edit ? 'Save and Submit' : 'Submit Request'}</button></div>`; }
+function formFoot(d) { return `<div class="az-actionbar"><button class="az-btn" onclick="submitDraft()">${d.edit ? 'Save and Submit' : 'Submit Request'}</button></div>`; }
+/* where a missing answer is asked, to scroll to it */
+const ERR_AT = [[/title/, '#f-title'], [/description/, '#f-text'], [/dates/, '#p-start'], [/reason/, '#d-note'], [/item/, '.chgcount, .mtab-wrap']];
 function redrawFoot() { const f = $('#form-foot'); if (f && S.draft) f.innerHTML = formFoot(S.draft); }
 function paneForm(q) {
   const d = initDraft(q), close = d.edit ? `#/requests/${d.edit}` : S.back;
@@ -371,15 +372,18 @@ function paneForm(q) {
     if (ready && !(d.kind === 'items' && !d.base)) secs.push(d.kind === 'items' ? itemsSec(d) : d.kind === 'diet' ? dietSec(d) : skipSec(d));
     const changed = ready && (d.kind === 'items' ? d.changes.length : d.kind === 'diet' ? d.diet : true);
     if (changed) secs.push(d.kind === 'skip' ? section('label', 'Why', reasonNote(d), true) : whenSec(d));
+    secs.push(section('subject', 'Title and description', askFields(d), true));
   }
   if (DEPT_FORMS[d.dept]) secs.push(deptSection(d));
   secs.push(attachSec(d));
-  const prio = `<button class="prio prio--${d.prio}" onclick="prioSheet()" aria-label="Priority: ${PRIO[d.prio][1]}" title="Priority: ${PRIO[d.prio][1]}">${d.prio === 'emergency' ? I('local_fire_department', 22, true) : PRIO[d.prio][0]}</button>`;
+  const prio = `<button class="prio-pick" onclick="prioSheet()" aria-label="Priority: ${PRIO[d.prio][1]}"><span class="prio prio--${d.prio}">${d.prio === 'emergency' ? I('local_fire_department', 16, true) : PRIO[d.prio][0]}</span>${PRIO[d.prio][1]}${I('keyboard_arrow_down', 20)}</button>`;
   return pane('pane--fill form-page', topbar({ back: close, title: d.edit ? `Edit ${d.edit}` : 'New Request', actions: prio }), `<div class="body">${secs.join('')}</div>`, `<div id="form-foot">${formFoot(d)}</div>`, `form-${d.key}`);
 }
 function submitDraft() {
   const d = S.draft;
-  if (!d || d.blocked || err(d)) return;
+  if (!d || d.blocked) return;
+  const e = err(d);
+  if (e) { toast(e); const at = (ERR_AT.find(([re]) => re.test(e.toLowerCase())) || [])[1], el = at && document.querySelector(at); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); if (el.focus) el.focus({ preventScroll: true }); } return; }
   const fields = { dept: d.dept, title: titleOf(d).trim(), text: d.text.trim(), site: d.site, approver: d.approver, prio: d.prio, files: [...d.files], note: d.note.trim() };
   if (DEPT_FORMS[d.dept]) fields.f = { ...d.f, ...(d.f.items ? { items: d.f.items.filter(i => i.name.trim()) } : {}) };
   if (d.dept === 'diet') {

@@ -32,7 +32,13 @@ function dietsFor(kind, cert = S.dCert) {
 function myRequestsRow() {
   if (!canRaise(me())) return '';
   const open = D.requests.filter(r => isDiet(r) && r.by === S.user && isOpen(r)), delayed = open.filter(r => r.state === 'delayed').length;
-  return `<a class="reqsum" href="#/requests" onclick="S.rTab='pending';S.rDept='diet'"><span class="reqsum__ic">${I('assignment')}</span><span class="grow"><b>My diet requests</b><span class="sub">${open.length ? `${open.length - delayed} awaiting approval${delayed ? ` · ${delayed} delayed` : ''}` : 'None open'}</span></span><span class="cnt">${open.length}</span>${I('chevron_right', 20)}</a>`;
+  return `<a class="reqsum" href="#/requests" onclick="S.rTab='pending';S.rDept='diet'"><span class="reqsum__ic">${I('assignment')}</span><span class="grow"><b>My diet requests</b><span class="sub">${open.length ? `${open.length - delayed} waiting${delayed ? ` · ${delayed} delayed` : ''}` : 'None open'}</span></span><span class="cnt">${open.length}</span>${I('chevron_right', 20)}</a>`;
+}
+/* an approver's diet requests that wait on them, opening Help Desk on Diet (audit, 2 Nov) */
+function approvalsRow() {
+  if (!isApprover(me()) || !D.requests.some(r => isDiet(r) && r.approver === S.user)) return '';
+  const wait = D.requests.filter(r => isDiet(r) && r.approver === S.user && isOpen(r)), delayed = wait.filter(r => r.state === 'delayed').length;
+  return `<a class="reqsum" href="#/requests" onclick="S.rTab='pending';S.rDept='diet'"><span class="reqsum__ic">${I('how_to_reg')}</span><span class="grow"><b>Waiting for your approval</b><span class="sub">${wait.length ? `${wait.length - delayed} waiting${delayed ? ` · ${delayed} delayed` : ''}` : 'Nothing waiting'}</span></span><span class="cnt">${wait.length}</span>${I('chevron_right', 20)}</a>`;
 }
 const dietTabs = cur => `<div class="az-tabs" role="tablist">${thumb(true)}${[['diets', 'Diet wise'], ['species', 'Species wise']].map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${cur === k}" onclick="homeTab('${k}')">${l}</button>`).join('')}</div>`;
 /* switching tabs keeps them pinned if they were, and shows the new list from its start */
@@ -41,10 +47,10 @@ function homeTab(k) {
   if (b) b.scrollTop = Math.min(b.scrollTop, r ? r.offsetHeight : 0);
   S.land = k; go('#/diets'); swapFx('.pane--home .list');
 }
-/* one diet in the Diet wise list: a diet avatar, its name, its kind, how many species get it, and its ID */
+/* one diet in the Diet wise list: a diet avatar, its name, its kind, how many species share it (when more than one; the list is grouped by species), and its ID */
 function dietRow(a, current) {
   const d = diet(a.diet), n = new Set(usesOf(d.id).map(u => u.sp)).size;
-  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotKind(a))}</span><span class="dfoot"><span class="dfoot__n">${n} species</span><span class="did">${esc(d.id)}</span></span></span></a>`;
+  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotKind(a))}</span><span class="dfoot">${n > 1 ? `<span class="dfoot__n">Shared · ${n} species</span>` : '<span></span>'}<span class="did">${esc(d.id)}</span></span></span></a>`;
 }
 /* the filters, in one sheet (the design system's Search and filter): Diet wise = kind + certification; Species wise = class + diet status */
 const FILTERS = {
@@ -68,36 +74,52 @@ function listHead(tab, n) {
 const listToggle = (key, opts) => `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Certification">${thumb()}${opts.map(([k, l]) => `<button role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l}</button>`).join('')}</div></div>`;
 /* the page scrolls as one: the requests row, search and chips go up with the list; Diet wise | Species wise stays pinned under the top bar */
 function paneDietHome({ cls = '', cur = null } = {}) {
-  const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true }), head = myRequestsRow() + dietTabs(tab);
+  const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true }), head = myRequestsRow() + approvalsRow() + dietTabs(tab);
   const chips = (key, opts, count) => `<div class="az-chips" role="tablist">${opts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l} - ${count(k)}</button>`).join('')}</div>`;
   if (tab === 'diets') {
     const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species, place or ID" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label></div>`;
-    const list = dietsFor(S.dKind);
+    const list = dietsFor(S.dKind), on = (by('assigns', cur) || {}).diet;
+    /* grouped under species headings that stay under the tabs while their diets scroll (audit, 2 Nov) */
+    const rows = [...new Set(list.map(a => a.sp))].map(sp => { const as = list.filter(a => a.sp === sp);
+      return `<div class="lgrp"><div class="lgroup">${spThumb(species(sp))}<b>${esc(species(sp).name)}</b><span>${plural(as.length, 'diet')}</span></div>${as.map(a => dietRow(a, !!cur && on === a.diet)).join('')}</div>`; }).join('');
+    const none = S.dQ.trim() && !dietsFor(S.dKind, 'all').length;
     return pane(`${cls} pane--home`, top, head + search + chips('dKind', [['all', 'All'], ...KINDS.map(k => [k, k])], k => dietsFor(k).length)
-      + `<div class="body">${listToggle('dCert', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']])}<div class="list list--8">${list.length ? list.map(a => dietRow(a, !!cur && (by('assigns', cur) || {}).diet === a.diet)).join('') : empty1('No diet here')}</div></div>`, '', 'home');
+      + `<div class="body">${none ? '' : listToggle('dCert', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']])}<div class="list list--8">${rows || (none ? noMatch(S.dQ, "S.dQ=''") : empty1('No diet here'))}</div></div>`, '', 'home');
   }
   const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="sp-q" placeholder="Search species or taxonomy ID" value="${esc(S.spQ)}" oninput="S.spQ=this.value;render()" aria-label="Search species"></label></div>`;
   const list = speciesFor(S.spTab), clsChips = chips('spCls', [['all', 'All'], ...CLASSES.map(c => [c, c]), ['Other', 'Other']], c => speciesFor(S.spTab, c).length);
   /* a species card: photo, name, scientific name, animal count, and its diet count big in a tile */
+  const none = S.spQ.trim() && !speciesFor('all', 'all').length;
   const rows = list.length ? list.map(s => { const all = slotsOf(s.id).length;
     return speciesRow(s, { href: `#/diets/${s.id}`, current: cur === s.id, sub: plural(spAnimals(s.id, S.site).length, 'animal'),
-      end: `<span class="sprow__n${all ? '' : ' sprow__n--none'}"><b>${all ? activeDiets(s.id) : 0}</b><span>Diets</span></span>` }); }).join('') : empty1('No species here');
-  return pane(`${cls} pane--home`, top, head + search + clsChips + `<div class="body">${listToggle('spTab', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified'], ['without', 'No diet']])}<div class="list list--8">${rows}</div></div>`, '', 'home');
+      end: `<span class="sprow__n${all ? '' : ' sprow__n--none'}"><b>${all ? activeDiets(s.id) : 0}</b><span>Diets</span></span>` }); }).join('') : none ? noMatch(S.spQ, "S.spQ=''") : empty1('No species here');
+  return pane(`${cls} pane--home`, top, head + search + clsChips + `<div class="body">${none ? '' : listToggle('spTab', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified'], ['without', 'No diet']])}<div class="list list--8">${rows}</div></div>`, '', 'home');
 }
+
+/* a search that finds nothing says so, with a way back (audit, 2 Nov) */
+const noMatch = (q, clear) => `<div class="empty1"><div>No match for “${esc(q.trim())}”<button class="az-btn az-btn--outline empty1__btn" onclick="${clear};render()">Clear search</button></div></div>`;
 
 /* ---------- a species: its photo, facts, the level chips, then the diets or places of that level ---------- */
 const lvlOf = sp => { const l = S.lvl[sp] || 'species'; return levelsOf(sp).includes(l) ? l : 'species'; };
 function spFacts(sp) {
   const as = spAnimals(sp.id, S.site), n = k => new Set(as.map(a => pathOfAnimal(a)[k])).size, w = (k, one, many) => `<span><b>${n(k)}</b> ${n(k) === 1 ? one : many}</span>`;
-  return `<div class="facts"><span><b>${as.length}</b> animals</span>${w('site', 'site', 'sites')}${w('section', 'section', 'sections')}${w('enclosure', 'enclosure', 'enclosures')}</div>`;
+  return `<div class="facts"><span><b>${as.length}</b> animals</span>${w('site', 'site', 'sites')}${w('section', 'section', 'sections')}${w('enclosure', 'enclosure', 'enclosures')}</div>${coverLine(sp.id)}`;
+}
+/* who eats what: the animals by the level of the diet each one follows; a part opens its level (audit, 2 Nov). Counts only, no inherited diet */
+function coverLine(spId) {
+  if (!slotsOf(spId).length) return '';
+  const n = {};
+  spAnimals(spId, S.site).forEach(an => { const w = currentDiet({ sp: spId, level: 'animal', ref: an.id }); n[w ? w.level : 'none'] = (n[w ? w.level : 'none'] || 0) + 1; });
+  const parts = LEVELS.filter(l => n[l]).map(l => `<button class="cover__p" onclick="pickLevel(${spId},'${l}')"><b>${n[l]}</b> ${l === 'species' ? 'species-wide' : l}</button>`).concat(n.none ? [`<span class="cover__p"><b>${n.none}</b> no diet</span>`] : []);
+  return `<div class="cover"><span class="cover__k">Who eats what</span>${parts.join('<span class="cover__dot">·</span>')}</div>`;
 }
 /* the photo header of a species: the photo as it is, a shade only behind the words */
 const shade = 'linear-gradient(180deg,rgba(0,0,0,.42) 0%,rgba(0,0,0,0) 30%,rgba(0,0,0,0) 48%,rgba(0,0,0,.66) 100%)';
 const spHero = (sp, close = '') => `<div class="sphero" style="background-image:${shade},url('${spPhoto(sp.id)}')">${close ? `<button class="sphero__x" onclick="${close}" aria-label="Close">${I('close')}</button>` : ''}<span class="sphero__t"><b>${esc(sp.name)}</b><span><i>${esc(sp.sci)}</i> · ${esc(sp.cls)}</span></span></div>`;
 function speciesParts(spId, cur) {
   const l = lvlOf(spId);
-  if (!slotsOf(spId).length) return { chips: '', body: empty1(`No diet added for ${esc(species(spId).name)}`) };
-  const chips = `<div class="az-chips" role="tablist" aria-label="Level">${levelsOf(spId).map(k => `<button class="az-chip" role="tab" aria-selected="${l === k}" onclick="pickLevel(${spId},'${k}')">${LEVEL[k]} - ${dietCount(spId, k, S.site)}</button>`).join('')}</div>`;
+  if (!slotsOf(spId).length) return { chips: '', body: `<div class="empty1"><div>No diet added for ${esc(species(spId).name)}${canRaise(me()) ? `<button class="az-btn empty1__btn" onclick="go('#/new?dept=diet&sp=${spId}&kind=diet')">${I('add_circle')}Request a diet</button>` : ''}</div></div>` };
+  const chips = `<div class="az-chips az-chips--wrap" role="tablist" aria-label="Level">${levelsOf(spId).map(k => `<button class="az-chip" role="tab" aria-selected="${l === k}" onclick="pickLevel(${spId},'${k}')">${LEVEL[k]} - ${dietCount(spId, k, S.site)}</button>`).join('')}</div>`;
   let body;
   if (l === 'species') {
     const list = slotsOf(spId).filter(a => a.level === 'species'), gone = endedOf(spId);
@@ -110,11 +132,11 @@ function speciesParts(spId, cur) {
     const search = S.animAll ? `<label class="az-search az-search--card">${I('search', 20)}<input id="a-q" placeholder="Search animal ID, name or enclosure" value="${esc(S.aQ)}" oninput="S.aQ=this.value;render()" aria-label="Search animals"></label>` : '';
     body = search + list.map(p => animalCard(p.animal, p.diets.length ? p.diets.map(a => placeDietRow(a, cur === a.id)).join('') : '<div class="place__none">No diet added</div>')).join('')
       + (!withD.length && !S.animAll ? `<div class="nodiet">No animal has its own diet</div>` : '')
-      + (rest ? `<button class="restline" onclick="S.animAll=!S.animAll;S.aQ='';render()"><span>${S.animAll ? `Showing all ${plural(all.length, 'animal')}` : `No diet added · ${plural(rest, 'other animal')}`}</span><b>${S.animAll ? 'Show fewer' : 'Show all'}</b></button>` : '');
+      + (rest ? `<button class="restline" onclick="S.animAll=!S.animAll;S.aQ='';render()"><span>${S.animAll ? `Showing all ${plural(all.length, 'animal')}` : `No animal diet · ${plural(rest, 'other animal')}${all.filter(p => !p.diets.length).every(p => currentDiet({ sp: spId, level: 'animal', ref: p.id })) ? ' eat a wider diet' : ''}`}</span><b>${S.animAll ? 'Show fewer' : 'Show all'}</b></button>` : '');
   } else {
     const list = placesAt(spId, l, S.site), withD = list.filter(p => p.diets.length), none = list.filter(p => !p.diets.length);
-    body = withD.map(p => placeCard(p, cur)).join('') + (!withD.length ? `<div class="nodiet">No ${LEVEL[l].toLowerCase()} diet added</div>` : '')
-      + (none.length && withD.length ? `<div class="restline restline--static"><span>No diet added</span><span class="sub">${none.map(p => esc(p.name)).join(', ')}</span></div>` : '');
+    body = withD.map(p => placeCard(p, cur)).join('') + (!withD.length ? `<div class="nodiet">No ${LEVEL[l].toLowerCase()} diet</div>` : '')
+      + (none.length && withD.length ? `<div class="restline restline--static"><span>No ${LEVEL[l].toLowerCase()} diet</span><span class="sub">${none.map(p => esc(p.name)).join(', ')}</span></div>` : '');
   }
   return { chips, body };
 }
@@ -146,31 +168,48 @@ function notesBlock(d) {
   return `<div class="notes">${rows.map(([k, v]) => `<div class="notes__r"><span>${k}</span><p>${v}</p></div>`).join('')}
     ${d.remark ? `<div class="notes__r notes__r--remark"><span>Remark</span><p>${esc(d.remark)}</p></div>` : ''}${why ? `<div class="notes__r"><span>Change reason</span><p>${why}</p></div>` : ''}</div>`;
 }
-function paneDiet(asgId, { cls = '', back = '', close = '' } = {}) {
+/* the diet header's shade: darker behind the name so it reads on a bright photo (audit, 2 Nov) */
+const dshade = 'linear-gradient(180deg,rgba(0,0,0,.45) 0%,rgba(0,0,0,.14) 30%,rgba(0,0,0,.42) 52%,rgba(0,0,0,.72) 100%)';
+function paneDiet(asgId, { cls = '', back = '', close = '', wide = isTab() } = {}) {
   const a = by('assigns', asgId);
   if (!a) return pane(cls, '', empty1('Diet not found'));
-  const d = diet(a.diet), now = isNow(a);
+  const d = diet(a.diet), [tone, state] = dietStatus(a), when = !ended(a) && !a.group ? slotWhen(a) : '';
   const lead = close ? '' : back ? `<button class="az-iconbtn" onclick="${back === 'history' ? `goBack('#/diets')` : `go('${back}')`}" aria-label="Back">${I('arrow_back')}</button>` : '';
-  const head = `<div class="dhead dhead--photo" style="background-image:${shade},url('${spPhoto(a.sp)}')"><div class="dhead__bar">${lead}<b>Diet Details</b>${iconBtn('info', 'Diet info', `dietInfoSheet('${a.id}')`)}${iconBtn('history', 'History of this diet', `dietHistorySheet('${a.id}')`)}${close ? iconBtn('close', 'Close', `go('${close}')`) : ''}</div>
-    <div class="dhead__who"><span class="dhead__name">${esc(d.name)}</span><span class="dhead__sub">Diet type : <b>${esc(slotKind(a))}${a.group ? ` · ${esc(a.group.label)}` : ''}</b></span>
-    <span class="dhead__tags">${now ? '<span class="az-pill pill-on-dark">Currently active</span>' : ended(a) ? pill('neutral', 'Ended') : `<span class="az-pill pill-on-dark">${esc(slotWhen(a))}</span>`}</span></div></div>`;
-  /* the day switch: the design system's segmented control, always the width of the screen */
+  const head = `<div class="dhead dhead--photo" style="background-image:${dshade},url('${spPhoto(a.sp)}')"><div class="dhead__bar">${lead}<b>Diet Details</b>${iconBtn('info', 'Diet info', `dietInfoSheet('${a.id}')`)}${iconBtn('history', 'History of this diet', `dietHistorySheet('${a.id}')`)}${close ? iconBtn('close', 'Close', `go('${close}')`) : ''}</div>
+    <div class="dhead__who"><span class="dhead__name">${esc(d.name)}</span><span class="dhead__sub">Diet type : <b>${esc(slotKind(a))}${a.group ? ` · ${esc(a.group.label)}` : ''}</b>${when ? ` · ${esc(when)}` : ''}</span>
+    <span class="dhead__tags"><span class="az-pill ${tone === 'positive' ? 'pill-on-dark' : 'pill-on-dark--muted'}">${esc(state)}</span></span></div></div>`;
+  /* the day switch: the design system's segmented control, right above the table it changes and pinned while the table scrolls (audit, 2 Nov) */
   const days = true ? `<div class="dayseg"><div class="az-seg" role="tablist" aria-label="Day">${thumb()}${[[null, 'Full Week'], ...DAYS.map((x, i) => [i, x[0]])].map(([i, l]) => `<span role="tab" tabindex="0" class="${i == null ? 'wide' : ''}" aria-selected="${S.day === i}" aria-label="${i == null ? 'Full week' : DAYS[i]}" onclick="S.day=${i};render();swapFx('.dtable')" onkeydown="if(event.key==='Enter'){S.day=${i};render();swapFx('.dtable')}">${l}</span>`).join('')}</div></div>` : '';
   const groups = dietGroups(d, S.day, 'itemSheet');
-  const body = appliedTo(a) + certLine(d) + `<div class="dtable">${mealTable(groups, isTab(), S.day == null)}</div>` + notesBlock(d);
-  const fab = canRaise(me()) && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="go('#/new?dept=diet&asg=${a.id}')">${I('add_circle')}Raise request</button>` : '';
-  return pane(cls + (fab ? ' has-fab' : ''), head + days, `<div class="body">${body}</div>`, '', `diet-${asgId}`).replace(/<\/section>$/, `${fab}</section>`);
+  const body = appliedTo(a) + certLine(d) + days + `<div class="dtable">${mealTable(groups, wide, S.day == null)}</div>` + nutriLine(d, a) + notesBlock(d);
+  const fab = canRaise(me()) && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="raisePick('${a.id}')">${I('add_circle')}<span class="dfab__t">Raise request</span></button>` : '';
+  return pane(cls + (fab ? ' has-fab' : ''), head, `<div class="body">${body}</div>`, '', `diet-${asgId}`).replace(/<\/section>$/, `${fab}</section>`);
 }
 /* where one diet is applied: every species, level and place it is set on, broad to narrow, each with the animals that eat it there */
 const LVL_IC = { species: 'pets', site: 'location_on', section: 'grid_view', enclosure: 'fence', animal: 'cruelty_free' };
 const useText = x => x.level === 'species' ? `Species-wide · ${species(x.sp).name}` : `${LEVEL[x.level]} · ${targetName(x)}`;
+const dietUses = id => D.assigns.filter(x => x.diet === id && !ended(x))
+  .sort((x, y) => (y.sp === diet(id).sp) - (x.sp === diet(id).sp) || species(x.sp).name.localeCompare(species(y.sp).name) || LVL_RANK(x) - LVL_RANK(y));
+/* the places above a place, named by level: "Site: Lset · Section: Cassowary Paddock" */
+const pathNamed = x => { const p = pathOf(x); return ['site', 'section', 'enclosure'].filter(k => p[k] && LEVELS.indexOf(k) < LEVELS.indexOf(x.level)).map(k => `${LEVEL[k]}: ${placeOf(k, p[k]).name}`).join(' · '); };
 function appliedTo(a) {
-  const d = diet(a.diet), uses = D.assigns.filter(x => x.diet === d.id && !ended(x))
-    .sort((x, y) => (y.sp === d.sp) - (x.sp === d.sp) || species(x.sp).name.localeCompare(species(y.sp).name) || LVL_RANK(x) - LVL_RANK(y));
+  const d = diet(a.diet), uses = dietUses(d.id);
   const many = new Set(uses.map(x => x.sp)).size > 1, n = x => followersOf(x).length, total = uses.reduce((t, x) => t + n(x), 0);
-  const row = x => { const more = [x.level !== 'species' && many ? species(x.sp).name : '', targetPath(x), slotKind(x) !== slotKind(a) ? slotText(x) : ''].filter(Boolean).join(' · ');
+  const row = x => { const more = [x.level !== 'species' && many ? species(x.sp).name : '', pathNamed(x), slotKind(x) !== slotKind(a) ? slotText(x) : ''].filter(Boolean).join(' · ');
     return `<button class="apply__r" onclick="dietAnimalsSheet('${x.id}')"${x.id === a.id ? ' aria-current="true"' : ''}>${I(LVL_IC[x.level])}<span class="t"><b>${x.level === 'species' ? 'Species-wide' : LEVEL[x.level]}</b><span>${esc(x.level === 'species' ? species(x.sp).name : targetName(x))}</span>${more ? `<small>${esc(more)}</small>` : ''}</span><span class="apply__n">${plural(n(x), 'animal')}${I('chevron_right', 20)}</span></button>`; };
   return `<div class="apply"><div class="apply__h"><b>Applied to</b><span>${plural(total, 'animal')}</span></div>${uses.map(row).join('')}</div>`;
+}
+/* Raise request from a diet set at several places asks which place first (audit, 2 Nov) */
+function raisePick(id) {
+  const a = by('assigns', id), uses = dietUses(a.diet);
+  if (uses.length < 2) return go(`#/new?dept=diet&asg=${id}`);
+  openSheet(() => ({ title: 'Which place?', sub: esc(diet(a.diet).name), pick: true,
+    body: uses.map(x => `<button class="az-option" onclick="closeAll();go('#/new?dept=diet&asg=${x.id}')"><span>${esc(useText(x))}<small>${esc([pathNamed(x), plural(followersOf(x).length, 'animal')].filter(Boolean).join(' · '))}</small></span>${I('chevron_right')}</button>`).join('') }));
+}
+/* a short nutrition line on the page, per animal a day; it opens the full list in Diet info (audit, 2 Nov) */
+function nutriLine(d, a) {
+  const nut = nutrition(d), pick = ['Energy', 'Protein', 'Fat', 'Calcium'].map(k => nut.find(x => x.name === k)).filter(Boolean);
+  return pick.length ? `<button class="nline" onclick="dietInfoSheet('${a.id}')"><span class="nline__h">Nutrition · per animal a day</span><span class="nline__v">${pick.map(x => `<span>${x.name} <b>${nutriText(x)}</b></span>`).join('')}</span>${I('chevron_right', 20)}</button>` : '';
 }
 /* Figma "Diet Info": the diet with its species' photo, then when, sharing, open requests, its ID and nutrition (where and the animals are on the page) */
 function dietInfoSheet(id) {
@@ -190,15 +229,15 @@ function dietAnimalsSheet(id) {
   const a = by('assigns', id), list = followersOf(a), d = diet(a.diet);
   openSheet(() => ({ title: 'Animals on this diet', sub: `${esc(d.name)} · ${esc(useText(a))} · ${list.length}`, body: list.length ? list.map(x => animalCard(x)).join('') : '<div class="nodiet">No animal is on this diet</div>' }), SH.length > 0);
 }
-/* Figma "Meal details": the time, the amount, the item with its preparation and cut, the days */
+/* Figma "Meal details": the item first, then the time, the amount, its preparation and cut (or a mix's parts), the days (audit, 2 Nov) */
 function itemSheet(dietId, f, it) {
   const d = diet(dietId), l = entryOf(d, f, it), x = item(it);
   const a = D.assigns.find(z => z.diet === dietId && location.hash.includes(z.id)) || D.assigns.find(z => z.diet === dietId), n = a ? followersOf(a).length : 0, total = toBase(l.qty, l.unit) * n;
-  openSheet(() => ({ title: `${I('schedule', 20)} ${bandText(feed(f))}`, body: `<div class="qcard"><span>Per animal</span><b>${qtyText(l.qty, l.unit)}</b>${n ? `<small>${plural(n, 'animal')} · ${qtyText(total, BASE[l.unit][0])} ${l.cad ? 'a feed' : 'a day'}</small>` : ''}</div>
-    <div class="mcard">${x.mix ? `<span class="mcard__k">Mix</span><b class="mcard__n">${esc(x.name)}</b><span class="mcard__k">Ingredients used</span>${x.mix.map(p => `<span class="mcard__chip"><b>${esc(item(p.item).name)}</b><span>${esc(p.prep)}</span><span>${esc(p.cut)}</span><b>${p.pct}%</b></span>`).join('')}<span class="mcard__k">Per animal</span><span class="nextf">${x.mix.map(p => `<span>${esc(item(p.item).name)} ${qtyText(toBase(l.qty, l.unit) * p.pct / 100, BASE[l.unit][0])}</span>`).join('')}</span>`
-      : `<span class="mcard__k">Item</span><b class="mcard__n">${esc(x.name)}</b><span class="mcard__chip"><span>${esc(l.prep || 'As it comes')}</span><span>${esc(l.cut || 'Whole')}</span></span>`}
+  openSheet(() => ({ title: `${esc(x.name)}${x.mix ? MIXTAG : ''}`, sub: `${I('schedule', 16)} ${bandText(feed(f))}`, body: `<div class="qcard"><span>Per animal</span><b>${qtyText(l.qty, l.unit)}</b>${n ? `<small>${plural(n, 'animal')} · ${qtyText(total, BASE[l.unit][0])} ${l.cad ? 'a feed' : 'a day'}</small>` : ''}</div>
+    <div class="mcard">${x.mix ? `<span class="mcard__k">Ingredients · per animal</span>${ingrChips(x, toBase(l.qty, l.unit))}`
+      : `<span class="mcard__k">Preparation · Cut</span><b class="mcard__n">${esc(l.prep || 'As it comes')} · ${esc(l.cut || 'Whole')}</b>`}
       ${l.cad ? `<span class="mcard__k">Repeats</span><b class="mcard__n">${cadText(l.cad)}</b><span class="mcard__k">Next feeds</span><span class="nextf">${nextFeeds(l, 3).map(s => `<span>${wday(s)} ${fmtDay(s)}</span>`).join('')}</span>`
-        : `<span class="mcard__k">Days</span><div class="daygrid" role="list">${DAYS.map((y, i) => `<span role="listitem" class="${fedOn(l, i) ? 'on' : ''}" aria-label="${y}${fedOn(l, i) ? ', fed' : ', not fed'}">${y.slice(0, 2)}</span>`).join('')}</div>`}</div>` }));
+        : `<span class="mcard__k">Days</span><b class="mcard__n">${daysText(l.days ?? EVERY_DAY)}</b>`}</div>` }));
 }
 /* the diet's own history: every change to it, newest first; a change opens over the list */
 function dietHistorySheet(id) {
@@ -214,10 +253,14 @@ function vDiets(parts) {
     const home = paneDietHome({ cls: 'pane--fill' });
     return spId ? { html: home, overlay: speciesSheet(spId) } : home;
   }
-  /* iPad: Diet on the left, the species on the right; a diet opens in a centred popup over both */
+  /* iPad: Diet on the left. Diet wise: the diet picked on the right (list | detail). Species wise: the species on the right, a diet in a sheet over both */
   const first = S.land === 'diets' ? (dietsFor(S.dKind)[0] || {}).sp : (speciesFor(S.spTab)[0] || {}).id, sp = spId || first || D.species[0].id;
   const a = asgId ? by('assigns', asgId) : null;
   if (a && a.sp === sp) S.lvl[sp] = a.level === 'species' || ended(a) ? 'species' : a.level;
+  if (S.land === 'diets' && (!spId || a)) {
+    const pickd = a || dietsFor(S.dKind)[0] || null;
+    return paneDietHome({ cls: isLand() ? 'pane--w400' : 'pane--w340', cur: pickd ? pickd.id : null }) + (pickd ? paneDiet(pickd.id, { cls: 'pane--fill pane--dcol', wide: isLand() }) : pane('pane--fill', '', empty1('No diet here'), '', 'dcol-none'));
+  }
   const html = paneDietHome({ cls: isLand() ? 'pane--w400' : 'pane--w340', cur: S.land === 'diets' ? (a ? a.id : null) : sp }) + paneSpecies(sp, { cls: 'pane--fill', cur: a ? a.id : null });
   return a ? { html, modal: paneDiet(a.id, { cls: 'pane--fill', close: `#/diets/${sp}` }), modalClose: `#/diets/${sp}`, sheet: a.id } : html;
 }
