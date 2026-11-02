@@ -18,9 +18,14 @@ function speciesFor(tab, cls = S.spCls) {
 /* every diet in use (not ended), at the site picked, by kind */
 /* certified = a dietitian certified it (Kitchen & Diet's Certified / Uncertified) */
 const isCert = a => !!diet(a.diet).cert;
+/* a diet's uses in force at the site picked: one per species it is given to (a diet can be shared), its own species first */
+const usesOf = id => D.assigns.filter(a => a.diet === id && !ended(a) && atSite(a, S.site) && spAnimals(a.sp, S.site).length).sort((x, y) => (y.sp === diet(id).sp) - (x.sp === diet(id).sp));
+/* Diet wise lists diets, one card each however many species share it; the card stands for its first matching use */
 function dietsFor(kind, cert = S.dCert) {
-  const q = S.dQ.trim().toLowerCase();
+  const q = S.dQ.trim().toLowerCase(), seen = new Set();
   return D.assigns.filter(a => !ended(a) && atSite(a, S.site) && spAnimals(a.sp, S.site).length && (kind === 'all' || slotKind(a) === kind) && (cert === 'all' || (cert === 'cert') === isCert(a)) && (!q || [diet(a.diet).name, species(a.sp).name, scopeText(a)].some(x => x.toLowerCase().includes(q))))
+    .sort((x, y) => (y.sp === diet(y.diet).sp) - (x.sp === diet(x.diet).sp))
+    .filter(a => !seen.has(a.diet) && seen.add(a.diet))
     .sort((x, y) => species(x.sp).name.localeCompare(species(y.sp).name) || LEVELS.indexOf(x.level) - LEVELS.indexOf(y.level) || kindRank(x) - kindRank(y));
 }
 /* "if the person may raise requests, show the count": open diet requests, opening Help Desk on Diet */
@@ -36,10 +41,11 @@ function homeTab(k) {
   if (b) b.scrollTop = Math.min(b.scrollTop, r ? r.offsetHeight : 0);
   S.land = k; go('#/diets'); swapFx('.pane--home .list');
 }
-/* one diet in the Diet wise list: the species' photo, the diet's name, where and when */
+/* one diet in the Diet wise list: its name, the species it is given to and where, when, and how many species */
 function dietRow(a, current) {
-  const d = diet(a.diet), sp = species(a.sp), now = isNow(a);
-  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}>${spThumb(sp)}<span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(sp.name)} · ${esc(a.level === 'species' ? 'Species-wide' : `${LEVEL[a.level]} · ${targetName(a)}`)}</span><span class="meta">${esc(slotText(a))} · ${plural(followersOf(a).length, 'animal')}</span></span>${now ? pill('positive', 'Active') : ''}</a>`;
+  const d = diet(a.diet), uses = usesOf(d.id), sps = [...new Set(uses.map(u => u.sp))];
+  const where = [...new Set(uses.map(u => u.level === 'species' ? 'Species-wide' : `${LEVEL[u.level]} · ${targetName(u)}`))].join(', ');
+  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(sps.map(id => species(id).name).join(', '))} · ${esc(where)}</span><span class="meta">${esc(slotText(a))} · ${plural(sps.length, 'species', 'species')}</span></span></a>`;
 }
 /* the filters, in one sheet (the design system's Search and filter): Diet wise = kind + certification; Species wise = class + diet status */
 const FILTERS = {
@@ -69,7 +75,7 @@ function paneDietHome({ cls = '', cur = null } = {}) {
     const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species or place" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label></div>`;
     const list = dietsFor(S.dKind);
     return pane(`${cls} pane--home`, top, head + search + chips('dKind', [['all', 'All'], ...KINDS.map(k => [k, k])], k => dietsFor(k).length)
-      + `<div class="body">${listToggle('dCert', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']])}<div class="list list--8">${list.length ? list.map(a => dietRow(a, cur === a.id)).join('') : empty1('No diet here')}</div></div>`, '', 'home');
+      + `<div class="body">${listToggle('dCert', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']])}<div class="list list--8">${list.length ? list.map(a => dietRow(a, !!cur && (by('assigns', cur) || {}).diet === a.diet)).join('') : empty1('No diet here')}</div></div>`, '', 'home');
   }
   const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="sp-q" placeholder="Search species or taxonomy ID" value="${esc(S.spQ)}" oninput="S.spQ=this.value;render()" aria-label="Search species"></label></div>`;
   const list = speciesFor(S.spTab), clsChips = chips('spCls', [['all', 'All'], ...CLASSES.map(c => [c, c]), ['Other', 'Other']], c => speciesFor(S.spTab, c).length);
