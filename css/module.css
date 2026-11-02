@@ -1025,8 +1025,7 @@ button.pipe__c{cursor:pointer}
 .pipe__p{font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant)}
 .pipe__why{color:var(--neutralSecondary)}
 
-/* ---------- round 15: iPad split screens as Apple's (owner, 2 Nov): the left column floats as a rounded panel inset from the edges,
-   lifted by a soft shadow with no outline; the right content runs edge to edge ---------- */
-.tab .main[class]:has(> .pane + .pane){gap:0;padding:0;background:var(--displaybgSecondary)}
-.tab .main:has(> .pane + .pane) > .pane:first-child{margin:10px 0 10px 10px;border-radius:24px;overflow:hidden;box-shadow:0 12px 32px rgba(31,65,91,.12),0 2px 8px rgba(31,65,91,.06);z-index:1}
-.tab .main:has(> .pane + .pane) > .pane + .pane{border-radius:0;box-shadow:none;margin-left:10px}
+/* ---------- round 15: iPad split screens as Apple's (owner, 2 Nov): left and right float as rounded panels on a light canvas,
+   a gap between them, lifted by a soft shadow with no outline ---------- */
+.tab .main[class]:has(> .pane + .pane){gap:10px;padding:10px;background:#E9EFEE}
+.tab .main:has(> .pane + .pane) > .pane{border-radius:24px;overflow:hidden;box-shadow:0 12px 32px rgba(31,65,91,.1),0 2px 8px rgba(31,65,91,.05)}
