@@ -41,10 +41,12 @@ function homeTab(k) {
   if (b) b.scrollTop = Math.min(b.scrollTop, r ? r.offsetHeight : 0);
   S.land = k; go('#/diets'); swapFx('.pane--home .list');
 }
-/* one diet in the Diet wise list: a diet avatar, its name, its kind, how many species get it, and its ID */
+/* each kind of diet has its colour from the design system: on the diet avatars, and as a dot on its chip */
+const KIND_C = { 'Year-round': 'yr', Seasonal: 'sea', 'Time-bound': 'tb', Age: 'age', Weight: 'wt' };
+/* one diet in the Diet wise list: a diet avatar in its kind's colour, its name, its kind, how many species get it, and its ID */
 function dietRow(a, current) {
   const d = diet(a.diet), n = new Set(usesOf(d.id).map(u => u.sp)).size;
-  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotKind(a))}</span><span class="dfoot"><span class="dfoot__n">${n} species</span><span class="did">${esc(d.id)}</span></span></span></a>`;
+  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar k-${KIND_C[slotKind(a)]}">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotKind(a))}</span><span class="dfoot"><span class="dfoot__n">${n} species</span><span class="did">${esc(d.id)}</span></span></span></a>`;
 }
 /* the filters, in one sheet (the design system's Search and filter): Diet wise = kind + certification; Species wise = class + diet status */
 const FILTERS = {
@@ -69,11 +71,11 @@ const listToggle = (key, opts) => `<div class="ltoggle"><div class="az-segment a
 /* the page scrolls as one: the requests row, search and chips go up with the list; Diet wise | Species wise stays pinned under the top bar */
 function paneDietHome({ cls = '', cur = null } = {}) {
   const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true }), head = myRequestsRow() + dietTabs(tab);
-  const chips = (key, opts, count) => `<div class="az-chips" role="tablist">${opts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l} - ${count(k)}</button>`).join('')}</div>`;
+  const chips = (key, opts, count, dot = () => '') => `<div class="az-chips" role="tablist">${opts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${dot(k)}${l} - ${count(k)}</button>`).join('')}</div>`;
   if (tab === 'diets') {
     const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species, place or ID" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label></div>`;
     const list = dietsFor(S.dKind);
-    return pane(`${cls} pane--home`, top, head + search + chips('dKind', [['all', 'All'], ...KINDS.map(k => [k, k])], k => dietsFor(k).length)
+    return pane(`${cls} pane--home`, top, head + search + chips('dKind', [['all', 'All'], ...KINDS.map(k => [k, k])], k => dietsFor(k).length, k => k === 'all' ? '' : `<i class="kdot k-${KIND_C[k]}" aria-hidden="true"></i>`)
       + `<div class="body">${listToggle('dCert', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']])}<div class="list list--8">${list.length ? list.map(a => dietRow(a, !!cur && (by('assigns', cur) || {}).diet === a.diet)).join('') : empty1('No diet here')}</div></div>`, '', 'home');
   }
   const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="sp-q" placeholder="Search species or taxonomy ID" value="${esc(S.spQ)}" oninput="S.spQ=this.value;render()" aria-label="Search species"></label></div>`;
