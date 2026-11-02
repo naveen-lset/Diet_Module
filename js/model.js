@@ -331,7 +331,8 @@ function applyApproval(r, at) {
       else if (c.op === 'remove') m.items = m.items.filter(i => i.item !== c.item);
       else m.items = m.items.map(i => i.item === c.item ? line : i);
     });
-    D.diets.push({ id, name: r.title, sp: r.sp, type: 'timebound', cert: { by: r.by, at: at.slice(0, 10) }, kcert: null, note: r.note || '', site: '', remark: '', reason: r.reason, remarks: r.text, shared: [], meals: meals.filter(m => m.items.length) });
+    /* named like every diet, what kind of diet it is then the species: Short-term + the diet it changes (Year Round Lovebird Diet → Short-term Lovebird Diet) */
+    D.diets.push({ id, name: `Short-term ${B.name.replace(/^Year Round /, '')}`, sp: r.sp, type: 'timebound', cert: { by: r.by, at: at.slice(0, 10) }, kcert: null, note: r.note || '', site: '', remark: '', reason: r.reason, remarks: r.text, shared: [], meals: meals.filter(m => m.items.length) });
     D.assigns.push({ id: 'AS-' + (D.assigns.length + 1), diet: id, sp: r.sp, level: r.level, ref: r.ref, start: r.start, end: r.end, req: r.id, recur: false });
     addHistory({ ...H, type: 'created', diet: id, created: 1, from: B.id,
       lines: r.changes.map(c => ({ op: c.op, feed: c.feed, was: c.op === 'add' ? null : { ...entryOf(B, c.feed, c.item) }, now: c.op === 'remove' ? null : { item: c.to, qty: c.qty, unit: c.unit, prep: c.prep || '', cut: c.cut || '', days: c.days ?? EVERY_DAY, cad: c.cad || null } })) });
