@@ -985,7 +985,8 @@ span.cover__p{color:var(--neutralSecondary);cursor:default}
 /* dark teal, the design system's detail header, as WhatsApp's dark wallpaper: faint light doodles, some filled */
 .dhead--doodle{position:relative;overflow:hidden;background:var(--OnPrimaryContainer);color:var(--white)}
 .dhead--doodle > :not(.dhead__dd){position:relative}
-.dhead__dd{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+/* the doodles fade behind the diet's name, so the centre reads cleanly; full strength around it */
+.dhead__dd{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;-webkit-mask-image:radial-gradient(ellipse 70% 62% at 32% 68%,rgba(0,0,0,.22) 45%,#000 100%);mask-image:radial-gradient(ellipse 70% 62% at 32% 68%,rgba(0,0,0,.22) 45%,#000 100%)}
 .dhead__ddg{fill:none;stroke:rgba(255,255,255,.14);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
 .dhead__ddg .f{fill:rgba(255,255,255,.1)}
 .dhead--doodle .dhead__bar .az-iconbtn,.dhead--doodle .dhead__bar b{color:var(--white)}

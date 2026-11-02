@@ -218,8 +218,9 @@ function doodleSvg() {
   const rnd = () => (seed = seed * 16807 % 2147483647) / 2147483647, pick = a => a[Math.floor(rnd() * a.length)];
   const gap = (a, b) => Math.min(Math.abs(a - b), W - Math.abs(a - b)), free = (x, y, sz, pad) => pts.every(p => Math.hypot(gap(p.x, x), gap(p.y, y)) > (p.sz + sz) / 2 + pad);
   /* big first, then medium, then small fillers until no gap is left, as WhatsApp's wallpaper */
-  [[big, 36, 10, 14, 2, 26], [mid, 22, 8, 60, 1.5, 26], [small, 7, 6, 400, 1.5, 180]].forEach(([set, min, span, n, pad, tilt]) => {
-    for (let k = 0, got = 0; k < 9000 && got < n; k++) { const sz = min + rnd() * span, x = rnd() * W, y = rnd() * W;
+  /* the drawings are smaller than their boxes, so the boxes may overlap a little (a negative pad) and the drawings still don't touch */
+  [[big, 32, 8, 22, -3, 20], [mid, 21, 7, 220, -3, 20], [small, 6, 5, 900, 0, 180]].forEach(([set, min, span, n, pad, tilt]) => {
+    for (let k = 0, got = 0; k < 30000 && got < n; k++) { const sz = min + rnd() * span, x = rnd() * W, y = rnd() * W;
       if (free(x, y, sz, pad)) { const g = pick(set); pts.push({ x, y, sz, r: Math.round((rnd() - .5) * tilt * 2), g, f: FILLED.includes(g) && rnd() < .5 }); got++; } }
   });
   const use = (p, x, y) => `<use${p.f ? ' class="f"' : ''} href="#dd-${p.g}" x="${(x - p.sz / 2).toFixed(1)}" y="${(y - p.sz / 2).toFixed(1)}" width="${p.sz.toFixed(1)}" height="${p.sz.toFixed(1)}"${p.r ? ` transform="rotate(${p.r} ${x.toFixed(1)} ${y.toFixed(1)})"` : ''}/>`;
