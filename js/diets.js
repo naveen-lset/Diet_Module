@@ -277,21 +277,32 @@ function nutriTab(d) {
   return (e ? `<div class="nbig"><span class="nbig__ic">${I('bolt', 24, true)}</span><span><b>${nutriText(e)}</b><small>per animal, per day</small></span></div>` : '')
     + groups.map(g => rows(g) ? `<div class="nutri"><div class="nutri__h">${g}</div><div class="nutri__rows">${rows(g)}</div></div>` : '').join('');
 }
-/* History as a pipeline (owner, 2 Nov): every step of the diet in date order, joined by one line: created, certified by the dietitian,
-   each change, certified by the kitchen. A change opens to its lines; the newest step is marked Latest */
-const PIPE = { created: ['add_circle', 'new'], cert: ['verified', 'cert'], kcert: ['soup_kitchen', 'cert'], edited: ['edit', 'edit'], shared: ['share', 'other'], lifecycle: ['event_repeat', 'other'] };
+/* History as a stepper (owner, 2 Nov, from their reference): one white card, the steps oldest first on one line. Done steps are filled with a
+   tick, the latest is a ring with a dot (where the diet is now), steps still to come are empty rings: a missing certification, the end of a dated diet.
+   The line is coloured up to the latest step. Each step: what on the left, the date and time on the right; a change opens to its lines */
 function historyTab(a, d) {
-  const who = id => `${youName(id)} · ${esc(user(id).title)}`, steps = [];
+  const who = id => `${youName(id)}, ${esc(user(id).title)}`, steps = [], todo = [];
   const hist = changesIn({ dietId: d.id });
-  if (d.made && !hist.some(h => h.created && h.diet === d.id)) steps.push({ at: `${d.made.at}T09:00`, k: 'created', t: 'Created', p: esc(useText(dietUses(d.id)[0] || a)), w: who(d.made.by), day: true });
-  if (d.cert) steps.push({ at: `${d.cert.at}T12:00`, k: 'cert', t: 'Certified by the dietitian', w: who(d.cert.by), day: true });
-  if (d.kcert) steps.push({ at: `${d.kcert.at}T12:00`, k: 'kcert', t: 'Certified by Kitchen', w: who(d.kcert.by), day: true });
-  hist.forEach(h => steps.push({ at: h.at, k: h.created ? 'created' : h.type, t: h.created ? 'Created' : HTYPE[h.type], p: esc(changeSummary(h)) + (h.reason ? ` <span class="pipe__why">· ${esc(h.reason)}</span>` : ''), w: `${who(h.by)}${h.req ? ` · ${h.req}` : ''}`, open: h.id }));
-  steps.sort((x, y) => (x.at < y.at ? -1 : 1));
-  if (!steps.length) return '<div class="nodiet">No history yet</div>';
-  return `<div class="pipe">${steps.map((x, i) => { const [ic, tone] = PIPE[x.k] || PIPE.lifecycle, last = i === steps.length - 1;
-    const card = `<span class="pipe__top"><b>${x.t}</b>${last ? '<span class="pipe__new">Latest</span>' : ''}<span class="meta">${x.day ? fmtDayY(x.at.slice(0, 10)) : `${fmtDayY(x.at.slice(0, 10))}, ${fmtTime(x.at)}`}</span></span>${x.p ? `<span class="pipe__p">${x.p}</span>` : ''}<span class="meta">${x.w}</span>`;
-    return `<div class="pipe__s${last ? ' pipe__s--last' : ''}"><span class="pipe__dot pipe__dot--${tone}">${I(ic, 18, true)}</span>${x.open ? `<button class="pipe__c pick" onclick="changeSheet('${x.open}')">${card}</button>` : `<div class="pipe__c">${card}</div>`}</div>`; }).join('')}</div>`;
+  /* within a day: created, then changes, then the certifications (they carry no time), then the end */
+  if (d.made && !hist.some(h => h.created && h.diet === d.id)) steps.push({ at: `${d.made.at}T09:00`, o: 0, t: 'Diet created', p: esc(useText(dietUses(d.id)[0] || a)), w: who(d.made.by), day: true });
+  if (d.cert) steps.push({ at: `${d.cert.at}T00:00`, o: 2, t: 'Certified by the dietitian', w: who(d.cert.by), day: true });
+  if (d.kcert) steps.push({ at: `${d.kcert.at}T00:00`, o: 3, t: 'Certified by Kitchen', w: who(d.kcert.by), day: true });
+  hist.forEach(h => steps.push({ at: h.at, o: h.created ? 0 : 1, t: h.created ? 'Diet created' : HTYPE[h.type], p: `${esc(changeSummary(h))}${h.reason ? ` · ${esc(h.reason)}` : ''}`, w: `${who(h.by)}${h.req ? ` · ${h.req}` : ''}`, open: h.id }));
+  steps.sort((x, y) => x.at.slice(0, 10).localeCompare(y.at.slice(0, 10)) || x.o - y.o || x.at.localeCompare(y.at));
+  if (!d.cert) todo.push({ t: 'Certified by the dietitian', p: 'Waiting' });
+  if (!d.kcert) todo.push({ t: 'Certified by Kitchen', p: 'Waiting' });
+  if (a.end && !a.recur && !ended(a)) todo.push({ at: `${a.end}T23:59`, t: 'Diet ends', p: esc(useText(a)), day: true });
+  if (ended(a)) steps.push({ at: `${a.end}T23:59`, o: 4, t: 'Diet ended', p: esc(useText(a)), day: true });
+  if (!steps.length && !todo.length) return '<div class="nodiet">No history yet</div>';
+  const all = steps.map((x, i) => ({ ...x, st: i === steps.length - 1 ? 'now' : 'done' })).concat(todo.map(x => ({ ...x, st: 'todo' })));
+  const row = (x, i) => {
+    const mark = x.st === 'done' ? I('check', 18) : x.st === 'now' ? '<i></i>' : '';
+    const when = x.at ? `<span class="step__w"><b>${fmtDayY(x.at.slice(0, 10))}</b>${x.day ? '' : `<span>${fmtTime(x.at)}</span>`}</span>` : '';
+    const inner = `<span class="step__m step__m--${x.st}">${mark}</span><span class="step__t"><b>${x.t}</b>${x.p ? `<span>${x.p}</span>` : ''}${x.w ? `<small>${x.w}</small>` : ''}</span>${when}`;
+    const line = i < all.length - 1 ? ` step--${all[i + 1].st === 'todo' ? 'grey' : 'on'}` : ' step--last';
+    return x.open ? `<button class="step pick${line}" onclick="changeSheet('${x.open}')">${inner}</button>` : `<div class="step${line}">${inner}</div>`;
+  };
+  return `<div class="steps">${all.map(row).join('')}</div>`;
 }
 /* Figma "Diet Info": the diet with its species' photo, then when, sharing, open requests and its ID (nutrition, places and history have their tabs) */
 function dietInfoSheet(id) {
