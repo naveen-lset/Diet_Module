@@ -138,37 +138,33 @@ const dietGroups = (d, day = null, click = null) => d.meals.map(m => ({ feed: m.
 const cadTag = c => `<span class="cadtag">${I('event_repeat', 16)}${cadText(c)}</span>`;
 const dayMark = r => r.cad ? cadTag(r.cad) : letters(r.mask);
 const letters = mask => `<span class="dayl" aria-label="${daysText(mask)}">${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((x, i) => `<i class="${mask & (1 << i) ? 'on' : ''}">${x}</i>`).join('')}</span>`;
-function linesView(groups, { act = false } = {}) {
-  if (!groups.length) return `<div class="nodiet">Nothing to feed on this day</div>`;
-  if (isPhone()) return groups.map(g => `<div class="band"><div class="band__h">${I('schedule', 18)}${bandText(feed(g.feed))}<small>${plural(g.rows.length, 'item')}</small></div>${g.rows.map(r => {
-    const inner = `<span class="t"><b>${r.name}${r.nameWas || ''}</b>${r.gar || r.garWas ? `<span>${r.gar || ''}${r.garWas || ''}</span>` : ''}${r.cad || r.mask !== EVERY_DAY || r.day.includes('was') ? `<span>${r.cad ? cadTag(r.cad) : r.mask === EVERY_DAY ? 'Daily' : letters(r.mask)}${r.day.includes('class="was"') ? r.day.slice(r.day.indexOf('<span class="was">')) : ''}</span>` : ''}</span><span class="q">${r.amt}</span>${act && r.act ? `<span class="act">${r.act}</span>` : ''}`;
-    return r.click ? `<button class="drow ${r.cls}" onclick="${r.click}">${inner}</button>` : `<div class="drow ${r.cls}">${inner}</div>`;
-  }).join('')}</div>`).join('');
-  const body = groups.map(g => g.rows.map((r, i) => {
-    let run = 1;
-    while (i + run < g.rows.length && g.rows[i + run].day === r.day) run++;
-    const dayCell = i === 0 || g.rows[i - 1].day !== r.day ? `<td class="dy" rowspan="${run}">${r.day}</td>` : '';
-    return `<tr class="${r.cls}${r.click ? ' click' : ''}"${r.click ? ` onclick="${r.click}" tabindex="0" onkeydown="if(event.key==='Enter')${r.click}"` : ''}>${i === 0 ? `<td class="tm" rowspan="${g.rows.length}">${bandText(feed(g.feed))}</td>` : ''}${dayCell}<td class="it"><b>${r.name}</b>${r.gar ? ` <span class="gar">(${r.gar})</span>` : ''}${r.nameWas || ''}${r.garWas || ''}</td><td class="amt">${r.amt}</td>${act ? `<td class="act">${r.act || ''}</td>` : ''}</tr>`;
-  }).join('')).join('');
-  return `<div class="dtab-wrap"><table class="dtab"><thead><tr><th>Time</th><th>Day</th><th>Item</th><th>Daily amt</th>${act ? '<th></th>' : ''}</tr></thead><tbody>${body}</tbody></table></div>`;
-}
+/* requests, history and the form show their lines in the same Kitchen table as Diet Details, with the change marks (audit, 2 Nov) */
+const linesView = (groups, { act = false } = {}) => mealTable(groups, isTab(), true, { act });
 /* the diet as the Kitchen table (owner, 2 Nov): Time | Day | Item | Daily amt, the time and the day spanning their runs of items as live.
-   On the phone the time sits on top of its items. showDays: off when one day is picked. A tap on an item opens the line */
-function mealTable(groups, wide = false, showDays = true) {
+   On the phone the time sits on top of its items. showDays: off when one day is picked. A tap on an item opens the line.
+   Change marks as the Kitchen: a changed line is yellow with what it was under it, a stopped one red and struck through.
+   act: a last column of actions; add: f => the js for "+ Add item" under each time (the request form) */
+function mealTable(groups, wide = false, showDays = true, { act = false, add = null } = {}) {
   if (!groups.length) return `<div class="nodiet">Nothing to feed on this day</div>`;
-  const cols = (wide ? 1 : 0) + (showDays ? 1 : 0) + 2, still = ' onclick="event.stopPropagation()"';
+  const cols = (wide ? 1 : 0) + (showDays ? 1 : 0) + 2 + (act ? 1 : 0), still = ' onclick="event.stopPropagation()"';
   const itemCell = r => { const x = item(r.line.item);
-    return x.mix ? `<b>${esc(x.name)}</b><span class="mixtag">MIX</span><span class="mtab__s">· ${plural(x.mix.length, 'item')}</span><span class="ingr">${x.mix.map(p => `<span><b>${esc(item(p.item).name)} · ${p.pct}%</b><small>${esc([p.prep, p.cut].filter(Boolean).join(' · '))}</small></span>`).join('')}</span>`
-      : `<b>${esc(x.name)}</b>${r.gar ? `<span class="mtab__s mtab__s--i">(${r.gar})</span>` : ''}`; };
-  const body = groups.map(g => (wide ? '' : `<tr class="mtab__band"><td colspan="${cols}"><span>${I('schedule', 18)}${bandText(feed(g.feed))}</span></td></tr>`) + g.rows.map((r, i) => {
-    let run = 1;
-    while (i + run < g.rows.length && g.rows[i + run].day === r.day) run++;
-    const time = wide && i === 0 ? `<td class="mtab__t" rowspan="${g.rows.length}"${still}>${bandText(feed(g.feed))}</td>` : '';
-    const day = showDays && (i === 0 || g.rows[i - 1].day !== r.day) ? `<td class="mtab__d" rowspan="${run}"${still}>${r.day}</td>` : '';
-    return `<tr onclick="${r.click}" tabindex="0" onkeydown="if(event.key==='Enter'){${r.click}}">${time}${day}<td class="mtab__i">${itemCell(r)}</td><td class="mtab__q">${r.amt}</td></tr>`;
-  }).join('')).join('');
-  return `<div class="mtab-wrap"><table class="mtab${wide ? ' mtab--wide' : ''}"><thead><tr>${wide ? '<th>Time</th>' : ''}${showDays ? '<th>Day</th>' : ''}<th>Item</th><th>Daily amt</th></tr></thead><tbody>${body}</tbody></table></div>`;
+    return `<b>${r.name}</b>${x && x.mix ? `<span class="mtab__s">· ${plural(x.mix.length, 'item')}</span>${ingrChips(x)}` : r.gar ? `<span class="mtab__s mtab__s--i">(${r.gar})</span>` : ''}${r.nameWas || ''}${r.garWas || ''}`; };
+  const body = groups.map(g => {
+    const rows = g.rows.map((r, i) => {
+      let run = 1;
+      while (i + run < g.rows.length && g.rows[i + run].day === r.day) run++;
+      const time = wide && i === 0 ? `<td class="mtab__t" rowspan="${g.rows.length + (add ? 1 : 0)}"${still}>${bandText(feed(g.feed))}</td>` : '';
+      const day = showDays && (i === 0 || g.rows[i - 1].day !== r.day) ? `<td class="mtab__d" rowspan="${run}"${still}>${r.day}</td>` : '';
+      const tap = r.click ? ` class="tap${r.cls ? ' ' + r.cls : ''}" onclick="${r.click}" tabindex="0" onkeydown="if(event.key==='Enter'){${r.click}}"` : r.cls ? ` class="${r.cls}"` : '';
+      return `<tr${tap}>${time}${day}<td class="mtab__i">${itemCell(r)}</td><td class="mtab__q">${r.amt}</td>${act ? `<td class="mtab__a">${r.act || ''}</td>` : ''}</tr>`;
+    }).join('');
+    const more = add ? `<tr class="mtab__add"><td colspan="${cols - (wide ? 1 : 0)}"><button onclick="${add(g.feed)}">${I('add', 20)}Add item</button></td></tr>` : '';
+    return (wide ? '' : `<tr class="mtab__band"><td colspan="${cols}"><span>${I('schedule', 18)}${bandText(feed(g.feed))}</span></td></tr>`) + rows + more;
+  }).join('');
+  return `<div class="mtab-wrap"><table class="mtab${wide ? ' mtab--wide' : ''}"><thead><tr>${wide ? '<th>Time</th>' : ''}${showDays ? '<th>Day</th>' : ''}<th>Item</th><th>Daily amt</th>${act ? '<th></th>' : ''}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
+/* a mix's parts as the Kitchen table's chips: the item and its share, then its preparation and cut */
+const ingrChips = (x, per = null) => `<span class="ingr">${x.mix.map(p => `<span><b>${esc(item(p.item).name)} · ${per ? qtyText(per * p.pct / 100, 'g') : p.pct + '%'}</b><small>${esc([p.prep, p.cut].filter(Boolean).join(' · '))}</small></span>`).join('')}</span>`;
 /* changed lines only, grouped by feed time (requests and history) */
 function changeGroups(base, changes) {
   const feeds = [...new Set(changes.map(c => c.feed))].sort((a, b) => a - b);
@@ -194,23 +190,27 @@ const spThumb = sp => `<span class="thumb"><img src="${spPhoto(sp.id)}" alt="" l
 function speciesRow(sp, { end = '', href, current = false, sub = '' } = {}) {
   return `<a class="sprow pick" href="${href}"${current ? ' aria-current="true"' : ''}>${spThumb(sp)}<span class="sprow__t"><b>${esc(sp.name)}</b><span class="sub sci">${esc(sp.sci)}</span>${sub ? `<span class="meta">${sub}</span>` : ''}</span>${end}</a>`;
 }
-/* the diet card (Figma plan card, a plain Antz fill); the diet's name, never its ID */
+/* a diet's state today: fed now, not fed by anyone now, starting later, or ended */
+function dietStatus(a) {
+  if (ended(a)) return ['neutral', 'Ended'];
+  if (isNow(a)) return ['positive', 'Currently active'];
+  if (inForce(a, TODAY)) return ['neutral', 'Not in use now'];
+  return ['neutral', `Starts ${fmtDay(slotDay(a))}`];
+}
+/* a diet in a species' list: the Diet wise row (avatar, name, kind and when) with its state and its animals (audit, 2 Nov: one diet card) */
 function dietCard(a, { current = false } = {}) {
-  const d = diet(a.diet), now = isNow(a), off = ended(a), n = followersOf(a).length;
-  const cls = off ? 'dcard--ended' : now ? '' : 'dcard--later';
-  const tags = [now ? pill('positive', 'Currently active') : '', off ? pill('neutral', 'Ended') : '', !d.cert ? pill('negative', 'Not certified') : ''].join('');
-  return `<a class="dcard pick ${cls}" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}>${tags ? `<span class="dcard__tags">${tags}</span>` : ''}<span class="dcard__name">${esc(d.name)}</span><span class="dcard__kind">${esc(slotText(a))}</span>
-    <span class="dcard__foot"><span class="dcard__chip">${I('pets', 18)}${plural(n, 'animal')}</span></span></a>`;
+  const d = diet(a.diet), n = followersOf(a).length, [tone, label] = dietStatus(a);
+  return `<a class="sprow dietrow pick${ended(a) ? ' dietrow--ended' : ''}" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotText(a))}</span><span class="dfoot"><span class="dfoot__tags">${pill(tone, label)}${!d.cert ? pill('negative', 'Not certified') : ''}</span><span class="dfoot__n">${plural(n, 'animal')}</span></span></span></a>`;
 }
 /* one diet set at a place, as a row of its card */
 function placeDietRow(a, current) {
   const d = diet(a.diet);
-  return `<a class="place__d pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="t"><b>${esc(d.name)}</b><span class="sub">${esc(slotText(a))}${isNow(a) ? ' · Currently active' : ''}</span></span>${I('chevron_right', 20)}</a>`;
+  return `<a class="place__d pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar davatar--s">${I('restaurant', 20)}</span><span class="t"><b>${esc(d.name)}</b><span class="sub">${esc(slotText(a))} · ${esc(dietStatus(a)[1])}</span></span>${I('chevron_right', 20)}</a>`;
 }
 const PLACE_ICON = { site: 'location_on', section: 'domain', enclosure: 'fence' };
 function placeCard(p, cur) {
   const sub = [p.path, plural(p.n, 'animal'), p.level === 'section' ? plural(p.encl, 'enclosure') : ''].filter(Boolean).join(' · ');
-  return `<div class="place"><div class="place__top"><span class="thumb">${I(PLACE_ICON[p.level])}</span><span class="place__t"><b>${esc(p.name)}</b><span class="sub">${esc(sub)}</span></span></div>${p.diets.length ? p.diets.map(a => placeDietRow(a, cur === a.id)).join('') : '<div class="place__none">No diet added</div>'}</div>`;
+  return `<div class="place"><div class="place__top"><span class="thumb">${I(PLACE_ICON[p.level])}</span><span class="place__t"><b>${esc(p.name)}</b><span class="sub">${esc(sub)}</span></span></div>${p.diets.length ? p.diets.map(a => placeDietRow(a, cur === a.id)).join('') : `<div class="place__none">No ${p.level} diet</div>`}</div>`;
 }
 const SEXT = { M: 'M', F: 'F', U: 'UD' };
 function animalCard(a, extra = '') {
