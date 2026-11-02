@@ -304,7 +304,8 @@ function SEED(t) {
     items.push({ id, name, unit: 'g', preps: ['Mixed'], kitchen, stock: 999, stockUnit: 'kg', nutri, pieceG: null, mix }); ITEM_ID[name] = id; });
   const diets = DIETS_RAW.map(([id, name, sp, type, meals]) => {
     const m = DIET_META[id] || {};
-    return { id, name, sp, type, cert: m.cert ? { by: m.cert[0], at: addDays(t, m.cert[1]) } : null, kcert: m.kcert ? { by: m.kcert[0], at: addDays(t, m.kcert[1]) } : null,
+    /* made: the diet was created on the web by the Diet Manager, two weeks before its first certification (demo) */
+    return { id, name, sp, type, made: { by: 'u-narendra', at: addDays(t, (m.cert ? m.cert[1] : -20) - 14) }, cert: m.cert ? { by: m.cert[0], at: addDays(t, m.cert[1]) } : null, kcert: m.kcert ? { by: m.kcert[0], at: addDays(t, m.kcert[1]) } : null,
       note: m.note || '', site: m.site || '', remark: m.remark || '', reason: m.reason || '', remarks: m.remarks || '', shared: m.shared || [],
       meals: meals.map(([feed, rows]) => ({ feed, items: rows.map(([n, qty, unit, prep, cut, days = WK.daily]) => typeof days === 'object'
       ? { item: ITEM_ID[n], qty, unit, prep, cut, days: WK.daily, cad: days.every ? { every: days.every, from: addDays(t, days.from) } : { monthly: days.monthly } }

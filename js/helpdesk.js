@@ -87,7 +87,8 @@ function paneRequest(id, { cls = '' } = {}) {
       if (e.kind === 'comment') return `<div class="az-tl"><span class="az-tl__dot">${avatar(user(e.by).name, '24')}</span><span class="az-tl__text"><span class="az-tl__title">${youName(e.by)}</span><span class="az-tl__meta">${fmtAt(e.at)}</span><p>${esc(e.note)}</p></span></div>`;
       const [t, ic, tone] = EVT[e.kind];
       return `<div class="az-tl"><span class="az-tl__dot ${tone}">${I(ic, 20)}</span><span class="az-tl__text"><span class="az-tl__title">${t}${e.kind === 'delayed' ? ` till ${fmtDay(e.until)}` : ''}</span><span class="az-tl__meta">${youName(e.by)} • ${fmtAt(e.at)}</span>${e.reason || e.note ? `<p class="plain">${esc([e.reason, e.note].filter(Boolean).join('. '))}</p>` : ''}</span></div>`; }).join('')}</div></div>`;
-  return pane(cls, topbar({ back, title: r.id, actions: more }) + head, `<div class="body">${body}</div>`, statusBar(r), `req-${r.id}`);
+  /* the record header scrolls away with the request; only the top bar and the status bar stay */
+  return pane(cls, topbar({ back, title: r.id, actions: more }), head + `<div class="body">${body}</div>`, statusBar(r), `req-${r.id}`);
 }
 /* no diet for a day: each feed time of the diet in force, given or not */
 function skipView(r) {
@@ -107,10 +108,10 @@ function nextLine(r) {
 function statusBar(r) {
   const a = actionsFor(r, me()), at = r.events.filter(e => e.kind !== 'comment').pop().at, s = stateOf(r);
   let btns = '';
-  if (a.includes('approve')) btns = isPhone() ? `<button class="az-btn az-btn--approve" onclick="approveSheet('${r.id}')">${I('check')}Approve</button><button class="az-btn az-btn--reject" onclick="reasonSheet('${r.id}','reject')">Reject</button>`
-    : `<button class="az-btn az-btn--reject" onclick="reasonSheet('${r.id}','reject')">Reject</button><button class="az-btn az-btn--approve" onclick="approveSheet('${r.id}')">${I('check')}Approve</button>`;
+  /* Reject and Approve side by side on every device, so the request keeps most of the phone screen (audit, 2 Nov) */
+  if (a.includes('approve')) btns = `<button class="az-btn az-btn--reject" onclick="reasonSheet('${r.id}','reject')">Reject</button><button class="az-btn az-btn--approve" onclick="approveSheet('${r.id}')">${I('check')}Approve</button>`;
   else if (a.includes('edit')) btns = `<button class="az-btn az-btn--outline az-btn--approve" onclick="reasonSheet('${r.id}','cancel')">Cancel request</button><button class="az-btn az-btn--approve" onclick="go('#/new?edit=${r.id}')">${I('edit')}Edit request</button>`;
-  return `<div class="az-statusbar"><span>Current status • ${ago(at)} ago</span><b class="tone-${s.tone}">${esc(s.label)}</b><span>${nextLine(r)}</span>${btns ? `<div class="az-statusbar__actions${isPhone() && a.includes('approve') ? ' stack' : ''}">${btns}</div>` : ''}</div>`;
+  return `<div class="az-statusbar"><span>Current status • ${ago(at)} ago</span><b class="tone-${s.tone}">${esc(s.label)}</b><span>${nextLine(r)}</span>${btns ? `<div class="az-statusbar__actions">${btns}</div>` : ''}</div>`;
 }
 /* the more menu: what is not the main decision */
 function moreSheet(id) {

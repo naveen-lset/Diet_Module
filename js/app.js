@@ -2,7 +2,7 @@
 // Home › Modules › Diet opens #/diets (and #/history); Home › Modules › Help Desk opens #/requests (and #/new). No bottom navigation:
 // each module goes back to Home from its first screen. URL options: ?f=phone|portrait|landscape, ?as=hydar|suresh|manoj, ?fill.
 
-const STORE = 'antz-diet-module-v8';   // bump whenever the demo data changes (v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
+const STORE = 'antz-diet-module-v9';   // bump whenever the demo data changes (v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
 const AS = { hydar: 'u-hydar', suresh: 'u-suresh', manoj: 'u-manoj' };
 const FRAMES = { phone: 'phone', portrait: 'tab-p', landscape: 'tab-l' };
 function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: TODAY, D, S: { user: S.user, frame: S.frame, site: S.site } })); } catch (e) {} }
@@ -70,8 +70,14 @@ function render() {
   render.last = location.hash; render.done = true;
   if (SH.length) drawOverlay();
   positionThumbs($('.device'));
+  fabFit();
   drawStage();
 }
+/* Raise request shrinks to its icon once the diet is scrolled, so it never sits over the amounts (audit, 2 Nov) */
+function fabFit(b) {
+  (b ? [b] : [...document.querySelectorAll('.has-fab > .pane__body')]).forEach(x => { const f = x.parentElement.querySelector(':scope > .dfab'); if (f) f.classList.toggle('dfab--mini', x.scrollTop > 120); });
+}
+document.addEventListener('scroll', e => { if (e.target instanceof Element && e.target.matches('.has-fab > .pane__body')) fabFit(e.target); }, true);
 
 /* ---------- prototype controls: outside the device, not part of the app ---------- */
 function drawStage() {
