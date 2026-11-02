@@ -152,17 +152,22 @@ function linesView(groups, { act = false } = {}) {
   }).join('')).join('');
   return `<div class="dtab-wrap"><table class="dtab"><thead><tr><th>Time</th><th>Day</th><th>Item</th><th>Daily amt</th>${act ? '<th></th>' : ''}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
-/* the diet as the Figma Diet Details table on the phone: the item and its days on the left, the amount on the right; a tap opens the line */
-/* the diet as the Figma Diet Details table: the first time band's row carries the column labels; each band folds; one roomy row per item
-   (the item and its preparation · cut or mix, and its days | the amount). showDays: off when one day is picked. fold: the diet, to remember folded bands */
-function linesFigma(groups, wide = false, showDays = true, fold = '') {
+/* the diet as the Kitchen table (owner, 2 Nov): Time | Day | Item | Daily amt, the time and the day spanning their runs of items as live.
+   On the phone the time sits on top of its items. showDays: off when one day is picked. A tap on an item opens the line */
+function mealTable(groups, wide = false, showDays = true) {
   if (!groups.length) return `<div class="nodiet">Nothing to feed on this day</div>`;
-  return `<div class="fbands${wide ? ' fbands--wide' : ''}">${groups.map((g, gi) => {
-    const k = `${fold}:${g.feed}`, shut = !!S.fold[k];
-    const label = shut ? plural(g.rows.length, 'item') : gi === 0 ? 'Daily amt' : '';
-    const head = `<button class="fband" aria-expanded="${!shut}" onclick="S.fold['${k}']=!S.fold['${k}'];render()"><span class="fband__t">${I('schedule', 18)}${bandText(feed(g.feed))}${I(shut ? 'expand_more' : 'expand_less', 20)}</span>${wide ? `<span class="fband__c">${gi === 0 && !shut ? 'Preparation · Cut' : ''}</span>` : ''}<span class="fband__c fband__c--q">${label}</span></button>`;
-    return head + (shut ? '' : `<div class="frows">${g.rows.map(r => `<button class="frow" onclick="${r.click}"><span class="frow__i"><b>${r.name}</b>${!wide && (r.mix || r.gar) ? `<span class="frow__s">${r.mix || r.gar}</span>` : ''}${showDays ? dayMark(r) : ''}</span>${wide ? `<span class="frow__g">${r.mix || r.gar || '–'}</span>` : ''}<span class="frow__q">${r.amt}</span></button>`).join('')}</div>`);
-  }).join('')}</div>`;
+  const cols = (wide ? 1 : 0) + (showDays ? 1 : 0) + 2, still = ' onclick="event.stopPropagation()"';
+  const itemCell = r => { const x = item(r.line.item);
+    return x.mix ? `<b>${esc(x.name)}</b><span class="mixtag">MIX</span><span class="mtab__s">· ${plural(x.mix.length, 'item')}</span><span class="ingr">${x.mix.map(p => `<span><b>${esc(item(p.item).name)} · ${p.pct}%</b><small>${esc([p.prep, p.cut].filter(Boolean).join(' · '))}</small></span>`).join('')}</span>`
+      : `<b>${esc(x.name)}</b>${r.gar ? `<span class="mtab__s mtab__s--i">(${r.gar})</span>` : ''}`; };
+  const body = groups.map(g => (wide ? '' : `<tr class="mtab__band"><td colspan="${cols}"><span>${I('schedule', 18)}${bandText(feed(g.feed))}</span></td></tr>`) + g.rows.map((r, i) => {
+    let run = 1;
+    while (i + run < g.rows.length && g.rows[i + run].day === r.day) run++;
+    const time = wide && i === 0 ? `<td class="mtab__t" rowspan="${g.rows.length}"${still}>${bandText(feed(g.feed))}</td>` : '';
+    const day = showDays && (i === 0 || g.rows[i - 1].day !== r.day) ? `<td class="mtab__d" rowspan="${run}"${still}>${r.day}</td>` : '';
+    return `<tr onclick="${r.click}" tabindex="0" onkeydown="if(event.key==='Enter'){${r.click}}">${time}${day}<td class="mtab__i">${itemCell(r)}</td><td class="mtab__q">${r.amt}</td></tr>`;
+  }).join('')).join('');
+  return `<div class="mtab-wrap"><table class="mtab${wide ? ' mtab--wide' : ''}"><thead><tr>${wide ? '<th>Time</th>' : ''}${showDays ? '<th>Day</th>' : ''}<th>Item</th><th>Daily amt</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 /* changed lines only, grouped by feed time (requests and history) */
 function changeGroups(base, changes) {

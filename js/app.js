@@ -2,7 +2,7 @@
 // Home › Modules › Diet opens #/diets (and #/history); Home › Modules › Help Desk opens #/requests (and #/new). No bottom navigation:
 // each module goes back to Home from its first screen. URL options: ?f=phone|portrait|landscape, ?as=hydar|suresh|manoj, ?fill.
 
-const STORE = 'antz-diet-module-v6';   // bump whenever the shape of the demo data changes (v6: one cassowary chick; mixes, cadence, Age/Weight diets)
+const STORE = 'antz-diet-module-v8';   // bump whenever the demo data changes (v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
 const AS = { hydar: 'u-hydar', suresh: 'u-suresh', manoj: 'u-manoj' };
 const FRAMES = { phone: 'phone', portrait: 'tab-p', landscape: 'tab-l' };
 function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: TODAY, D, S: { user: S.user, frame: S.frame, site: S.site } })); } catch (e) {} }
@@ -80,7 +80,23 @@ function drawStage() {
   $('#stage-bar').innerHTML = `<b class="cap">Prototype controls</b>
     <span class="stage__grp">Frame ${[['phone', 'Phone'], ['tab-p', 'iPad portrait'], ['tab-l', 'iPad landscape']].map(([k, l]) => opt(S.frame === k, l, `setFrame('${k}')`)).join(' · ')}</span>
     <span class="stage__grp">Viewing as ${VIEWERS.map(id => opt(S.user === id, `${user(id).name} (${user(id).title})`, `setUser('${id}')`)).join(' · ')}</span>
-    <span class="stage__grp">${opt(false, 'Home', "go('#/home')")} · ${opt(false, 'Reset demo data', 'resetData()')}</span>`;
+    <span class="stage__grp">${opt(false, 'Home', "go('#/home')")} · ${opt(false, 'Reset demo data', 'resetData()')} · ${opt(figmaOpen, 'Copy to Figma', 'copyToFigma()')}</span>`;
+}
+/* Copy to Figma: Figma's own capture script, loaded on first use. It copies the screen in the frame as Figma layers (paste with Cmd+V
+   in Figma), then shows its bar: Entire screen · Select element (a card, a sheet, a list). While that bar is open the frame is at full
+   size, so the layers come out at the device's real size. The Antz Home is its own page, so on Home the script runs inside it. */
+const FIGMA_JS = 'https://mcp.figma.com/mcp/html-to-design/capture.js';
+let figmaOpen = false;
+function loadFigma(w) {
+  if (w.figma && w.figma.captureForDesign) return Promise.resolve();
+  return new Promise((ok, no) => { const s = w.document.createElement('script'); s.src = FIGMA_JS; s.onload = ok; s.onerror = () => { s.remove(); no(); }; w.document.head.appendChild(s); });
+}
+function copyToFigma() {
+  if (figmaOpen) return;
+  const fr = $('#homefr'), home = !fr.hidden, w = home ? fr.contentWindow : window;
+  figmaOpen = true; fit();
+  loadFigma(w).then(() => w.figma.captureForDesign({ selector: home ? 'body' : '.device' }), () => toast("Couldn't load Figma's capture tool. Check the internet connection."))
+    .finally(() => { figmaOpen = false; fit(); });
 }
 function setFrame(f) { S.frame = f; closeAll(); storeSave(); fit(); }
 function setUser(id) { S.user = id; S.draft = null; S.rDept = 'all'; closeAll(); storeSave(); if (route()[0] === 'new') go('#/requests'); else render(); toast(`Viewing as ${user(id).name}, ${user(id).title}`); }
@@ -92,7 +108,7 @@ function fit() {
   if (fill) { S.frame = Math.min(innerWidth, innerHeight) < 600 ? 'phone' : innerWidth > innerHeight ? 'tab-l' : 'tab-p'; dev.style.transform = ''; slot.style.width = slot.style.height = ''; render(); return; }
   const W = { phone: 390, 'tab-p': 834, 'tab-l': 1194 }[S.frame], H = { phone: 844, 'tab-p': 1194, 'tab-l': 834 }[S.frame];
   drawStage();
-  const k = Math.min(1, (innerHeight - slot.getBoundingClientRect().top - 24) / H, (innerWidth - 48) / W);
+  const k = figmaOpen ? 1 : Math.min(1, (innerHeight - slot.getBoundingClientRect().top - 24) / H, (innerWidth - 48) / W);
   dev.style.transform = k < 1 ? `scale(${k})` : ''; slot.style.width = W * k + 'px'; slot.style.height = H * k + 'px';
   render();
 }
