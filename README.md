@@ -7,6 +7,7 @@ Phone and iPad prototype of the Antz **Diet** module and the **Help Desk** diet 
 - **Diet:** browse diets by diet or by species. A species shows its diets at every level (species, site, section, enclosure, animal). A diet shows its details, certifications, notes, nutrition and its own change history. The app only views diets; editing stays on the web.
 - **Help Desk:** list, raise and approve requests. Diet is one department; Dieticians raise diet requests and the Kitchen Head approves them. Approving a diet request changes the diets and writes the diet history.
 - **Layouts:** the phone drills in one screen at a time with bottom sheets. The iPad (portrait and landscape) uses a split view.
+- **Sheets** follow the Antz design system: a sheet is for a short choice or a few facts, never opens another sheet, and is never a place Back returns to. Leaving a sheet for a page closes it for good. A record's extra actions sit in a menu under ⋮.
 
 This is a front-end prototype. It has no backend and no login, and it runs on demo data.
 

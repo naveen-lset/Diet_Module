@@ -121,7 +121,9 @@ function speciesParts(spId, cur) {
   if (l === 'species') {
     const list = slotsOf(spId).filter(a => a.level === 'species'), gone = endedOf(spId);
     body = (list.length ? `<div class="dcards">${list.map(a => dietCard(a, { current: cur === a.id })).join('')}</div>` : `<div class="nodiet">No diet added</div>`)
-      + (gone.length ? `<button class="cap lnk" onclick="endedSheet(${spId})">Ended diets - ${gone.length}${I('chevron_right', 20)}</button>` : '');
+      /* ended diets open in place, not as a second sheet over the species sheet (design system: a sheet never opens another sheet) */
+      + (gone.length ? `<button class="cap lnk" aria-expanded="${S.endOpen === spId}" onclick="S.endOpen=S.endOpen===${spId}?null:${spId};render()">Ended diets - ${gone.length}${I(S.endOpen === spId ? 'expand_less' : 'expand_more', 20)}</button>`
+        + (S.endOpen === spId ? `<div class="dcards">${gone.map(a => dietCard(a, { current: cur === a.id })).join('')}</div>` : '') : '');
   } else if (l === 'animal') {
     const all = placesAt(spId, 'animal', S.site), withD = all.filter(p => p.diets.length), rest = all.length - withD.length;
     const shown = S.animAll ? all : withD, q = S.aQ.trim().toLowerCase();
@@ -148,7 +150,6 @@ function speciesSheet(spId) {
   return `<div class="az-scrim" onclick="if(event.target===this)go('#/diets')"><section class="spsheet" role="dialog" aria-modal="true" aria-label="${esc(sp.name)}" data-k="sps-${spId}">${spHero(sp, "go('#/diets')")}<div class="sphead">${spFacts(sp)}</div>${p.chips}<div class="spsheet__body"><div class="body">${p.body}</div></div></section></div>`;
 }
 function pickLevel(sp, l) { S.lvl[sp] = l; S.aQ = ''; render(); }
-function endedSheet(sp) { openSheet(() => ({ title: 'Ended diets', sub: esc(species(sp).name), body: endedOf(sp).map(a => dietCard(a)).join('') })); }
 
 /* ---------- one diet: the Figma Diet Details (photo header, day pills, the table), with who certified it and its notes as the web ---------- */
 /* certification as the Kitchen & Diet web: the dietitian who certified it; when none has, the kitchen's certification */
@@ -231,13 +232,14 @@ function doodleSvg() {
 }
 /* Diet Details in tabs (owner, 2 Nov): what to feed; what it gives; where it is used; what happened to it */
 const DTABS = [['ov', 'Overview'], ['nu', 'Nutrition'], ['ap', 'Applied to'], ['hi', 'History']];
-function paneDiet(asgId, { cls = '', back = '', close = '', wide = isTab() } = {}) {
+function paneDiet(asgId, { cls = '', back = '', wide = isTab() } = {}) {
   const a = by('assigns', asgId);
   if (!a) return pane(cls, '', empty1('Diet not found'));
   const d = diet(a.diet), [tone, state] = dietStatus(a), when = !ended(a) && !a.group ? slotWhen(a) : '';
   if (S.dTabFor !== asgId) { S.dTab = 'ov'; S.dTabFor = asgId; }
-  const lead = close ? '' : back ? `<button class="az-iconbtn" onclick="${back === 'history' ? `goBack('#/diets')` : `go('${back}')`}" aria-label="Back">${I('arrow_back')}</button>` : '';
-  const head = `<div class="dhead dhead--doodle">${doodleSvg()}<div class="dhead__bar">${lead}<b>Diet Details</b>${iconBtn('info', 'Diet info', `dietInfoSheet('${a.id}')`)}${close ? iconBtn('close', 'Close', `go('${close}')`) : ''}</div>
+  /* Back returns to the screen the diet was opened from; `back` is where to go when there is none (a link, a reload) */
+  const lead = back ? `<button class="az-iconbtn" onclick="goBack('${back}')" aria-label="Back">${I('arrow_back')}</button>` : '';
+  const head = `<div class="dhead dhead--doodle">${doodleSvg()}<div class="dhead__bar">${lead}<b>Diet Details</b>${iconBtn('info', 'Diet info', `dietInfoSheet('${a.id}')`)}</div>
     <div class="dhead__card"><span class="davatar">${I('restaurant')}</span><span class="dhead__t"><span class="dhead__name">${esc(d.name)}</span><span class="dhead__sub">Diet type : <b>${esc(slotKind(a))}${a.group ? ` · ${esc(a.group.label)}` : ''}</b>${when ? ` · ${esc(when)}` : ''}</span>
     <span class="dhead__tags">${pill(tone, state)}</span></span></div></div>`;
   const tabs = `<div class="az-tabs dtabs" role="tablist">${thumb(true)}${DTABS.map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${S.dTab === k}" onclick="S.dTab='${k}';render()">${l}</button>`).join('')}</div>`;
@@ -334,11 +336,12 @@ function itemSheet(dietId, f, it) {
 function vDiets(parts) {
   const spId = parts[1] ? +parts[1] : null, asgId = parts[2] || null;
   if (isPhone()) {
-    if (asgId) return paneDiet(asgId, { cls: 'pane--fill', back: 'history' });
+    if (asgId) return paneDiet(asgId, { cls: 'pane--fill', back: '#/diets' });
     const home = paneDietHome({ cls: 'pane--fill' });
     return spId ? { html: home, overlay: speciesSheet(spId) } : home;
   }
-  /* iPad: Diet on the left. Diet wise: the diet picked on the right (list | detail). Species wise: the species on the right, a diet in a sheet over both */
+  /* iPad: Diet on the left. Diet wise: the diet picked on the right (list | detail). Species wise: the species on the right, and a diet
+     picked there takes its place with Back to the species, so Meal details and Diet info never open a sheet on a sheet (3 Nov) */
   const first = S.land === 'diets' ? (dietsFor(S.dKind)[0] || {}).sp : (speciesFor(S.spTab)[0] || {}).id, sp = spId || first || D.species[0].id;
   const a = asgId ? by('assigns', asgId) : null;
   if (a && a.sp === sp) S.lvl[sp] = a.level === 'species' || ended(a) ? 'species' : a.level;
@@ -346,8 +349,8 @@ function vDiets(parts) {
     const pickd = a || dietsFor(S.dKind)[0] || null;
     return paneDietHome({ cls: isLand() ? 'pane--w400' : 'pane--w340', cur: pickd ? pickd.id : null }) + (pickd ? paneDiet(pickd.id, { cls: 'pane--fill pane--dcol', wide: isLand() }) : pane('pane--fill', '', empty1('No diet here'), '', 'dcol-none'));
   }
-  const html = paneDietHome({ cls: isLand() ? 'pane--w400' : 'pane--w340', cur: S.land === 'diets' ? (a ? a.id : null) : sp }) + paneSpecies(sp, { cls: 'pane--fill', cur: a ? a.id : null });
-  return a ? { html, modal: paneDiet(a.id, { cls: 'pane--fill', close: `#/diets/${sp}` }), modalClose: `#/diets/${sp}`, sheet: a.id } : html;
+  return paneDietHome({ cls: isLand() ? 'pane--w400' : 'pane--w340', cur: S.land === 'diets' ? (a ? a.id : null) : sp })
+    + (a ? paneDiet(a.id, { cls: 'pane--fill pane--dcol', wide: isLand(), back: `#/diets/${sp}` }) : paneSpecies(sp, { cls: 'pane--fill' }));
 }
 /* a change has its own page on the phone (from a diet's history on the iPad it opens in a side sheet) */
 function vHistory(parts) {

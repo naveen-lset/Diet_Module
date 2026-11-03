@@ -52,7 +52,7 @@ const EVT = { raised: ['Request raised', 'send', ''], edited: ['Request edited',
 function paneRequest(id, { cls = '' } = {}) {
   const r = by('requests', id), back = isPhone() ? '#/requests' : '';
   if (!r || !visibleTo(r, me())) return pane(cls, topbar({ back, title: 'Request' }), empty1('Not one of your requests'));
-  const acts = actionsFor(r, me()), more = acts.length ? iconBtn('more_vert', 'More', `moreSheet('${r.id}')`) : '';
+  const acts = actionsFor(r, me()), more = acts.length ? iconBtn('more_vert', 'More', `moreMenu('${r.id}',this)`) : '';
   const req = user(r.by);
   const head = `<div class="rhead"><span class="rhead__row"><span class="az-dept">${I(isDiet(r) ? KIND[r.kind][1] : dept(r.dept).icon, 20)}</span><span class="rhead__catn">${esc(catOf(r))}</span>${flag(r.prio)}</span>
     <span class="meta">${wday(r.events[0].at.slice(0, 10))} ${fmtAt(r.events[0].at)}</span>
@@ -113,10 +113,10 @@ function statusBar(r) {
   else if (a.includes('edit')) btns = `<button class="az-btn az-btn--outline az-btn--approve" onclick="reasonSheet('${r.id}','cancel')">Cancel request</button><button class="az-btn az-btn--approve" onclick="go('#/new?edit=${r.id}')">${I('edit')}Edit request</button>`;
   return `<div class="az-statusbar"><span>Current status • ${ago(at)} ago</span><b class="tone-${s.tone}">${esc(s.label)}</b><span>${nextLine(r)}</span>${btns ? `<div class="az-statusbar__actions">${btns}</div>` : ''}</div>`;
 }
-/* the more menu: what is not the main decision */
-function moreSheet(id) {
-  const r = by('requests', id), a = actionsFor(r, me()), item = (icon, l, js, danger) => `<button class="az-option" onclick="closeAll();${js}"><span${danger ? ' style="color:var(--Error)"' : ''}>${l}</span>${I(icon, 24)}</button>`;
-  openSheet(() => ({ title: r.id, body: [a.includes('delay') ? item('timer', r.state === 'delayed' ? 'Change the delay' : 'Delay', `delaySheet('${id}')`) : '', a.includes('edit') ? item('edit', 'Edit request', `go('#/new?edit=${id}')`) : '', a.includes('cancel') ? item('do_not_disturb_on', 'Cancel request', `reasonSheet('${id}','cancel')`, true) : ''].join('') }));
+/* the more menu: what is not the main decision. The design system's Menu, not a sheet: record actions go in a menu (3 Nov) */
+function moreMenu(id, btn) {
+  const r = by('requests', id), a = actionsFor(r, me()), item = (icon, l, js, danger) => `<button role="menuitem"${danger ? ' class="az-danger"' : ''} onclick="closeMenu();${js}">${I(icon, 20)}${l}</button>`;
+  openMenu(btn, [a.includes('delay') ? item('timer', r.state === 'delayed' ? 'Change the delay' : 'Delay', `delaySheet('${id}')`) : '', a.includes('edit') ? item('edit', 'Edit request', `go('#/new?edit=${id}')`) : '', a.includes('cancel') ? item('do_not_disturb_on', 'Cancel request', `reasonSheet('${id}','cancel')`, true) : ''].join(''));
 }
 
 /* ---------- sheets: approve · delay · reject or cancel · the animals ---------- */
