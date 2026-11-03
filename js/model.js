@@ -75,6 +75,7 @@ function placesUnder(sp, level, within, pool = null) {
 /* ---------- the diet in force ---------- */
 /* a Seasonal diet's dates are MM-DD and come back every year (a window may run over the new year) */
 function inForce(a, date) {
+  if (a.stop && date > a.stop) return false;
   if (!a.recur) return (!a.start || a.start <= date) && (!a.end || a.end >= date);
   const md = date.slice(5);
   return a.start <= a.end ? md >= a.start && md <= a.end : md >= a.start || md <= a.end;
@@ -82,14 +83,14 @@ function inForce(a, date) {
 /* Kitchen & Diet precedence: the most specific level, then a dated diet over the base, a one-off over a seasonal, the newest last.
    skipReq leaves out what one request added, to see the animals as they were before it. */
 /* an Age or Weight diet (species scope only) feeds the animals in its range */
-const inGroup = (an, g) => g.kind === 'age' ? an.ageM >= g.min && (g.max == null || an.ageM < g.max) : an.wt != null && an.wt >= g.min && (g.max == null || an.wt < g.max);
+const inGroup = (an, g) => g.kind === 'sex' ? an.sex === g.sex : g.kind === 'age' ? an.ageM >= g.min && (g.max == null || an.ageM < g.max) : an.wt != null && an.wt >= g.min && (g.max == null || an.wt < g.max);
 function currentDiet(t, date = TODAY, skipReq = null) {
   const p = { species: true, ...pathOf(t) }, order = LEVELS.slice(0, LEVELS.indexOf(t.level) + 1).reverse(), an = t.level === 'animal' ? by('animals', t.ref) : null;
   for (const lvl of order) {
     const ref = lvl === 'species' ? null : p[lvl];
     if (lvl !== 'species' && !ref) continue;
     /* Kitchen & Diet: within a level an age or weight group wins (weight 4), then dates (1); a one-off beats a seasonal */
-    const rank = x => (x.group ? 8 : 0) + (x.start || x.end ? 2 : 0) + (x.recur ? 0 : 1);
+    const rank = x => (x.group ? (x.group.kind === 'sex' ? 4 : 8) : 0) + (x.start || x.end ? 2 : 0) + (x.recur ? 0 : 1);
     const a = D.assigns.filter(x => x.sp === t.sp && x.level === lvl && x.ref === ref && (!skipReq || x.req !== skipReq) && inForce(x, date) && (!x.group || (an && inGroup(an, x.group))))
       .sort((x, y) => rank(y) - rank(x) || D.assigns.indexOf(y) - D.assigns.indexOf(x))[0];
     if (a) return { diet: diet(a.diet), level: lvl, asg: a };
@@ -98,16 +99,19 @@ function currentDiet(t, date = TODAY, skipReq = null) {
 }
 
 /* ---------- a species' diets, each set at one level ---------- */
-const ended = a => !a.recur && !!a.end && a.end < TODAY;
+/* a diet ends on its own date, or early (stop: its last day, from an approved request) */
+const ended = a => (!!a.stop && a.stop < TODAY) || (!a.recur && !!a.end && a.end < TODAY);
+const lastDay = a => a.stop && (!a.end || a.recur || a.stop < a.end) ? a.stop : a.end;
 const LVL_RANK = a => LEVELS.indexOf(a.level);
 const kindRank = a => a.group ? 3 : !a.start && !a.end ? 0 : a.recur ? 1 : 2;
 const slotsOf = sp => D.assigns.filter(a => a.sp === sp && !ended(a)).sort((x, y) => LVL_RANK(x) - LVL_RANK(y) || kindRank(x) - kindRank(y));
-const endedOf = sp => D.assigns.filter(a => a.sp === sp && ended(a)).sort((x, y) => (y.end > x.end ? 1 : -1));
+const endedOf = sp => D.assigns.filter(a => a.sp === sp && ended(a)).sort((x, y) => (lastDay(y) > lastDay(x) ? 1 : -1));
 /* the kinds as Kitchen & Diet names them: Year-round (the base), Seasonal, Time-bound, Age, Weight */
-const slotKind = a => a.group ? (a.group.kind === 'age' ? 'Age' : 'Weight') : !a.start && !a.end ? 'Year-round' : a.recur ? 'Seasonal' : 'Time-bound';
+const slotKind = a => a.group ? (a.group.kind === 'age' ? 'Age' : a.group.kind === 'sex' ? 'Sex-based' : 'Weight') : !a.start && !a.end ? 'Year-round' : a.recur ? 'Seasonal' : 'Time-bound';
 const KINDS = ['Year-round', 'Seasonal', 'Time-bound', 'Age', 'Weight'];
 const mdText = md => `${+md.slice(3)} ${MON[+md.slice(0, 2) - 1]}`;
 function slotWhen(a) {
+  if (a.stop) return `${a.stop < TODAY ? 'Ended' : 'Ends'} ${fmtDayY(a.stop)}`;
   if (!a.start && !a.end) return '';
   if (a.recur) return `${mdText(a.start)} – ${mdText(a.end)}, every year`;
   if (ended(a)) return `Ended ${fmtDayY(a.end)}`;
@@ -122,7 +126,7 @@ function slotDay(a) {
   return d > TODAY ? d : `${y + 1}-${a.start}`;
 }
 const follows = (an, a, date = slotDay(a), skipReq = null) => { const w = currentDiet({ sp: an.sp, level: 'animal', ref: an.id }, date, skipReq); return !!w && w.asg.id === a.id; };
-const followersOf = (a, date) => D.animals.filter(an => inScope(an, a) && follows(an, a, date || (ended(a) ? a.end : slotDay(a))));
+const followersOf = (a, date) => D.animals.filter(an => inScope(an, a) && follows(an, a, date || (ended(a) ? lastDay(a) : slotDay(a))));
 /* fed today: the diet in force here, and some animal is on it today */
 const isNow = a => inForce(a, TODAY) && followersOf(a, TODAY).length > 0;
 /* the diet a request changes: the one it names, or the one its animals were on */
@@ -159,7 +163,7 @@ const dietCount = (sp, level, site = 'all') => slotsOf(sp).filter(a => a.level =
 /* the other species fed this same diet */
 const sharedWith = (dietId, sp) => [...new Set(D.assigns.filter(a => a.diet === dietId && a.sp !== sp && !ended(a)).map(a => a.sp))].map(species);
 const dietItems = d => d.meals.reduce((n, m) => n + m.items.length, 0);
-const KINDTYPE = { yearround: 'Year-round', seasonal: 'Seasonal', timebound: 'Time-bound', age: 'Age', weight: 'Weight' };
+const KINDTYPE = { yearround: 'Year-round', seasonal: 'Seasonal', timebound: 'Time-bound', age: 'Age', weight: 'Weight', sex: 'Sex-based' };
 
 /* ---------- quantities: per animal per feed in g / ml / pcs; stock in the item's stock unit ---------- */
 const BASE = { g: ['g', 1], kg: ['g', 1000], ml: ['ml', 1], ltr: ['ml', 1000], pcs: ['pcs', 1] };
@@ -210,11 +214,7 @@ function nutrition(d, day = null) {
 const nutriText = n => { const v = n.v; if (!v) return `0 ${n.unit}`; const r = n.unit === 'g' || (n.unit === 'mg' && v < 10) ? Math.round(v * 10) / 10 : Math.round(v); return `${r.toLocaleString('en-IN')} ${n.unit}`; };
 
 /* ---------- requests ---------- */
-const KIND = { items: ['Item change', 'swap_horiz'], diet: ['Diet change', 'restaurant'], skip: ['No diet for a day', 'block'] };
-function animalsIn(t) {
-  const s = t.kind === 'skip' ? null : slotFor(t);
-  return D.animals.filter(a => inScope(a, t) && (!s || follows(a, s, slotDay(s), t.id)));
-}
+const KIND = { items: ['Item change', 'swap_horiz'], new: ['New diet', 'add_circle'], diet: ['Diet change', 'restaurant'], end: ['End a diet', 'event_busy'], skip: ['No feed on a day', 'block'] };
 /* what a changed line does differently from the diet's line: item, amount, days, prep, cut */
 function lineDiff(was, c) {
   return { item: c.to !== was.item, amount: toBase(c.qty, c.unit) !== toBase(was.qty, was.unit), days: (c.days ?? EVERY_DAY) !== (was.days ?? EVERY_DAY) || JSON.stringify(c.cad || null) !== JSON.stringify(was.cad || null), prep: (c.prep || '') !== (was.prep || ''), cut: (c.cut || '') !== (was.cut || '') };
@@ -235,7 +235,11 @@ function autoTitle(r) {
     const when = r.date === TODAY ? 'today' : `on ${relDay(r.date).replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) /, '')}`;
     return r.feeds === 'all' ? `No diet ${when}` : `Skip the ${r.feeds.map(f => feed(f).from).join(' and ')} feed ${when}`;
   }
-  if (r.kind === 'diet') return r.diet ? `Move to ${diet(r.diet).name}` : 'Diet change';
+  const ts = targetsOf(r), for1 = ts.length === 1 ? (ts[0].level === 'species' ? (ts[0].group ? ` for ${GROUP_WORD(ts[0].group).toLowerCase()}` : '') : ` for ${targetName(ts[0])}`) : ` for ${placesText(ts)}`;
+  if (r.kind === 'diet') return r.diet ? `Move to ${diet(r.diet).name}${for1}` : 'Diet change';
+  if (r.kind === 'new') { const o = planOf(r).ops.find(x => x.type === 'new'); return o ? `${o.name}${for1}` : 'New diet'; }
+  if (r.kind === 'end') { const es = (r.ends || []).map(id => by('assigns', id)).filter(Boolean); return es.length ? `End ${es.length === 1 ? diet(es[0].diet).name : plural(es.length, 'diet')} ${onDay(addDays(r.stop, 1)).replace(/^on /, 'on ')}` : 'End a diet'; }
+  if (r.base === 'many') { const us = r.rules || []; return us.length ? us.slice(0, 2).map(ruleText).join(' · ') + (us.length > 2 ? ` + ${us.length - 2} more` : '') + for1 : 'Item change'; }
   const cs = r.changes || [];
   if (!cs.length) return 'Item change';
   const base = diet(r.base);
@@ -244,11 +248,16 @@ function autoTitle(r) {
 }
 function phaseOf(r) {
   if (r.kind === 'skip') return r.date > TODAY ? 'next' : r.date === TODAY ? 'live' : 'past';
+  if (r.kind === 'end') return r.stop < TODAY ? 'past' : 'next';
+  if (r.how === 'always' || r.how === 'yearly') return 'live';
   return r.start > TODAY ? 'next' : r.end && r.end < TODAY ? 'past' : 'live';
 }
 function approvedWhen(r) {
   const p = phaseOf(r);
   if (r.kind === 'skip') return p === 'past' ? `done ${fmtDay(r.date)}` : `no diet ${onDay(r.date)}`;
+  if (r.kind === 'end') return p === 'past' ? `ended ${fmtDay(r.stop)}` : `last day ${fmtDay(r.stop)}`;
+  if (r.how === 'yearly') return `every year, ${mdText(r.start)} – ${mdText(r.end)}`;
+  if (r.how === 'always') return 'in force';
   return p === 'next' ? `starts ${dayText(r.start)}` : p === 'past' ? `ended ${fmtDay(r.end)}` : r.end ? `running till ${fmtDay(r.end)}` : 'running';
 }
 /* the status in the Help Desk's words, and its tone */
@@ -284,14 +293,18 @@ function actionsFor(r, u) {
   if (r.approver === u.id && isOpen(r)) a.push('reject', 'delay', 'approve');
   return a;
 }
-const openFor = t => D.requests.filter(r => isDiet(r) && r.sp === t.sp && r.level === t.level && r.ref === t.ref && isOpen(r));
-const openOnSlot = a => D.requests.filter(r => isDiet(r) && isOpen(r) && r.kind !== 'skip' && (slotFor(r) || {}).id === a.id);
+const openFor = t => D.requests.filter(r => isDiet(r) && isOpen(r) && targetsOf(r).some(x => samePlace(x, t)));
+const openOnSlot = a => D.requests.filter(r => isDiet(r) && isOpen(r) && ((r.kind === 'items' && r.slot === a.id) || (r.kind === 'end' && (r.ends || []).includes(a.id)) || (r.kind === 'items' && r.base === a.diet && targetsOf(r).some(t => samePlace(t, a)))));
 
 /* stock: what the kitchen must find each day for a request, item by item */
 function stockCheck(r) {
   const n = animalsIn(r).length, need = {};
   const put = (id, q, u, tag) => { const x = need[id] || (need[id] = { item: item(id), base: 0, tag }); x.base += toBase(q, u) * n; };
-  if (r.kind === 'items') {
+  if (r.kind === 'new') {
+    const o = planOf(r).ops.find(x => x.type === 'new'), have = new Set(eatNow(targetsOf(r), TODAY, r.id || null).list.flatMap(e => e.diet.meals.flatMap(m => m.items.map(i => i.item))));
+    if (o) applyChanges(o.from ? diet(o.from).meals : [], o.changes).forEach(m => m.items.forEach(i => { if (!have.has(i.item)) put(i.item, i.qty, i.unit, 'New'); }));
+  }
+  if (r.kind === 'items' && r.base !== 'many' && diet(r.base)) {
     const base = diet(r.base);
     r.changes.forEach(c => {
       if (c.op === 'add') put(c.to, c.qty, c.unit, 'Added');
@@ -308,42 +321,18 @@ function stockCheck(r) {
     return { ...x, need: qtyText(x.base, BASE[x.item.unit][0]), have, status };
   }).sort((a, b) => ({ out: 0, short: 1, ok: 2 }[a.status] - { out: 0, short: 1, ok: 2 }[b.status]));
 }
-const shortOf = r => (!isDiet(r) || r.kind === 'skip' ? [] : stockCheck(r)).filter(x => x.status !== 'ok');
+const shortOf = r => (!isDiet(r) || ['skip', 'end'].includes(r.kind) ? [] : stockCheck(r)).filter(x => x.status !== 'ok');
 function stockFor(it, q, u, n) { const need = q && u ? toBase(q, u) * n : 0, have = toBase(it.stock, it.stockUnit); return have <= 0 ? 'out' : need && have < need ? 'short' : 'ok'; }
 
 const DELAY_REASONS = ['Ingredient not in stock', 'Supplier delay', 'Kitchen staff unavailable', 'Preparation time needed', 'Equipment not ready'];
 const REASONS = {
-  items: ['Health', 'Post-op recovery', 'Weight management', 'Underweight animal', 'Seasonal change', 'Breeding', 'Behavioural', 'Trial diet', 'Other'],
-  diet: ['Health', 'Post-op recovery', 'Weight management', 'Underweight animal', 'Seasonal change', 'Breeding', 'Behavioural', 'Trial diet', 'Other'],
+  /* Kitchen & Diet's change reasons (CHANGE_REASONS in the backend), in sentence case */
+  items: ['Breeding', 'Enrichment', 'Health', 'Post-operative', 'Quarantine', 'Seasonal change', 'Test diet', 'Transition', 'Trial', 'Weight management', 'Winter', 'Summer', 'Monsoon', 'Medical', 'Behavioral', 'Recovery', 'Chronic illness', 'Post-op recovery', 'Medication delivery', 'Juvenile', 'Senior', 'Gestation', 'Lactation', 'Herd trending heavy', 'Underweight animal', 'Obesity management', 'Dry season', 'Pre-release conditioning', 'Trial diet', 'Low-density herd', 'Shared enclosure', 'Other'],
+
   skip: ['Fasting day', 'Vet procedure', 'Transfer', 'Animal unwell', 'Weather', 'Other'],
 };
+REASONS.new = REASONS.diet = REASONS.end = REASONS.items;
 
-/* ---------- approving changes the diets (as Kitchen & Diet would set them) and writes the history ---------- */
-/* an item change becomes a Time-bound diet at the request's place: the diet it changes, with the changes in it */
-function applyApproval(r, at) {
-  const H = { at, by: r.by, approvedBy: r.approver, sp: r.sp, level: r.level, ref: r.ref, reason: r.reason, remarks: r.text, req: r.id };
-  if (r.kind === 'items') {
-    const B = diet(r.base), id = 'D-' + (++D.dseq), meals = B.meals.map(m => ({ feed: m.feed, items: m.items.map(i => ({ ...i })) }));
-    r.changes.forEach(c => {
-      let m = meals.find(x => x.feed === c.feed); if (!m) { m = { feed: c.feed, items: [] }; meals.push(m); meals.sort((a, b) => a.feed - b.feed); }
-      const line = { item: c.to, qty: c.qty, unit: c.unit, prep: c.prep || '', cut: c.cut || '', days: c.days ?? EVERY_DAY, cad: c.cad || null };
-      if (c.op === 'add') m.items.push(line);
-      else if (c.op === 'remove') m.items = m.items.filter(i => i.item !== c.item);
-      else m.items = m.items.map(i => i.item === c.item ? line : i);
-    });
-    /* named like every diet, what kind of diet it is then the species: Short-term + the diet it changes (Year Round Lovebird Diet → Short-term Lovebird Diet) */
-    D.diets.push({ id, name: `Short-term ${B.name.replace(/^Year Round /, '')}`, sp: r.sp, type: 'timebound', cert: { by: r.by, at: at.slice(0, 10) }, kcert: null, note: r.note || '', site: '', remark: '', reason: r.reason, remarks: r.text, shared: [], meals: meals.filter(m => m.items.length) });
-    D.assigns.push({ id: 'AS-' + (D.assigns.length + 1), diet: id, sp: r.sp, level: r.level, ref: r.ref, start: r.start, end: r.end, req: r.id, recur: false });
-    addHistory({ ...H, type: 'created', diet: id, created: 1, from: B.id,
-      lines: r.changes.map(c => ({ op: c.op, feed: c.feed, was: c.op === 'add' ? null : { ...entryOf(B, c.feed, c.item) }, now: c.op === 'remove' ? null : { item: c.to, qty: c.qty, unit: c.unit, prep: c.prep || '', cut: c.cut || '', days: c.days ?? EVERY_DAY, cad: c.cad || null } })) });
-  }
-  if (r.kind === 'diet') {
-    if (!r.applied) D.assigns.push({ id: 'AS-' + (D.assigns.length + 1), diet: r.diet, sp: r.sp, level: r.level, ref: r.ref, start: r.start, end: r.end, req: r.id, recur: false });
-    addHistory({ ...H, type: 'created', diet: r.diet, follows: r.diet, from: r.base });
-  }
-  if (r.kind === 'skip') addHistory({ ...H, type: 'lifecycle', diet: (currentDiet(r) || { diet: {} }).diet.id || null, skip: { date: r.date, feeds: r.feeds } });
-  r.applied = true;
-}
 function addHistory(h) { D.history.push({ id: 'CH-' + String(++D.hseq).padStart(3, '0'), ...h }); }
 /* the seed requests that were approved before today changed the diets then */
 function seedApprovals() { D.requests.filter(r => isDiet(r) && r.state === 'approved').forEach(r => applyApproval(r, r.events.find(e => e.kind === 'approved').at)); }
@@ -353,6 +342,7 @@ function act(r, kind, uid, x = {}) {
   if (!actionsFor(r, u).includes(kind)) throw new Error(`${u.title} can't ${kind} ${r.id} now`);
   if (['reject', 'cancel'].includes(kind) && (x.reason || '').trim().length < 3) throw new Error('Add a reason');
   if (kind === 'delay' && !(x.until > TODAY && x.reason)) throw new Error('Choose a date after today and a reason');
+  if (kind === 'approve' && isDiet(r) && planOf(r).block) throw new Error(planOf(r).block);
   const at = nowStamp(), ev = (k, extra = {}) => r.events.push({ kind: k, by: uid, at, ...extra });
   switch (kind) {
     case 'approve': ev('approved', { note: (x.note || '').trim() }); r.state = 'approved'; r.delay = null; if (isDiet(r)) applyApproval(r, at); break;

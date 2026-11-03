@@ -115,7 +115,7 @@ const shade = 'linear-gradient(180deg,rgba(0,0,0,.42) 0%,rgba(0,0,0,0) 30%,rgba(
 const spHero = (sp, close = '') => `<div class="sphero" style="background-image:${shade},url('${spPhoto(sp.id)}')">${close ? `<button class="sphero__x" onclick="${close}" aria-label="Close">${I('close')}</button>` : ''}<span class="sphero__t"><b>${esc(sp.name)}</b><span><i>${esc(sp.sci)}</i> · ${esc(sp.cls)}</span></span></div>`;
 function speciesParts(spId, cur) {
   const l = lvlOf(spId);
-  if (!slotsOf(spId).length) return { chips: '', body: `<div class="empty1"><div>No diet added for ${esc(species(spId).name)}${canRaise(me()) ? `<button class="az-btn empty1__btn" onclick="go('#/new?dept=diet&sp=${spId}&kind=diet')">${I('add_circle')}Request a diet</button>` : ''}</div></div>` };
+  if (!slotsOf(spId).length) return { chips: '', body: `<div class="empty1"><div>No diet added for ${esc(species(spId).name)}${canRaise(me()) ? `<button class="az-btn empty1__btn" onclick="go('#/new?dept=diet&sp=${spId}&kind=new')">${I('add_circle')}Request a diet</button>` : ''}</div></div>` };
   const chips = `<div class="az-chips az-chips--wrap" role="tablist" aria-label="Level">${levelsOf(spId).map(k => `<button class="az-chip" role="tab" aria-selected="${l === k}" onclick="pickLevel(${spId},'${k}')">${LEVEL[k]} - ${dietCount(spId, k, S.site)}</button>`).join('')}</div>`;
   let body;
   if (l === 'species') {
@@ -142,12 +142,14 @@ function speciesParts(spId, cur) {
 /* the iPad's species column */
 function paneSpecies(spId, { cls = '', cur = null } = {}) {
   const sp = species(spId), p = speciesParts(spId, cur);
-  return pane(cls, spHero(sp) + `<div class="sphead">${spFacts(sp)}</div>` + p.chips, `<div class="body">${p.body}</div>`, '', `sp-${spId}`);
+  return pane(cls + (spFab(spId) ? ' has-fab' : ''), spHero(sp) + `<div class="sphead">${spFacts(sp)}</div>` + p.chips, `<div class="body">${p.body}</div>`, '', `sp-${spId}`).replace(/<\/section>$/, `${spFab(spId)}</section>`);
 }
+/* Raise request from a species: the request starts with it, whole species (a species without a diet has its own button) */
+const spFab = spId => canRaise(me()) && slotsOf(spId).length ? `<button class="az-fab az-fab--pill dfab" onclick="go('#/new?dept=diet&sp=${spId}')">${I('add_circle')}<span class="dfab__t">Raise request</span></button>` : '';
 /* the phone's species: a bottom sheet over Diet, with its photo */
 function speciesSheet(spId) {
   const sp = species(spId), p = speciesParts(spId, null);
-  return `<div class="az-scrim" onclick="if(event.target===this)go('#/diets')"><section class="spsheet" role="dialog" aria-modal="true" aria-label="${esc(sp.name)}" data-k="sps-${spId}">${spHero(sp, "go('#/diets')")}<div class="sphead">${spFacts(sp)}</div>${p.chips}<div class="spsheet__body"><div class="body">${p.body}</div></div></section></div>`;
+  return `<div class="az-scrim" onclick="if(event.target===this)go('#/diets')"><section class="spsheet" role="dialog" aria-modal="true" aria-label="${esc(sp.name)}" data-k="sps-${spId}">${spHero(sp, "go('#/diets')")}<div class="sphead">${spFacts(sp)}</div>${p.chips}<div class="spsheet__body"><div class="body">${p.body}</div></div>${spFab(spId)}</section></div>`;
 }
 function pickLevel(sp, l) { S.lvl[sp] = l; S.aQ = ''; render(); }
 
@@ -311,7 +313,7 @@ function dietInfoSheet(id) {
   const a = by('assigns', id), d = diet(a.diet), sp = species(a.sp), others = sharedWith(d.id, a.sp), open = openOnSlot(a).filter(r => visibleTo(r, me()));
   const r = (icon, k, v) => `<div class="rsec__r">${I(icon)}<span class="t"><span>${k}</span>${v}</span></div>`;
   openSheet(() => ({ title: 'Diet info', body: `<div class="dinfo"><img src="${spPhoto(a.sp)}" alt=""><span><b>${esc(d.name)}</b><span>${esc(slotKind(a))} · ${esc(sp.name)}</span></span></div>
-    <div class="rsec">${a.group ? r('location_on', 'For', `<b>${esc(sp.name)} ${a.group.kind === 'age' ? 'aged' : 'of'} ${esc(a.group.label)}</b>`) : ''}
+    <div class="rsec">${a.group ? r('location_on', 'For', `<b>${esc(sp.name)} ${a.group.kind === 'age' ? 'aged' : a.group.kind === 'sex' ? '·' : 'of'} ${esc(a.group.kind === 'sex' ? GROUP_WORD(a.group) : a.group.label)}</b>`) : ''}
       ${r('event', 'When', `<b>${esc(!a.start && !a.end ? 'All year' : slotWhen(a))}</b>`)}
       ${others.length ? r('share', 'Shared with', others.map(o => { const oa = D.assigns.find(x => x.diet === d.id && x.sp === o.id && !ended(x)); return `<a class="lnk" href="#/diets/${o.id}/${oa.id}">${esc(o.name)}${I('chevron_right', 18)}</a>`; }).join('')) : ''}
       ${open.length ? r('assignment', open.length === 1 ? 'Open request' : 'Open requests', open.map(x => `<a class="lnk" href="#/requests/${x.id}">${x.id} · ${esc(stateOf(x).label)}</a>`).join('')) : ''}

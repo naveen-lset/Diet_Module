@@ -1060,3 +1060,40 @@ button.step{cursor:pointer}
 .fgrid__side .az-actionbar{padding:0;border:0;background:none}
 .fgrid__side .az-btn{width:100%}
 .ktiles .az-tile__t span{line-height:18px}
+
+/* ---------- round 17: the request follows Kitchen & Diet (places, kinds, who gets it), and can be for many species and places ---------- */
+/* the kinds in the web's colours: Year-round green, Seasonal orange, Time-bound blue (admin lib/diet-plan-kind-style.ts) */
+.ktag{flex:none;display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:var(--r-4);font:500 12px/1 var(--font);white-space:nowrap}
+.ktag--yr{background:#DCFCE7;color:#15803D}
+.ktag--se{background:#FFEDD5;color:#C2410C}
+.ktag--tb{background:#DBEAFE;color:#1D4ED8}
+.howtag{display:flex;align-items:center;gap:8px;margin-top:10px;font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.rsec__r .ktag{margin-top:4px;align-self:flex-start}
+/* For: one row per target (the row opens its place, × removes it), then add a species or a place */
+.forrow--t{padding:0 4px 0 0;gap:0}
+.forrow__main{flex:1;min-width:0;display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 12px;text-align:left;background:none}
+.forrow__main:disabled{cursor:default}
+.forrow__main > .lnk{flex:none;font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+.forrow--t .az-iconbtn{color:var(--OnSurfaceVariant)}
+.foradd{display:flex;flex-wrap:wrap;gap:4px 20px;padding:8px 12px 12px 68px;border-top:1px solid var(--neutral05)}
+.foradd .lnk{display:inline-flex;align-items:center;gap:4px;font:var(--t-body-medium);color:var(--OnPrimaryContainer);min-height:36px}
+.forrow--static{cursor:default}
+.forcard > .forrow--pick{border-top:1px solid var(--neutral05)}
+/* what they eat today, who gets it: a diet (or species) then its animals as chips */
+.eatgrp{padding:12px 0;border-bottom:1px solid var(--neutral05)}
+.eatgrp:last-child{border-bottom:0}
+.eatgrp__h{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.eatgrp__h .grow{display:flex;flex-direction:column;gap:2px;min-width:0}
+.eatgrp__h b{font:var(--t-minor-medium);color:var(--OnSecondaryContainer)}
+.eatgrp__h small{font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.eatgrp__h .thumb{width:40px;height:40px;border-radius:var(--r-full);flex:none}
+.eatgrp__n{flex:none;min-width:32px;text-align:right;font:var(--t-minor-title)}
+.eatgrp .echips:empty{display:none}
+.eatgrp:has(.echips:empty) .eatgrp__h{margin-bottom:0}
+/* When approved: a rule of Kitchen & Diet that stops the request is red, above the lines */
+.az-warnline--bad{background:var(--status-negative-bg);color:var(--OnErrorContainer);margin-bottom:12px}
+.az-warnline--bad > .az-i{color:var(--Error)}
+.effect__ask{margin-top:12px}
+.effect .forrow .ktag{margin-left:4px}
+.spall{margin:4px 0}
+.foradd + .forrow{border-top:1px solid var(--neutral05)}
