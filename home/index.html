@@ -57514,7 +57514,11 @@ if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
   document.addEventListener('click', function (e) {
     var t = e.target.closest('[data-mod]');
     if (!t || t.closest('.mpage') || !OPEN[t.getAttribute('data-mod')]) return;
+    if (e.target.closest('.mview__act, .mview__kbd')) return;   /* the list's Add to Home / Remove stays the sheet's own */
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+    /* the All Modules sheet closes on the way out, so Back finds the Home and not the sheet (owner, 3 Nov 2026) */
+    var x = t.closest('.mview') && t.closest('.mview').querySelector('.mview__x');
+    if (x) x.click();
     var route = OPEN[t.getAttribute('data-mod')];
     if (window.parent !== window) window.parent.postMessage({ antzOpen: route }, '*');
     else location.href = '../index.html#/' + route;
