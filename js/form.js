@@ -37,7 +37,7 @@ function sync(d) {
   if (d.kind === 'end') { const ok = endable(d).map(a => a.id); d.ends = d.ends.filter(id => ok.includes(id)); if (!d.ends.length && ok.length === 1) d.ends = [ok[0]]; }
   if (d.targets.length) { const t = d.targets[0], p = pathOf(t); d.site = p.site || (d.site && spAnimals(t.sp, d.site).length ? d.site : pathOfAnimal(spAnimals(t.sp)[0]).site); }
 }
-function pickKind(k) { const d = S.draft; d.want = k; if (d.kind !== k) { Object.assign(d, { kind: k, changes: [], rules: [], diet: null, ends: [], base: null, startFrom: 'now' }); sync(d); } render(); }
+function pickKind(k) { const d = S.draft; d.want = k; if (d.kind !== k) { d.reach = 0; Object.assign(d, { kind: k, changes: [], rules: [], diet: null, ends: [], base: null, startFrom: 'now' }); sync(d); } render(); }
 
 /* ---------- the draft ---------- */
 function initDraft(q) {
@@ -57,6 +57,7 @@ function initDraft(q) {
         reason: r.reason, name: r.name || '', nameEdited: !!r.name, forAll: r.forAll || null });
       if (d.how === 'yearly' && d.end < d.start) d.end = `${+d.end.slice(0, 4) + 1}${d.end.slice(4)}`;
       if (r.kind === 'new') d.startFrom = !r.base ? 'empty' : (eatOf(d).list[0] || { diet: {} }).diet.id === r.base ? 'now' : 'other';
+      d.step = d.reach = stepsOf(d).length - 1;
     }
     return (S.draft = d);
   }
@@ -519,10 +520,78 @@ function reviewSec(d) {
   return section('send', 'Your request', title + `<div class="rsec">${[ap ? row('how_to_reg', 'To be approved by', `${esc(ap.name)} · ${esc(ap.title)}`) : '',
     row('person', 'Requested by', `${youName(S.user)} · ${esc(u.title)}`), d.site ? row('location_on', 'Requesting site', esc(by('sites', d.site).name)) : ''].join('')}</div>`);
 }
-/* Send looks off until the form is complete (design system); a tap still says what is missing and goes to it. It carries the count */
+/* ---------- a diet request in steps, one question at a time (as Kitchen & Diet's create-diet wizard), owner 3 Nov: "Full scroll… rethink".
+   Phone: a progress bar, the answers so far as chips, the step, Back | Next. iPad: the steps down the left with their answers (tap one to go
+   back); in landscape, When approved stays on the right as you answer ---------- */
+const STEP_NAME = { what: 'What', for: 'For', change: 'Changes', how: 'How long', day: 'Day and feeds', last: 'Last day', send: 'Check and send' };
+const stepsOf = d => d.kind === 'skip' ? ['what', 'for', 'day', 'send'] : d.kind === 'end' ? ['what', 'for', 'last', 'send'] : ['what', 'for', 'change', 'how', 'send'];
+const stepName = (d, s) => s === 'change' ? (d.kind === 'new' ? 'The new diet' : d.kind === 'diet' ? 'Which diet' : 'Changes') : STEP_NAME[s];
+const stepAt = d => { const ss = stepsOf(d); d.step = Math.min(d.step || 0, ss.length - 1); d.reach = Math.min(Math.max(d.reach || 0, d.step), ss.length - 1); return ss[d.step]; };
+/* what is still missing on a step (Next looks off and says it when tapped) */
+function stepErr(d, s) {
+  if (s === 'what') return d.dept ? '' : 'Choose the department';
+  if (s === 'for') return !d.targets.length ? 'Choose the species' : d.kind === 'items' && d.base !== 'many' && !d.base ? 'There is no diet here to change' : d.kind === 'end' && !d.ends.length ? 'Choose the diet to end' : '';
+  if (s === 'change') {
+    if (d.kind === 'items') return d.base === 'many' ? (d.rules.length ? '' : 'Add at least one item change') : d.changes.length ? '' : 'Change at least one item';
+    if (d.kind === 'diet') return d.diet ? '' : 'Choose the diet to use';
+    if (d.startFrom === 'other' && !d.base) return 'Choose the diet to start from';
+    if (!applyChanges(baseOf(d).meals, d.changes).length) return 'Add at least one item';
+    if (d.group && d.group.kind !== 'sex' && !(d.group.min >= 0 && (d.group.max == null || d.group.max > d.group.min))) return 'Check the age or weight range';
+    return dietNameOf(d).trim() ? '' : 'Name the diet';
+  }
+  if (s === 'how' && d.how === 'once' && (!d.start || d.start < TODAY || !d.end || d.end <= d.start)) return 'Check the dates';
+  if (s === 'how' && d.how === 'yearly' && (!d.start || !d.end || d.start.slice(5) === d.end.slice(5))) return 'Check the dates';
+  if (s === 'day' && (d.date < TODAY || (d.feeds !== 'all' && !d.feeds.length))) return 'Choose the day and the feeds';
+  if (s === 'last' && (!d.stop || d.stop < TODAY || d.ends.some(id => { const a = by('assigns', id); return !a.recur && a.end && d.stop >= a.end; }))) return 'Check the last day';
+  if (['how', 'day', 'last'].includes(s)) return planOf(asReq(d)).block || '';
+  return s === 'send' ? err(d) : '';
+}
+/* each answer in a few words, for the chips (phone) and the steps (iPad) */
+function stepSum(d, s) {
+  if (s === 'what') return d.dept === 'diet' ? KTABS.find(k => k[0] === d.kind)[1] : '';
+  if (s === 'for') { const ts = d.targets; return !ts.length ? '' : ts.length === 1 ? `${species(ts[0].sp).name} · ${tWhere(ts[0])}${d.kind === 'new' && d.group && ts[0].level === 'species' ? ` · ${GROUP_WORD(d.group)}` : ''}` : placesText(ts); }
+  if (s === 'change') return d.kind === 'items' ? (d.base === 'many' ? (d.rules.length ? `${plural(d.rules.length, 'change')} · all their diets` : '') : d.changes.length ? `${plural(d.changes.length, 'change')} · ${baseOf(d).name}` : '')
+    : d.kind === 'diet' ? (d.diet ? diet(d.diet).name : '') : stepErr(d, 'change') ? '' : dietNameOf(d);
+  if (s === 'how') return d.how === 'always' ? 'From now on' : d.how === 'yearly' ? `Every year · ${fmtDay(d.start)} – ${fmtDay(d.end)}` : `Once · ${fmtDay(d.start)} – ${fmtDay(d.end)}`;
+  if (s === 'day') return `${dayText(d.date)[0].toUpperCase() + dayText(d.date).slice(1)} · ${d.feeds === 'all' ? 'all feeds' : plural(d.feeds.length, 'feed')}`;
+  if (s === 'last') return fmtDayY(d.stop);
+  return '';
+}
+function goStep(i) { const d = S.draft; if (i > (d.reach || 0)) return; d.step = i; render(); }
+function nextStep() {
+  const d = S.draft, ss = stepsOf(d), e = stepErr(d, ss[d.step || 0]);
+  if (e) { toast(e); const at = (ERR_AT.find(([re]) => re.test(e.toLowerCase())) || [])[1], el = at && document.querySelector(at); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+  d.step = Math.min((d.step || 0) + 1, ss.length - 1); d.reach = Math.max(d.reach || 0, d.step); render();
+}
+/* the step's own questions */
+function stepBody(d, s) {
+  if (s === 'what') return requestDetails(d) + kindTiles(d);
+  if (s === 'for') return forSec(d);
+  if (s === 'change') return d.kind === 'items' ? (d.base === 'many' ? rulesSec(d) : itemsSec(d)) : d.kind === 'new' ? startSec(d) : dietSec(d);
+  if (s === 'how') return howSec(d);
+  if (s === 'day') return skipSec(d);
+  if (s === 'last') return stopSec(d);
+  return (isLand() ? '' : effectSec(d, planOf(asReq(d)))) + whySec(d) + attachSec(d) + reviewSec(d);
+}
+/* Back | Next, and Send on the last step; Next and Send look off until the step is answered (design system), a tap says what is missing */
 function formFoot(d) {
-  const e = err(d), n = d.dept === 'diet' && d.kind === 'items' ? (d.base === 'many' ? d.rules.length : d.changes.length) : 0;
-  return `<div class="az-actionbar"><button class="az-btn${e ? ' az-btn--disabled' : ''}" aria-disabled="${!!e}" onclick="submitDraft()">${d.edit ? 'Save and send' : n ? `Send ${plural(n, 'change')}` : 'Send request'}</button></div>`;
+  if (d.dept === 'diet') {
+    const ss = stepsOf(d), i = Math.min(d.step || 0, ss.length - 1), last = ss[i] === 'send', e = stepErr(d, ss[i]), n = d.kind === 'items' ? (d.base === 'many' ? d.rules.length : d.changes.length) : 0;
+    const back = i > 0 ? `<button class="az-btn az-btn--outline" onclick="goStep(${i - 1})">Back</button>` : '';
+    return `<div class="az-actionbar az-actionbar--row wiz-foot">${isTab() ? `<span class="wiz-foot__n">Step ${i + 1} of ${ss.length}</span>` : ''}${back}<button class="az-btn${e ? ' az-btn--disabled' : ''}" aria-disabled="${!!e}" onclick="${last ? 'submitDraft()' : 'nextStep()'}">${last ? (d.edit ? 'Save and send' : n ? `Send ${plural(n, 'change')}` : 'Send request') : `Next${I('arrow_forward', 20)}`}</button></div>`;
+  }
+  const e = err(d);
+  return `<div class="az-actionbar"><button class="az-btn${e ? ' az-btn--disabled' : ''}" aria-disabled="${!!e}" onclick="submitDraft()">${d.edit ? 'Save and send' : 'Send request'}</button></div>`;
+}
+/* phone: a bar of steps and the answers so far as chips; iPad: the steps down the left, each with its answer */
+function wizTop(d) {
+  const ss = stepsOf(d), i = d.step, chips = ss.slice(0, i).map((s, k) => stepSum(d, s) ? `<button class="wiz-chip" onclick="goStep(${k})">${esc(stepSum(d, s))}</button>` : '').join('');
+  return `<div class="wiz-top"><div class="wiz-bar" aria-hidden="true">${ss.map((s, k) => `<i class="${k < i ? 'done' : k === i ? 'on' : ''}"></i>`).join('')}</div><div class="wiz-t"><b>${stepName(d, ss[i])}</b><span>Step ${i + 1} of ${ss.length}</span></div>${chips ? `<div class="wiz-chips">${chips}</div>` : ''}</div>`;
+}
+function wizRail(d) {
+  const ss = stepsOf(d);
+  return `<nav class="wiz-rail" aria-label="Steps">${ss.map((s, k) => { const st = k < d.step ? 'done' : k === d.step ? 'on' : k <= d.reach ? 'open' : '', sum = k === d.step ? '' : stepSum(d, s);
+    return `<button class="wiz-step wiz-step--${st || 'todo'}"${k <= d.reach && k !== d.step ? ` onclick="goStep(${k})"` : ' disabled'}${k === d.step ? ' aria-current="step"' : ''}><span class="wiz-step__n">${k < d.step || (k <= d.reach && k !== d.step && !stepErr(d, s)) ? I('check', 18) : k + 1}</span><span class="wiz-step__t"><b>${stepName(d, s)}</b>${sum ? `<small>${esc(sum)}</small>` : ''}</span></button>`; }).join('')}</nav>`;
 }
 /* where a missing answer is asked, to scroll to it; a rule of Kitchen & Diet shows in When approved */
 const ERR_AT = [[/species/, '#f-sp'], [/^choose the diet|^there is no diet/, '#f-from'], [/name the diet/, '#f-name'], [/title/, '#f-title'], [/description/, '#f-text'], [/last day/, '#p-stop'], [/dates/, '#p-start'], [/reason/, '#f-reason'], [/range/, '#g-min'], [/item/, '.chgcount, .mtab-wrap, .rulecard'], [/./, '.effect, .az-warnline--bad']];
@@ -534,25 +603,17 @@ function paneForm(q) {
   const d = initDraft(q), close = d.edit ? `#/requests/${d.edit}` : S.back;
   if (d.blocked) return pane('pane--fill', topbar({ back: close, title: 'Edit request' }), empty1('This request can no longer be edited'));
   if (d.ent) return paneEntity(d);
-  const secs = [requestDetails(d)], wide0 = isLand();
-  let side = '';
+  const prio = `<button class="prio-pick" onclick="prioSheet()" aria-label="Priority: ${PRIO[d.prio][1]}"><span class="prio prio--${d.prio}">${d.prio === 'emergency' ? I('local_fire_department', 16, true) : PRIO[d.prio][0]}</span>${PRIO[d.prio][1]}${I('keyboard_arrow_down', 20)}</button>`;
+  const top = topbar({ close: `go('${close}')`, title: d.edit ? `Edit ${d.edit}` : d.dept === 'diet' ? 'New diet request' : 'New request', actions: prio }), foot = `<div id="form-foot">${formFoot(d)}</div>`;
   if (d.dept === 'diet') {
-    secs.push(kindTiles(d), forSec(d));
-    if (d.targets.length) {
-      secs.push(d.kind === 'items' ? (d.base === 'many' ? rulesSec(d) : d.base ? itemsSec(d) : '') : d.kind === 'new' ? startSec(d) : d.kind === 'diet' ? dietSec(d) : d.kind === 'end' ? stopSec(d) : skipSec(d));
-      if (['items', 'new', 'diet'].includes(d.kind)) secs.push(howSec(d));
-      const p = planOf(asReq(d)), eff = ready(d) || p.block ? effectSec(d, p) : '';
-      if (wide0) side += eff; else secs.push(eff);
-      if (ready(d)) secs.push(whySec(d));
-    }
-    side += reviewSec(d);
+    const s = stepAt(d), live = isLand() && d.targets.length ? `<aside class="wiz-live">${(p => p.lines.length || p.block ? effectSec(d, p) : section('task_alt', 'When approved', '<div class="nodiet">Shows here as you answer</div>'))(planOf(asReq(d)))}</aside>` : '';
+    const body = isTab() ? `<div class="body wiz${live ? ' wiz--live' : ''}">${wizRail(d)}<div class="wiz-main">${stepBody(d, s)}</div>${live}</div>` : `<div class="body wiz-body">${stepBody(d, s)}</div>`;
+    return pane('pane--fill form-page wiz-page', top + (isTab() ? '' : wizTop(d)), body, foot, `form-${d.key}-${s}`);
   }
+  const secs = [requestDetails(d)];
   if (DEPT_FORMS[d.dept]) secs.push(deptSection(d));
   secs.push(attachSec(d));
-  const prio = `<button class="prio-pick" onclick="prioSheet()" aria-label="Priority: ${PRIO[d.prio][1]}"><span class="prio prio--${d.prio}">${d.prio === 'emergency' ? I('local_fire_department', 16, true) : PRIO[d.prio][0]}</span>${PRIO[d.prio][1]}${I('keyboard_arrow_down', 20)}</button>`;
-  const foot = `<div id="form-foot">${formFoot(d)}</div>`, wide = side && wide0;
-  const body = wide ? `<div class="body fgrid"><div class="fgrid__main">${secs.join('')}</div><div class="fgrid__side">${side}${foot}</div></div>` : `<div class="body">${secs.join('')}${side}</div>`;
-  return pane('pane--fill form-page', topbar({ close: `go('${close}')`, title: d.edit ? `Edit ${d.edit}` : d.dept === 'diet' ? 'New diet request' : 'New request', actions: prio }), body, wide ? '' : foot, `form-${d.key}`);
+  return pane('pane--fill form-page', top, `<div class="body">${secs.join('')}</div>`, foot, `form-${d.key}`);
 }
 const DIET_KEYS = ['targets', 'group', 'date', 'feeds', 'slot', 'base', 'start', 'end', 'changes', 'rules', 'diet', 'ends', 'stop', 'how', 'name', 'forAll'];
 function submitDraft() {
@@ -586,3 +647,5 @@ function submitDraft() {
   S.draft = null; S.rTab = 'pending'; S.rDept = 'all'; storeSave();
   toast(`${d.edit ? 'Saved and sent' : 'Sent to ' + first(user(r.approver).name)} · ${r.id}`); go(`#/requests/${r.id}`);
 }
+/* a form whose draft is gone (sent, closed or reset while it leaves the screen) takes no more taps or typing */
+['click', 'input', 'change'].forEach(t => document.addEventListener(t, e => { if (!S.draft && e.target.closest && e.target.closest('.form-page')) { e.stopPropagation(); e.preventDefault(); } }, true));

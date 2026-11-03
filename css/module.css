@@ -1097,3 +1097,43 @@ button.step{cursor:pointer}
 .effect .forrow .ktag{margin-left:4px}
 .spall{margin:4px 0}
 .foradd + .forrow{border-top:1px solid var(--neutral05)}
+
+/* ---------- the diet request in steps (3 Nov) ---------- */
+/* phone: the step bar, the step's name and number, the answers so far as chips (tap one to go back) */
+.wiz-top{background:var(--white);padding:4px 16px 12px;border-bottom:1px solid var(--neutral05);flex:none}
+.wiz-bar{display:flex;gap:4px}
+.wiz-bar i{flex:1;height:4px;border-radius:2px;background:var(--SurfaceVariant);transition:background-color .2s}
+.wiz-bar i.done{background:var(--Primary)}
+.wiz-bar i.on{background:var(--OnPrimaryContainer)}
+.wiz-t{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:10px}
+.wiz-t b{font:var(--t-minor-title);color:var(--OnSecondaryContainer)}
+.wiz-t span{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.wiz-chips{display:flex;gap:6px;overflow-x:auto;margin:10px -16px 0;padding:0 16px;scrollbar-width:none}
+.wiz-chips::-webkit-scrollbar{display:none}
+.wiz-chip{flex:none;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;height:30px;padding:0 10px;border-radius:var(--r-4);background:var(--displaybgSecondary);font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+.wiz-foot .az-btn .az-i{margin-left:4px}
+.phone .wiz-foot .az-btn{flex:1;padding:0 16px}
+.phone .wiz-foot .az-btn--outline{flex:0 0 112px}
+/* iPad: the steps down the left (each with its answer), the step, and in landscape When approved on the right */
+.tab .form-page .body.wiz{max-width:none;display:grid;grid-template-columns:248px minmax(0,1fr);gap:16px;align-items:start}
+.tab .form-page .body.wiz--live{grid-template-columns:240px minmax(0,1fr) 340px}
+.tab-l .form-page .body.wiz{max-width:1240px}
+.wiz-main{display:flex;flex-direction:column;gap:12px;min-width:0}
+.wiz-rail,.wiz-live{position:sticky;top:0;display:flex;flex-direction:column}
+.wiz-rail{background:var(--white);border-radius:var(--r-12, 12px);padding:8px}
+.wiz-step{display:flex;align-items:flex-start;gap:12px;padding:10px 8px;border-radius:var(--r-8);text-align:left;width:100%;background:none}
+.wiz-step:not(:disabled):hover{background:var(--neutral05)}
+.wiz-step[aria-current="step"]{background:var(--displaybgPrimary)}
+.wiz-step:disabled{cursor:default}
+.wiz-step__n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:600 13px/1 var(--font);background:var(--SurfaceVariant);color:var(--OnSurfaceVariant)}
+.wiz-step--done .wiz-step__n,.wiz-step--open .wiz-step__n{background:var(--Primary);color:var(--white)}
+.wiz-step--on .wiz-step__n{background:var(--OnPrimaryContainer);color:var(--white)}
+.wiz-step__t{display:flex;flex-direction:column;gap:2px;min-width:0;padding-top:4px}
+.wiz-step__t b{font:var(--t-body-title);color:var(--OnSecondaryContainer)}
+.wiz-step--todo .wiz-step__t b{color:var(--neutralSecondary);font-weight:500}
+.wiz-step__t small{font:var(--t-body-regular);color:var(--OnSurfaceVariant);line-height:18px;overflow-wrap:anywhere}
+.tab .wiz-page .pane__foot .az-actionbar{max-width:none;padding:12px 24px}
+.wiz-foot__n{flex:1;font:var(--t-body-regular);color:var(--neutralSecondary)}
+.tab .wiz-foot .az-btn{flex:0 0 auto;min-width:140px}
+.tab .wiz .ktiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+.tab-l .wiz .ktiles{grid-template-columns:repeat(2,minmax(0,1fr))}
