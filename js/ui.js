@@ -94,7 +94,16 @@ function drawOverlay() {
 }
 /* redraw the sheet on top keeping its scroll (typing, ticking) */
 function redrawSheet() { drawOverlay.same = true; drawOverlay(); drawOverlay.same = false; }
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && SH.length) closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if ($('#ovl .menu-scrim')) closeMenu(); else if (SH.length) closeSheet(); });
+/* a menu (Antz Menu): drops below its icon with the right edges lined up, or opens above when there is no room; a tap outside closes it */
+function openMenu(btn, items) {
+  const dev = $('.device'), d = dev.getBoundingClientRect(), k = d.width / dev.offsetWidth || 1, b = btn.getBoundingClientRect();
+  $('#ovl').innerHTML = `<div class="menu-scrim" onclick="if(event.target===this)closeMenu()"><div class="az-menu" role="menu" style="right:${(d.right - b.right) / k}px;top:${(b.bottom - d.top) / k + 4}px">${items}</div></div>`;
+  const m = $('#ovl .az-menu');
+  if (m.offsetTop + m.offsetHeight > dev.offsetHeight - 8) { m.style.top = ''; m.style.bottom = `${(d.bottom - b.top) / k + 4}px`; m.classList.add('az-menu--up'); }
+  m.querySelector('button').focus({ preventScroll: true });
+}
+function closeMenu() { const m = $('#ovl .menu-scrim'); if (m) m.remove(); }
 /* choose one from a list: the design system's bottom sheet with option rows */
 function optionSheet(title, opts, cur, onpick) {
   openSheet(() => ({ title, pick: true, body: opts.map(([v, l, s]) => `<button class="az-option" role="radio" aria-checked="${String(v) === String(cur)}" onclick="${onpick}(${JSON.stringify(v).replace(/"/g, '&quot;')})"><span>${esc(l)}${s ? `<small>${esc(s)}</small>` : ''}</span>${I(String(v) === String(cur) ? 'radio_button_checked' : 'radio_button_unchecked', 24, String(v) === String(cur))}</button>`).join('') }), SH.length > 0);

@@ -322,8 +322,6 @@ body.fill .device{position:fixed;top:env(safe-area-inset-top,0px);right:env(safe
 .side .az-sheet__title{padding:20px}
 .side .az-sheet__body{padding:16px 20px}
 @keyframes sidein{from{transform:translateX(40px);opacity:.6}to{transform:none;opacity:1}}
-.modal-scrim{position:absolute;inset:0;z-index:15;background:var(--scrim);display:grid;place-items:center;padding:32px}
-.modal{width:min(720px,100%);height:100%;background:var(--Background);border-radius:var(--r-16);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.2)}
 .sidebar-scrim{position:absolute;inset:0;z-index:12;background:var(--scrim)}
 .sidebar{position:absolute;left:12px;top:12px;bottom:109px;width:320px;z-index:13;border-radius:var(--r-12);box-shadow:4px 0 24px rgba(0,0,0,.15);animation:sidebarin .2s ease-out}
 @keyframes sidebarin{from{transform:translateX(-24px);opacity:.6}to{transform:none;opacity:1}}
@@ -539,11 +537,10 @@ button.az-site{width:100%;text-align:left;cursor:pointer}
 .notes__r p{margin:0;font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant);white-space:pre-wrap}
 .notes__r p i{display:block;margin-top:2px;color:var(--neutralSecondary)}
 .notes__r--remark{background:var(--notes);margin:0 -12px;padding:12px}
-.modal.modal--diet{width:min(780px,100%);height:auto;max-height:100%}
 .dhead--photo .dhead__name,.dhead--photo .dhead__sub,.dhead--photo .dhead__bar b{text-shadow:0 1px 3px rgba(0,0,0,.4)}
 
 /* ---------- round 4b: clearer, brighter overlays and pickers; department questions ---------- */
-.az-scrim,.side-scrim,.modal-scrim{background:rgba(31,65,91,.36)}
+.az-scrim,.side-scrim{background:rgba(31,65,91,.36)}
 .az-scrim.over,.side-scrim.over,.pick-scrim.over{background:rgba(31,65,91,.10)}
 .pick-scrim{position:absolute;inset:0;z-index:20;background:rgba(31,65,91,.36);display:grid;place-items:center;padding:32px}
 .pickcard{width:min(460px,100%);max-height:80%;background:var(--white);border-radius:var(--r-16);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(31,65,91,.28);animation:popin .18s ease-out}
@@ -574,7 +571,7 @@ button.az-site{width:100%;text-align:left;cursor:pointer}
 .az-option > span.dopt__ic{flex:none}
 
 /* ---------- round 4c: a page colour the content stands out on; the day switch fits the screen ---------- */
-.pane,.modal,.spsheet__body{background:var(--displaybgSecondary)}
+.pane,.spsheet__body{background:var(--displaybgSecondary)}
 .tab .main{background:var(--OutlineVariant)}
 .dcard--later{background:var(--white);color:var(--OnSurfaceVariant)}
 .dcard--later .dcard__chip,.dcard--ended .dcard__chip{background:var(--displaybgSecondary)}
@@ -614,7 +611,7 @@ button.az-site{width:100%;text-align:left;cursor:pointer}
 .dcard{min-height:0}
 
 /* ---------- round 4f: blur behind every overlay (owner: "background blur has to be more"); an overlay on another adds none ---------- */
-.modal-scrim,.pick-scrim,.side-scrim,.az-scrim{-webkit-backdrop-filter:blur(12px) saturate(.9);backdrop-filter:blur(12px) saturate(.9)}
+.pick-scrim,.side-scrim,.az-scrim{-webkit-backdrop-filter:blur(12px) saturate(.9);backdrop-filter:blur(12px) saturate(.9)}
 .pick-scrim.over,.side-scrim.over,.az-scrim.over{-webkit-backdrop-filter:none;backdrop-filter:none}
 
 /* ---------- round 4g: the iPad cleaned like the phone ---------- */
@@ -711,16 +708,6 @@ button.az-site{width:100%;text-align:left;cursor:pointer}
 .ftab__s{font:var(--t-body-regular);color:var(--OnSurfaceVariant);line-height:18px}
 .ftab__i{gap:4px}
 .mcard__chip{flex-wrap:wrap}
-/* the Apple-style sheet (iPad Diet Details): slides up, a grab handle, rounded top, the page behind blurred */
-.bs-scrim{position:absolute;inset:0;z-index:15;display:flex;align-items:flex-end;justify-content:center;background:rgba(31,65,91,.32);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-.bsheet{position:relative;width:100%;height:calc(100% - 44px);border-radius:16px 16px 0 0;overflow:hidden;background:var(--displaybgSecondary);box-shadow:0 -8px 32px rgba(0,0,0,.18);display:flex;flex-direction:column;animation:bsup .34s cubic-bezier(.2,.8,.2,1);transition:transform .22s ease-out;will-change:transform}
-.tab-l .bsheet{width:calc(100% - 120px)}
-.bsheet > .pane{flex:1;min-height:0;border-radius:0}
-.bsheet__grab{position:absolute;left:0;right:0;top:0;height:22px;z-index:3;display:grid;place-items:center;cursor:grab;touch-action:none}
-.bsheet__grab i{width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.85);box-shadow:0 1px 2px rgba(0,0,0,.25)}
-.bsheet .dhead__bar{padding-top:10px}
-@keyframes bsup{from{transform:translateY(100%)}to{transform:none}}
-@media (prefers-reduced-motion:reduce){.bsheet{animation:none;transition:none}}
 
 /* ---------- motion (Antz Design · Motion): one set everywhere ---------- */
 :root{--ease-out:cubic-bezier(.2,.8,.2,1);--ease-in:cubic-bezier(.4,0,1,1)}
@@ -736,19 +723,17 @@ button.az-site{width:100%;text-align:left;cursor:pointer}
 @keyframes inback{from{opacity:0;transform:translateX(-32px)}}
 @keyframes swap{from{opacity:.35;transform:translateY(6px)}}
 /* overlays come in: the dim fades, the sheet slides or pops */
-.az-scrim,.side-scrim,.pick-scrim,.modal-scrim,.bs-scrim{animation:fadein .22s var(--ease-out)}
+.az-scrim,.side-scrim,.pick-scrim{animation:fadein .22s var(--ease-out)}
 .az-scrim.over,.side-scrim.over,.pick-scrim.over{animation:none}
 .az-sheet{animation:sheetup .3s var(--ease-out)}
 .spsheet{animation:sheetup .32s var(--ease-out)}
 .side{animation:sidein2 .28s var(--ease-out)}
 .pickcard{animation:popin2 .2s var(--ease-out)}
-.modal{animation:popin2 .22s var(--ease-out)}
-.bsheet{animation:sheetup .34s var(--ease-out)}
 /* …and leave the same way */
 .out{animation:fadeout .21s var(--ease-in) forwards;pointer-events:none}
-.out .az-sheet,.out .spsheet,.out .bsheet{animation:sheetdown .21s var(--ease-in) forwards}
+.out .az-sheet,.out .spsheet{animation:sheetdown .21s var(--ease-in) forwards}
 .out .side{animation:sideout .21s var(--ease-in) forwards}
-.out .pickcard,.out .modal{animation:popout .18s var(--ease-in) forwards}
+.out .pickcard{animation:popout .18s var(--ease-in) forwards}
 /* a new screen: the phone slides it in from the side it comes from; the iPad cross-fades */
 .in-fwd{animation:infwd .28s var(--ease-out)}
 .in-back{animation:inback .28s var(--ease-out)}
@@ -1038,3 +1023,10 @@ button.step{cursor:pointer}
    not the same as the panels); the shadows tinted teal */
 .tab .main[class]:has(> .pane + .pane){gap:10px;padding:10px;background:hsl(170 36% 84%)}
 .tab .main:has(> .pane + .pane) > .pane{border-radius:24px;overflow:hidden;box-shadow:0 10px 28px rgba(0,109,53,.1),0 2px 6px rgba(0,109,53,.05)}
+/* the more menu (Antz Menu): under its icon, right edges lined up; a clear layer behind it closes it on a tap outside */
+.menu-scrim{position:absolute;inset:0;z-index:20}
+.menu-scrim .az-menu{position:absolute;transform-origin:top right;animation:popin2 .16s var(--ease-out)}
+.menu-scrim .az-menu--up{transform-origin:bottom right}
+.az-menu button{background:var(--white);padding:12px 16px;min-height:44px;display:flex;align-items:center;gap:8px;font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+.az-menu button.az-danger{color:var(--Error)}
+.az-menu button:active{background:linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.1)),var(--white)}
