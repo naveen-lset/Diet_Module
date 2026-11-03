@@ -185,7 +185,7 @@ function SEED_REQUESTS(t) {
       title: 'Fasting day for Q Pen 1', text: 'Both birds in quarantine are on their weekly fast. Hold every feed for the day.', note: '', files: [],
       date: d(-6), feeds: 'all', state: 'approved',
       events: [{ kind: 'raised', by: 'u-hydar', at: at(-9, '10:20') }, { kind: 'approved', by: 'u-suresh', at: at(-8, '09:05'), note: '' }] },
-    { id: 'REQ38-00514', kind: 'diet', sp: 195022, level: 'species', ref: null, by: 'u-hydar', prio: 'normal', reason: 'Behavioural',
+    { id: 'REQ38-00514', kind: 'diet', sp: 195022, level: 'species', ref: null, by: 'u-hydar', prio: 'normal', reason: 'Behavioral',
       title: 'Meerkats onto the insectivore diet', text: 'More foraging time: move the mob to the insectivore diet with mealworm scatter feeds.', note: 'Scatter the mealworm across the sand, not in a bowl.', files: [],
       base: 'D-331', diet: 'D-330', start: d(-6), end: null, state: 'rejected',
       events: [{ kind: 'raised', by: 'u-hydar', at: at(-8, '11:40') },
@@ -228,6 +228,17 @@ function SEED_REQUESTS(t) {
       title: 'Breeding diet for Paddock A', text: 'The breeding pair and two hens in Paddock A start the laying season. Move them to the breeding diet.', note: 'Boil the eggs fully and cool before serving.', files: [{ name: 'Paddock A pairing.jpg', kind: 'image', size: '2.4 MB' }],
       base: 'D-313', diet: 'D-311', start: d(2), end: d(60), state: 'pending',
       events: [{ kind: 'raised', by: 'u-amruth', at: at(0, '08:40') }] },
+    /* a new diet for some animals of a species (the females), every year: Kitchen & Diet's Seasonal, sex-based diet */
+    { id: 'REQ38-00523', kind: 'new', sp: 135332, level: 'species', ref: null, targets: [{ sp: 135332, level: 'species', ref: null, group: { kind: 'sex', sex: 'F', label: 'Female' } }], by: 'u-hydar', prio: 'normal', reason: 'Breeding',
+      title: 'Breeding Coypu Diet for females', text: 'The females come into the breeding season in December. More beans and some sweet potato every year until February.', note: 'Boil the sweet potato soft, serve cool.', files: [],
+      base: 'D-273', changes: [{ op: 'change', feed: 2, item: item('Beans'), qty: 200, unit: 'g' }, { op: 'add', feed: 2, to: item('Sweet Potato'), qty: 100, unit: 'g', prep: 'Boiled', cut: 'Cubes 2 cm' }],
+      how: 'yearly', start: '12-01', end: '02-28', state: 'pending',
+      events: [{ kind: 'raised', by: 'u-hydar', at: at(0, '09:10') }] },
+    /* ending an exception early: the animal goes back to the diet of its place */
+    { id: 'REQ38-00524', kind: 'end', sp: 135332, level: 'animal', ref: 215920, by: 'u-hydar', prio: 'normal', reason: 'Recovery',
+      title: 'End Soft Recovery Coypu Diet early', text: 'The stitches are out and he eats normally. Back to the usual diet after Wednesday.', note: '', files: [],
+      ends: ['AS-5'], stop: d(2), state: 'pending',
+      events: [{ kind: 'raised', by: 'u-hydar', at: at(0, '09:40') }] },
   ];
 }
 
@@ -317,7 +328,7 @@ function SEED(t) {
   const siteOfPlace = r => { const a = r.level === 'animal' ? animals.find(x => x.id === r.ref) : null, enc = a ? a.enc : r.level === 'enclosure' ? r.ref : null;
     if (enc) return secOf[encOf[enc].section].site; if (r.level === 'section') return secOf[r.ref].site; if (r.level === 'site') return r.ref;
     return secOf[encOf[animals.find(x => x.sp === r.sp).enc].section].site; };
-  const requests = SEED_REQUESTS(t).map(r => ({ ...r, dept: 'diet', approver: APPROVER, site: siteOfPlace(r) })).concat(GENERIC_REQUESTS(t)), dietOf = Object.fromEntries(diets.map(x => [x.id, x]));
+  const requests = SEED_REQUESTS(t).map(r => ({ ...r, dept: 'diet', approver: APPROVER, site: siteOfPlace(r), ...(['skip', 'end'].includes(r.kind) || r.how ? {} : { how: r.end ? 'once' : 'always' }) })).concat(GENERIC_REQUESTS(t)), dietOf = Object.fromEntries(diets.map(x => [x.id, x]));
   requests.forEach(r => (r.changes || []).forEach(c => {
     if (c.op === 'add') Object.assign(c, { prep: '', cut: '', days: WK.daily, ...c });
     if (c.op === 'change') { const was = dietOf[r.base].meals.find(m => m.feed === c.feed).items.find(i => i.item === c.item); Object.assign(c, { to: was.item, qty: was.qty, unit: was.unit, prep: was.prep, cut: was.cut, days: was.days, ...c }); }

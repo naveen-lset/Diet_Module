@@ -17,10 +17,13 @@ function whatOf(r) {
   if (!isDiet(r)) return r.text;
   const base = diet(r.base);
   if (r.kind === 'skip') return `No diet ${onDay(r.date)} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ') + ' only'}`;
+  if (r.kind === 'end') return `${(r.ends || []).map(id => diet(by('assigns', id).diet).name).join(', ')} · last day ${fmtDay(r.stop)}`;
+  if (r.kind === 'new') return `${r.name || 'New diet'} · ${howText(r)}`;
+  if (r.kind === 'items' && r.base === 'many') return (r.rules || []).map(ruleText).join(', ');
   return r.kind === 'items' ? r.changes.map(c => changeText(c, base)).join(', ') : `${base ? base.name : 'No diet'} → ${diet(r.diet).name}`;
 }
 /* the card's second line: what changes, or, when the title already says that (a diet request names itself), who it is for and why */
-const cardLine = r => { const w = whatOf(r); return w !== r.title || !isDiet(r) ? w : [`${species(r.sp).name} · ${placeText(r)}`, r.reason].filter(Boolean).join(' · '); };
+const cardLine = r => { const w = whatOf(r); return w !== r.title || !isDiet(r) ? w : [targetsOf(r).length > 1 ? placesText(targetsOf(r)) : `${species(r.sp).name} · ${placeText(r)}`, r.reason].filter(Boolean).join(' · '); };
 const catOf = r => isDiet(r) ? `Diet · ${KIND[r.kind][0]}` : dept(r.dept).name;
 const siteOf = r => r.site ? by('sites', r.site).name : '';
 const lastComment = r => [...r.events].reverse().find(e => e.kind === 'comment');
@@ -68,16 +71,27 @@ function paneRequest(id, { cls = '' } = {}) {
     const t = x.type === 'switch' ? (v ? 'Yes' : 'No') : x.type === 'date' ? (v ? fmtDayY(v) : '') : x.type === 'money' ? (v ? `₹ ${(+v).toLocaleString('en-IN')}` : '') : x.type === 'items' ? (v || []).map(i => `${esc(i.name)} × ${i.qty}`).join('<br>') : esc(v || '');
     if (t) sec1.push(row(x.icon, x.label, `<b${x.type === 'money' ? ' class="amt-green"' : ''}>${t}</b>`)); });
   if (isDiet(r)) {
-    const s = r.kind === 'skip' ? null : slotFor(r), n = animalsIn(r).length;
-    sec1.push(row('pets', 'Animals', `<b>${esc(species(r.sp).name)} · ${esc(placeText(r))}</b><button class="lnk" onclick="animalsSheet('${r.id}')">${plural(n, 'animal')}${I('chevron_right', 18)}</button>`));
-    if (s) sec1.push(row('restaurant', r.kind === 'diet' ? 'Instead of' : 'Diet', `<b>${esc(diet(r.base).name)}</b><span>${esc(scopeText(s))}</span>${!ended(s) ? `<a class="lnk" href="#/diets/${s.sp}/${s.id}">Open diet${I('chevron_right', 18)}</a>` : ''}`));
-    sec1.push(row('event', 'When', `<b>${r.kind === 'skip' ? `${wday(r.date)} ${fmtDayY(r.date)} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ')}` : !r.end ? `From ${fmtDayY(r.start)}, no end date` : `${fmtDay(r.start)} – ${fmtDayY(r.end)} · ${plural(daysBetween(r.start, r.end) + 1, 'day')}`}</b>`));
+    const ts = targetsOf(r), s = r.kind === 'items' ? slotFor(r) : null, n = animalsIn(r).length;
+    const forText = ts.length > 1 ? placesText(ts) : `${species(r.sp).name} · ${ts[0].group ? `${GROUP_WORD(ts[0].group)} only` : placeText(r)}`;
+    sec1.push(row('pets', 'For', `<b>${esc(forText)}</b><button class="lnk" onclick="animalsSheet('${r.id}')">${plural(n, 'animal')}${I('chevron_right', 18)}</button>`));
+    if (s && diet(r.base)) sec1.push(row('restaurant', 'Diet to change', `<b>${esc(diet(r.base).name)}</b><span>Set for ${esc(whereSet(s))}</span>${!ended(s) ? `<a class="lnk" href="#/diets/${s.sp}/${s.id}">Open diet${I('chevron_right', 18)}</a>` : ''}`));
+    if (r.kind === 'items' && r.base === 'many') sec1.push(row('restaurant', 'Diets to change', '<b>All their diets, changed by item</b>'));
+    if (r.kind === 'new') sec1.push(row('restaurant', 'New diet', `<b>${esc(r.name || 'New diet')}</b><span>${r.base && diet(r.base) ? `From ${esc(diet(r.base).name)}` : 'Made from empty'}</span>`));
+    if (r.kind === 'diet' && r.base && diet(r.base)) sec1.push(row('restaurant', 'Instead of', `<b>${esc(diet(r.base).name)}</b>`));
+    if (r.kind === 'end') sec1.push(row('restaurant', 'Diet to end', (r.ends || []).map(id => { const a = by('assigns', id); return `<b>${esc(diet(a.diet).name)}</b><span>Set for ${esc(whereSet(a))}</span>`; }).join('')));
+    sec1.push(row('event', r.kind === 'end' ? 'Last day' : r.kind === 'skip' ? 'When' : 'How long', `<b>${r.kind === 'skip' ? `${wday(r.date)} ${fmtDayY(r.date)} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ')}` : r.kind === 'end' ? `${wday(r.stop)} ${fmtDayY(r.stop)}` : howText(r)}</b>${r.how && r.kind !== 'skip' ? ktag(HOW_KIND[r.how]) : ''}`));
   }
   body += `<div class="rsec">${sec1.join('')}</div>`;
   if (r.approver === S.user && isOpen(r)) shortOf(r).forEach(x => body += `<div class="az-warnline">${I('warning', 18)}<span class="grow"><b>${esc(x.item.name)} is low.</b> ${x.have <= 0 ? 'None' : 'Only ' + stockText(x.item)} in stock; the kitchen needs ${x.need} a day.</span><button class="lnk" onclick="delaySheet('${r.id}')">Delay</button></div>`);
   if (isDiet(r)) {
-    const lines = r.kind === 'items' ? linesView(changeGroups(diet(r.base), r.changes)) : r.kind === 'diet' ? linesView(dietDiffGroups(diet(r.base), diet(r.diet))) : skipView(r);
-    body += `<p class="secttl">${r.kind === 'items' ? 'What changes' : r.kind === 'diet' ? `New diet · ${esc(diet(r.diet).name)}` : 'Feeds'}</p>${lines}`;
+    const many = r.kind === 'items' && r.base === 'many', fresh = r.kind === 'new' ? { meals: applyChanges(r.base && diet(r.base) ? diet(r.base).meals : [], r.changes || []) } : null;
+    const lines = many ? `<div class="rsec">${(r.rules || []).map(u => `<div class="rsec__r">${I(RULE_IC[u.op])}<span class="t"><b>${esc(ruleText(u))}</b></span></div>`).join('')}</div>`
+      : r.kind === 'items' ? linesView(changeGroups(diet(r.base), r.changes)) : r.kind === 'new' ? linesView(dietDiffGroups(r.base && diet(r.base), fresh)) : r.kind === 'diet' ? linesView(dietDiffGroups(r.base && diet(r.base), diet(r.diet))) : r.kind === 'skip' ? skipView(r) : '';
+    if (lines) body += `<p class="secttl">${r.kind === 'items' ? 'What changes' : r.kind === 'new' ? `The new diet${r.base && diet(r.base) ? ' · what differs' : ''}` : r.kind === 'diet' ? `New diet · ${esc(diet(r.diet).name)}` : 'Feeds'}</p>${lines}`;
+    /* When approved: what Kitchen & Diet does (worked out while it is open; as it was done once approved) */
+    const p = r.state === 'approved' && r.outcome ? r.outcome : ['pending', 'delayed'].includes(r.state) ? planOf(r) : null;
+    if (p && p.lines.length) body += `<p class="secttl">${r.state === 'approved' ? 'What approval did' : 'When approved'}</p><div class="forcard effect">${p.lines.map(l => { const v = l.view && r.state !== 'approved';
+      return `<${v ? 'button' : 'div'} class="forrow${v ? '' : ' forrow--static'}"${v ? ` onclick="reachSheet('${l.view}','${r.id}')"` : ''}><span class="eav">${I(l.icon, 20)}</span><span class="grow"><b>${esc(l.b)}</b>${l.small ? `<small>${esc(l.small)}</small>` : ''}${l.x ? `<small>${esc(l.x)}</small>` : ''}</span>${l.tag ? ktag(l.tag) : v ? I('chevron_right', 20) : ''}</${v ? 'button' : 'div'}>`; }).join('')}</div>${p.block ? `<div class="az-warnline az-warnline--bad">${I('error', 18)}<span>${esc(p.block)}</span></div>` : ''}`;
   }
   const appr = user(r.approver);
   body += `<div class="rsec">${isDiet(r) ? row('label', 'Reason', `<b>${esc(r.reason)}</b>`) : ''}${row('location_on', 'Requesting site', `<b>${esc(siteOf(r))}</b>`)}
@@ -126,7 +140,7 @@ let AP = {};
 function approveSheet(id) { AP = { id, note: '' }; openSheet(() => {
   const r = by('requests', AP.id), lows = shortOf(r);
   return { title: `Approve ${r.id}?`, sub: esc(r.title), form: true, body: `${lows.map(x => `<div class="az-warnline">${I('warning', 18)}<span><b>${esc(x.item.name)}</b>: ${x.have <= 0 ? 'none' : 'only ' + stockText(x.item)} in stock, needs ${x.need} a day.</span></div>`).join('')}
-    ${isDiet(r) && r.kind === 'items' ? `<div class="az-hintline">${I('info', 18)}<span>The animals here get a Time-bound diet with these changes from ${fmtDay(r.start)}.</span></div>` : ''}
+    ${isDiet(r) ? (p => p.block ? `<div class="az-warnline az-warnline--bad">${I('error', 18)}<span>${esc(p.block)}</span></div>` : p.lines.length ? `<div class="az-hintline">${I('info', 18)}<span>${esc(p.lines.slice(0, 2).map(l => l.b).join('. '))}.</span></div>` : '')(planOf(r)) : ''}
     <label class="az-field"><span class="az-label">Note for ${esc(first(user(r.by).name))} (optional)</span><span class="az-input az-input--text az-textarea"><textarea id="ap-note" rows="3" oninput="AP.note=this.value">${esc(AP.note)}</textarea></span></label>`,
     foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button class="az-btn" onclick="doAct(AP.id,'approve',{note:AP.note})">${I('check')}Approve</button>` };
 }); }
@@ -156,7 +170,7 @@ function doAct(id, kind, x = {}) {
 function animalsSheet(id) { animalsSheetFor(by('requests', id)); }
 function animalsSheetFor(t) {
   const list = animalsIn(t);
-  openSheet(() => ({ title: 'Animals', sub: `${esc(species(t.sp).name)} · ${esc(placeText(t))} · ${list.length}`, body: list.length ? list.map(a => animalCard(a)).join('') : '<div class="nodiet">No animal here</div>' }), SH.length > 0);
+  openSheet(() => ({ title: 'Animals', sub: `${esc(targetsOf(t).length > 1 ? placesText(targetsOf(t)) : `${species(t.sp).name} · ${placeText(t)}`)} · ${list.length}`, body: list.length ? list.map(a => animalCard(a)).join('') : '<div class="nodiet">No animal here</div>' }), SH.length > 0);
 }
 
 /* ---------- Help Desk per device ---------- */
