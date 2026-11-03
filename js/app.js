@@ -20,7 +20,7 @@ function resetData() { try { localStorage.removeItem(STORE); } catch (e) {} Obje
 const route = () => (location.hash || '#/home').slice(2).split('?')[0].split('/');
 function view() {
   const parts = route(), q = new URLSearchParams(location.hash.split('?')[1] || '');
-  if (parts[0] !== 'new') S.back = location.hash || '#/home';
+  if (parts[0] !== 'new') S.back = underSheet(location.hash) || location.hash || '#/home';
   switch (parts[0]) {
     case 'diets': { const v = vDiets(parts); return typeof v === 'string' ? { html: v } : v; }
     case 'history': { const v = vHistory(parts); return typeof v === 'string' ? { html: v } : v; }
@@ -44,7 +44,14 @@ function showHome(on) {
 addEventListener('message', e => { const r = e.data && e.data.antzOpen; if (r === 'diets' || r === 'requests') { if (r === 'requests') { S.rDept = 'all'; S.rTab = 'pending'; } go('#/' + r); } });
 /* the app's own back trail: Back returns to the screen you came from, even after a reload, a shared link or inside the hub viewer */
 const TRAIL = [];
-function track(h) { if (TRAIL.length >= 2 && TRAIL[TRAIL.length - 2] === h) TRAIL.pop(); else if (TRAIL[TRAIL.length - 1] !== h) TRAIL.push(h); if (TRAIL.length > 40) TRAIL.shift(); }
+/* a sheet is never a place Back returns to (design system: a sheet works "without leaving the page"). Leaving the phone's species
+   sheet for a diet or a form closes it for good, so Back goes to the list under it (owner, 3 Nov: Back reopened the sheet) */
+const underSheet = h => isPhone() && /^#\/diets\/\d+$/.test(h || '') ? '#/diets' : '';
+function track(h) {
+  const u = underSheet(TRAIL[TRAIL.length - 1]);
+  if (u && h !== u && h !== TRAIL[TRAIL.length - 1]) { TRAIL.pop(); if (TRAIL[TRAIL.length - 1] !== u) TRAIL.push(u); }
+  if (TRAIL.length >= 2 && TRAIL[TRAIL.length - 2] === h) TRAIL.pop(); else if (TRAIL[TRAIL.length - 1] !== h) TRAIL.push(h); if (TRAIL.length > 40) TRAIL.shift();
+}
 function goBack(fallback) { go(TRAIL[TRAIL.length - 2] || fallback); }
 let V = null;
 function render() {
@@ -54,17 +61,20 @@ function render() {
   const main = $('#main'), act = document.activeElement, fid = act && act.id && dev.contains(act) ? act.id : null, pos = fid ? act.selectionStart : null;
   try { V = view(); } catch (e) { console.error(e); V = { html: pane('pane--fill', topbar({ back: '#/home', title: 'Something went wrong' }), empty1(esc(e.message))) }; }
   showHome(!!V.home);
+  if (V.home) S.homeY = 0;
   if (!V.home) {
     /* only what changed is redrawn (morph), so the screen never flashes; a new screen enters (phone: from the side it comes from) */
     const before = new Set([...main.children].map(c => c.getAttribute('data-k'))), depth = route().filter(Boolean).length, moved = render.last !== location.hash;
+    /* the Diet list keeps its place: Back from a diet finds it scrolled where it was left */
+    const hb = main.querySelector('.pane--home .pane__body'); if (hb) S.homeY = hb.scrollTop;
     morph(main, V.html);
+    const nb = !hb && S.homeY && main.querySelector('.pane--home .pane__body'); if (nb) nb.scrollTop = S.homeY;
     if (render.done) [...main.children].forEach(c => { if (!before.has(c.getAttribute('data-k'))) enter(c, isPhone() && moved ? (depth >= (render.depth || 0) ? 'in-fwd' : 'in-back') : 'in-fade'); });
     render.depth = depth;
-    const ov = $('#over'), ovHtml = V.sheet ? 'sheet' : V.modal ? 'modal' : V.overlay ? 'ov' : '';
+    const ov = $('#over');
     /* an overlay that is closing slides away first */
-    if (!ovHtml && ov.firstElementChild && !calm()) { const c = ov.firstElementChild; if (!c.classList.contains('out')) { c.classList.add('out'); setTimeout(() => { if (c.parentNode === ov && !(V.sheet || V.modal || V.overlay)) ov.innerHTML = ''; }, 230); } }
-    else morph(ov, V.sheet ? `<div class="bs-scrim" onclick="if(event.target===this)go('${V.modalClose}')"><div class="bsheet" role="dialog" aria-modal="true" data-k="bs-${V.sheet}"><div class="bsheet__grab" onpointerdown="sheetDrag(event,'${V.modalClose}')" aria-hidden="true"><i></i></div>${V.modal}</div></div>`
-      : V.modal ? `<div class="modal-scrim"${V.modalClose ? ` onclick="if(event.target===this)go('${V.modalClose}')"` : ''}>${V.modal.replace('class="pane ', 'class="modal pane ')}</div>` : V.overlay || '');
+    if (!V.overlay && ov.firstElementChild && !calm()) { const c = ov.firstElementChild; if (!c.classList.contains('out')) { c.classList.add('out'); setTimeout(() => { if (c.parentNode === ov && !V.overlay) ov.innerHTML = ''; }, 230); } }
+    else morph(ov, V.overlay || '');
     if (fid && document.getElementById(fid)) { const el = document.getElementById(fid); el.focus({ preventScroll: true }); try { if (pos != null) el.setSelectionRange(pos, pos); } catch (e) {} }
   } else $('#over').innerHTML = '';
   render.last = location.hash; render.done = true;
@@ -117,16 +127,6 @@ function fit() {
   const k = figmaOpen ? 1 : Math.min(1, (innerHeight - slot.getBoundingClientRect().top - 24) / H, (innerWidth - 48) / W);
   dev.style.transform = k < 1 ? `scale(${k})` : ''; slot.style.width = W * k + 'px'; slot.style.height = H * k + 'px';
   render();
-}
-/* the Apple sheet: drag the handle down to close it, or let go to spring back */
-function sheetDrag(e, close) {
-  const sh = e.target.closest('.bsheet'); if (!sh) return;
-  const y0 = e.clientY, k = sh.getBoundingClientRect().height / sh.offsetHeight || 1; let dy = 0;
-  sh.style.transition = 'none';
-  const move = ev => { dy = Math.max(0, (ev.clientY - y0) / k); sh.style.transform = `translateY(${dy}px)`; };
-  const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); sh.style.transition = '';
-    if (dy > 120) { sh.style.transform = 'translateY(100%)'; setTimeout(() => go(close), 180); } else sh.style.transform = ''; };
-  addEventListener('pointermove', move); addEventListener('pointerup', up);
 }
 addEventListener('resize', fit);
 addEventListener('hashchange', () => { closeAll(); render(); });
