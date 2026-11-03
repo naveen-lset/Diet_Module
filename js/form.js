@@ -25,7 +25,7 @@ function setTarget(d) {
 function pickKind(k) { const d = S.draft; if (d.kind !== k) { d.kind = k; d.changes = []; d.diet = null; setTarget(d); } render(); }
 function setW(level, id) {
   const d = S.draft;
-  if (level === 'species') { d.sp = id; d.w = {}; d.slot = null; }
+  if (level === 'species') { d.sp = id; d.w = {}; d.slot = null; if (!slotsOf(id).length) d.kind = 'diet'; }
   else { LEVELS.slice(LEVELS.indexOf(level) + 1).forEach(l => delete d.w[l]); if (id == null) delete d.w[level]; else { d.w[level] = id; Object.assign(d.w, wOf({ sp: d.sp, level, ref: id })); } }
   setTarget(d); closeAll(); render();
 }
@@ -52,6 +52,7 @@ function initDraft(q) {
   const a = asg && by('assigns', asg);
   if (a && d.dept === 'diet') { d.sp = a.sp; d.slot = a.id; d.w = wOf(a); setTarget(d); }
   else if (spq && d.dept === 'diet' && by('species', spq)) { d.sp = spq; if (KTABS.some(([k]) => k === kq)) d.kind = kq; setTarget(d); }
+  d.fixed = d.dept === 'diet' && !!(a || spq);
   return d;
 }
 const asReq = d => ({ kind: d.kind, sp: d.sp, level: d.level, ref: d.ref, slot: byDiet(d) ? d.slot : null, base: d.base, changes: d.changes, diet: d.diet, start: d.start, end: d.endMode === 'open' ? null : d.end, date: d.date, feeds: d.feeds });
@@ -72,7 +73,7 @@ function err(d) {
   const form = DEPT_FORMS[d.dept];
   if (form) for (const x of form.fields) if (x.req && !(x.type === 'items' ? (d.f.items || []).some(i => i.name.trim() && i.qty > 0) : d.f[x.k])) return `Add ${x.label.toLowerCase()}`;
   if (!titleOf(d).trim()) return 'Add a title';
-  if (d.text.trim().length < 5) return 'Add a description';
+  if (d.dept !== 'diet' && d.text.trim().length < 5) return 'Add a description';
   if (!d.site) return 'Choose the site';
   if (!d.approver) return 'Add the approver';
   return '';
@@ -80,9 +81,9 @@ function err(d) {
 
 /* ---------- form parts (Antz fields: labels above, 56 tall) ---------- */
 const section = (icon, title, body, req = false) => `<section class="az-section"><h2 class="az-section__title">${I(icon, 20)}<span class="grow">${title}${req ? '<span class="az-req">*</span>' : ''}</span></h2>${body}</section>`;
-const select = (label, value, js, { req = false, placeholder = 'Select', disabled = false, icon = 'keyboard_arrow_down' } = {}) => `<div class="az-field">${label ? `<span class="az-label">${label}${req ? ' <span class="az-req">*</span>' : ''}</span>` : ''}<button class="az-input az-input--select${value ? '' : ' az-input--placeholder'}" ${disabled ? 'aria-disabled="true" disabled' : `onclick="${js}"`}><span class="grow">${value ? esc(value) : placeholder}</span>${I(icon, 24)}</button></div>`;
+const select = (label, value, js, { req = false, placeholder = 'Select', disabled = false, icon = 'keyboard_arrow_down', id = '' } = {}) => `<div class="az-field">${label ? `<span class="az-label">${label}${req ? ' <span class="az-req">*</span>' : ''}</span>` : ''}<button${id ? ` id="${id}"` : ''} class="az-input az-input--select${value ? '' : ' az-input--placeholder'}" ${disabled ? 'aria-disabled="true" disabled' : `onclick="${js}"`}><span class="grow">${value ? esc(value) : placeholder}</span>${I(icon, 24)}</button></div>`;
 const personCard = (id, remove = '') => { const u = user(id); return `<div class="az-picked">${avatar(u.name)}<span class="grow"><span class="az-who__name">${youName(id)}</span><span class="az-who__sub">${esc(u.title)}</span></span>${remove ? `<button class="az-iconbtn" onclick="${remove}" aria-label="Remove ${esc(u.name)}" style="color:var(--Tertiary)">${I('cancel')}</button>` : ''}</div>`; };
-const KTABS = [['items', 'Change items'], ['diet', 'Change diet'], ['skip', 'No diet for a day']];
+const KTABS = [['items', 'Change items', 'Add, stop or change items in this diet'], ['diet', 'Change diet', 'Move these animals to another diet'], ['skip', 'No diet for a day', 'No feed on a day, or skip some feeds']];
 function setDept(id, draw = true) { const d = S.draft; if (d.dept !== id) d.f = id === 'procurement' ? { items: [{ name: '', qty: 1 }] } : {}; d.dept = id; d.approver = dept(id).head; if (draw) { closeAll(); render(); } }
 const pickDept = v => setDept(v);
 /* Requesting to: each department with what it handles and who approves; Diet is locked for people without the Dietician permission */
@@ -97,16 +98,17 @@ const askFields = d => `<span class="az-label">What are you requesting?</span>
     <label class="az-input az-input--text"><input id="f-title" placeholder="Title" value="${esc(titleOf(d))}" oninput="S.draft.title=this.value;S.draft.titleEdited=true;redrawFoot()" aria-label="Title"></label>
     <label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="4" placeholder="Description / Justification" oninput="S.draft.text=this.value;redrawFoot()" aria-label="Description or justification">${esc(d.text)}</textarea></label>`;
 function requestDetails(d) {
-  const deptName = d.dept ? dept(d.dept).name : '';
-  return section('category', 'Request Details', `${select('Requesting to', deptName, 'deptSheet()', { placeholder: 'Select Department', disabled: !!d.edit })}
-    ${d.dept === 'diet' ? '' : askFields(d)}
+  const deptName = d.dept ? dept(d.dept).name : '', to = select('Requesting to', deptName, 'deptSheet()', { placeholder: 'Select department', disabled: !!d.edit });
+  /* a diet request: who sends it, from which site and who approves are fixed, so they move to Your request at the end (owner, 3 Nov: "think more") */
+  if (d.dept === 'diet') return d.fixed || d.edit ? '' : section('category', 'Requesting to', select('', deptName, 'deptSheet()'), true);
+  return section('category', 'Request details', `${to}
+    ${askFields(d)}
     <div class="az-field"><span class="az-label">Requested by</span>${personCard(S.user)}</div>
-    ${d.site ? `<div class="az-field"><span class="az-label">Requesting Site</span><div class="az-site az-site--picked"><span class="az-site__thumb" style="display:grid;place-items:center;color:var(--Outline)">${I('location_on', 20)}</span><span class="grow"><span class="az-site__name">${esc(by('sites', d.site).name)}</span></span>${d.dept === 'diet' && d.sp ? '' : `<button class="az-iconbtn" onclick="S.draft.site=null;render()" aria-label="Remove site">${I('cancel')}</button>`}</div></div>`
-      : select('Requesting Site', '', `optionSheet('Requesting Site',D.sites.map(s=>[s.id,s.name]),S.draft.site,'pickReqSite')`, { placeholder: 'Choose site', icon: 'add_circle' })}
+    ${d.site ? `<div class="az-field"><span class="az-label">Requesting site</span><div class="az-site az-site--picked"><span class="az-site__thumb" style="display:grid;place-items:center;color:var(--Outline)">${I('location_on', 20)}</span><span class="grow"><span class="az-site__name">${esc(by('sites', d.site).name)}</span></span>${d.dept === 'diet' && d.sp ? '' : `<button class="az-iconbtn" onclick="S.draft.site=null;render()" aria-label="Remove site">${I('cancel')}</button>`}</div></div>`
+      : select('Requesting site', '', `optionSheet('Requesting site',D.sites.map(s=>[s.id,s.name]),S.draft.site,'pickReqSite')`, { placeholder: 'Choose site', icon: 'add_circle' })}
     ${d.approver ? `<div class="az-field"><span class="az-label">To be approved by</span>${personCard(d.approver, d.dept === 'diet' ? '' : 'S.draft.approver=null;render()')}</div>`
       : select('To be approved by', '', `optionSheet('To be approved by',D.users.filter(u=>u.id!==S.user&&!VIEWERS.includes(u.id)||u.id==='u-suresh').map(u=>[u.id,u.name,u.title]),S.draft.approver,'pickApprover')`, { placeholder: 'Add approver', icon: 'add_circle' })}`, true);
 }
-function speciesSelect(d) { return select('Species', d.sp ? species(d.sp).name : '', 'speciesPickSheet()', { req: true, placeholder: 'Choose species' }); }
 /* Species: a bottom sheet with search, photo rows, the number of diets */
 let SPQ = '';
 function speciesPickSheet() {
@@ -137,14 +139,34 @@ const dupNote = d => { const open = d.sp ? openFor(d).filter(r => r.id !== d.edi
 /* the diet part: what you need, the species, which diet (a bottom sheet by level), for which animals (the entity page) */
 const LVL_TABS = [['all', 'All'], ['species', 'Species-wide'], ['site', 'Site-wide'], ['section', 'Section-wide'], ['enclosure', 'Enclosure-wide'], ['animal', 'Animal-wide']];
 const slotWhere = a => a.level === 'species' ? 'Species-wide' : `${LEVEL[a.level]} · ${targetName(a)}`;
-function dietPick(d) {
-  const slots = d.sp ? slotsOf(d.sp) : [], s = slotOn(d);
-  const seg = `<div class="az-seg" role="tablist">${thumb()}${KTABS.map(([k, l]) => `<span role="tab" tabindex="0" aria-selected="${d.kind === k}" onclick="pickKind('${k}')" onkeydown="if(event.key==='Enter')pickKind('${k}')">${l}</span>`).join('')}</div>`;
-  if (d.kind === 'skip') return section('restaurant', 'Diet', seg + speciesSelect(d) + (d.sp ? whoField(d) + `<div class="az-hintline">${I('restaurant', 18)}<span>Diet now: ${currentDiet(d) ? `<button class="lnk" onclick="dietSheet('${currentDiet(d).diet.id}')">${esc(currentDiet(d).diet.name)}</button>` : 'no diet'}</span></div>` + dupNote(d) : ''));
-  if (!d.sp || !slots.length) return section('restaurant', 'Diet', seg + speciesSelect(d) + (d.sp ? `<div class="az-hintline">${I('info', 18)}<span>${esc(species(d.sp).name)} has no diet yet.${d.kind === 'diet' ? ' Pick a diet below to give it.' : ' Use Change diet to give it one.'}</span></div>` : ''));
-  const which = s ? pickedBox('Selected diet', 'restaurant', esc(diet(s.diet).name), `${esc(slotKind(s))} · ${esc(slotWhere(s))} · ${plural(followersOf(s).length, 'animal')}`, 'clearSlot()', `<button class="lnk" onclick="dietSheet('${s.diet}')">View</button>`)
-    : `<div class="az-field"><span class="az-label">Which diet? <span class="az-req">*</span></span><button class="az-input az-input--select az-input--placeholder" onclick="dietPickSheet()"><span class="grow">Choose diet</span>${I('keyboard_arrow_down')}</button></div>`;
-  return section('restaurant', 'Diet', seg + speciesSelect(d) + which + (s ? whoField(d) + dupNote(d) : ''));
+/* What do you want to do: the design system's choice tiles, first, as each one changes what the form asks next.
+   Change items and No diet for a day are locked, saying why, for a species with no diet */
+function kindTiles(d) {
+  const none = !!d.sp && !slotsOf(d.sp).length;
+  return section('checklist', 'What do you want to do?', `<div class="az-tiles ktiles" role="radiogroup" aria-label="What do you want to do?">${KTABS.map(([k, l, sub]) => {
+    const locked = k !== 'diet' && none, on = d.kind === k && !locked;
+    return `<button class="az-tile${locked ? ' az-tile--locked' : ''}" role="radio" aria-checked="${on}" ${locked ? 'aria-disabled="true" disabled' : `onclick="pickKind('${k}')"`}><span class="az-tile__t"><b>${l}</b><span>${locked ? 'No diet yet' : k === 'diet' && none ? 'Give these animals a diet' : sub}</span></span>${I(locked ? 'lock' : on ? 'radio_button_checked' : 'radio_button_unchecked', 24, on)}</button>`; }).join('')}</div>`, true);
+}
+/* For: the species, its diet and the animals in one container, each row opening its chooser. From a diet all three come filled in */
+function forSec(d) {
+  if (!d.sp) return section('restaurant', 'For', select('Species', '', 'speciesPickSheet()', { req: true, placeholder: 'Choose species', id: 'f-sp' }), true);
+  const sp = species(d.sp), s = slotOn(d), now = !byDiet(d) ? currentDiet(d) : null;
+  const row = (lead, name, sub, js, end) => `<button class="forrow" onclick="${js}">${lead}<span class="grow"><b>${name}</b>${sub ? `<small>${sub}</small>` : ''}</span>${end || `<span class="lnk">Change</span>`}</button>`;
+  const dav = `<span class="davatar">${I('restaurant')}</span>`;
+  const spRow = row(spThumb(sp), esc(sp.name), `${esc(sp.sci)} · ${plural(spAnimals(sp.id).length, 'animal')}`, 'speciesPickSheet()');
+  const dietRow = s ? row(dav, esc(diet(s.diet).name), `${esc(slotKind(s))} · ${esc(slotWhere(s))}`, 'dietPickSheet()')
+    : byDiet(d) ? `<div class="forrow forrow--pick">${select('Which diet?', '', 'dietPickSheet()', { req: true, placeholder: 'Choose diet', id: 'f-diet' })}</div>`
+    : now ? row(dav, esc(now.diet.name), 'Diet now', `dietSheet('${now.diet.id}')`, `<span class="lnk">View</span>`)
+    : `<div class="forrow forrow--static"><span class="davatar davatar--none">${I('no_meals')}</span><span class="grow"><b>No diet yet</b></span></div>`;
+  return section('restaurant', 'For', `<div class="forcard">${spRow}${dietRow}${byDiet(d) && !s ? '' : whoRow(d)}</div>${byDiet(d) && !s ? '' : dupNote(d)}`, true);
+}
+/* For which animals: the row shows the choice; it opens the entity page (a diet set on one animal is that animal) */
+function whoRow(d) {
+  const s = slotOn(d), n = animalsIn(d).length, base = s ? s.level : 'species', chosen = d.level !== base;
+  const name = chosen ? esc(targetName(d)) : s ? 'All animals on this diet' : `All ${esc(species(d.sp).name)}`, sub = [chosen ? esc(targetPath(d)) : '', plural(n, 'animal')].filter(Boolean).join(' · ');
+  const lead = `<span class="eav">${I(chosen ? (d.level === 'animal' ? 'pets' : PLACE_ICON[d.level]) : 'groups', 22)}</span>`;
+  if (s && s.level === 'animal') return `<div class="forrow forrow--static">${lead}<span class="grow"><b>${esc(targetName(d))}</b><small>${esc(targetPath(d))}</small></span></div>`;
+  return `<button class="forrow" onclick="entOpen()">${lead}<span class="grow"><b>${name}</b><small>${sub}</small></span>${I('chevron_right')}</button>`;
 }
 /* a chosen thing, as the Selected box of the entity page: title + Clear, then the choice */
 const pickedBox = (title, icon, name, sub, clear, end = '', locked = false) => `<div class="ebox"><div class="ebox__h"><span>${title}</span>${clear && !locked ? `<button onclick="${clear}">Clear</button>` : ''}</div><div class="ebox__c"><span class="eav">${I(icon, 22)}</span><span class="grow"><b>${name}</b>${sub ? `<small>${sub}</small>` : ''}</span>${end}</div></div>`;
@@ -159,14 +181,6 @@ function dietPickSheet() {
         + list.map(a => { const on = d.slot === a.id; return `<button class="az-pickrow" role="radio" aria-checked="${on}" onclick="closeAll();setSlot('${a.id}')"><span class="az-pickrow__t"><b>${esc(diet(a.diet).name)}</b><span>${esc(slotKind(a))}${a.group ? ' · ' + esc(a.group.label) : ''} · ${esc(slotWhere(a))}</span><span>${plural(followersOf(a).length, 'animal')}${isNow(a) ? ' · Currently active' : ''}</span></span>${I(on ? 'radio_button_checked' : 'radio_button_unchecked', 24, on)}</button>`; }).join('') };
   });
 }
-/* For which animals: the field shows the choice; it opens the entity page */
-function whoField(d) {
-  const s = slotOn(d), n = animalsIn(d).length, base = s ? s.level : 'species', chosen = d.level !== base;
-  const name = chosen ? esc(targetName(d)) : s ? 'All animals on this diet' : `All ${esc(species(d.sp).name)}`, path = chosen ? esc(targetPath(d)) : '';
-  if (s && s.level === 'animal') return pickedBox('For which animals?', 'pets', esc(targetName(d)), esc(targetPath(d)), '', '', true);
-  return `<div class="az-field"><span class="az-label">For which animals?</span><button class="whobtn" onclick="entOpen()"><span class="eav">${I(chosen ? (d.level === 'animal' ? 'pets' : PLACE_ICON[d.level]) : 'groups', 22)}</span><span class="grow"><b>${name}</b><small>${[path, plural(n, 'animal')].filter(Boolean).join(' · ')}</small></span>${I('chevron_right')}</button></div>`;
-}
-
 /* ---------- the entity page (as the Item requests form): search, the site, then Section › Enclosure › Animal, Done ---------- */
 const entPool = d => { const s = slotOn(d); return s ? followersOf(s) : D.animals.filter(a => a.sp === d.sp); };
 function entOpen() { const d = S.draft, s = slotOn(d), lock = s ? wOf(s) : {}; d.ent = { ...lock, ...d.w, lock, q: '' }; if (!d.ent.site) { const sites = placesUnder(d.sp, 'site', {}, entPool(d)); if (sites.length === 1) d.ent.site = sites[0].id; } render(); }
@@ -233,7 +247,7 @@ function itemsSec(d) {
   const groups = feeds.map(f => { const m = base.meals.find(x => x.feed === f) || { items: [] };
     return { feed: f, rows: m.items.map(i => ({ ...lineRow(i, changeOf(d, f, i.item)), click: `lineSheet(${f},${i.item})` })).concat(addsAt(d, f).map(c => ({ ...lineRow(null, c), click: `addSheet(${f},${c.to})` }))) }; });
   const n = d.changes.length;
-  return `<section class="az-section"><h2 class="az-section__title">${I('edit_note', 20)}<span class="grow">What should change<span class="az-req">*</span></span>${n ? `<span class="chgcount">${plural(n, 'change')}</span>` : ''}</h2>${mealTable(groups, isTab(), true, { add: f => `addSheet(${f})` })}</section>`;
+  return `<section class="az-section"><h2 class="az-section__title">${I('edit_note', 20)}<span class="grow">What should change<span class="az-req">*</span></span>${n ? `<span class="chgcount">${plural(n, 'change')}</span>` : ''}</h2>${mealTable(groups, isTab(), true, { add: f => `addSheet(${f})` })}${n ? kitchenNote(d) : ''}</section>`;
 }
 function setChange(c) { const d = S.draft; d.changes = d.changes.filter(x => !(c.op !== 'add' && x.op !== 'add' && x.feed === c.feed && x.item === c.item) && !(c.op === 'add' && x.op === 'add' && x.feed === c.feed && x.to === c.to)); d.changes.push(c); d.changes.sort((a, b) => a.feed - b.feed); closeAll(); render(); }
 function undoChange(f, it) { const d = S.draft; d.changes = d.changes.filter(x => !(x.op !== 'add' && x.feed === f && x.item === it)); closeAll(); render(); }
@@ -315,21 +329,22 @@ function dietSec(d) {
   const own = D.diets.filter(x => x.sp === d.sp && x.id !== d.base), cls = species(d.sp).cls;
   const list = own.length ? own : D.diets.filter(x => D.assigns.some(a => a.diet === x.id && !ended(a))).sort((x, y) => (species(y.sp).cls === cls) - (species(x.sp).cls === cls) || x.name.localeCompare(y.name));
   const pick = list.length ? list.map(x => `<button class="az-pickrow" role="radio" aria-checked="${d.diet === x.id}" onclick="S.draft.diet='${x.id}';render()"><span class="az-pickrow__t"><b>${esc(x.name)}</b><span>${KINDTYPE[x.type]}${own.length ? '' : ` · ${esc(species(x.sp).name)}`}</span></span><span class="lnk" onclick="event.stopPropagation();dietSheet('${x.id}')">View</span>${I(d.diet === x.id ? 'radio_button_checked' : 'radio_button_unchecked', 24, d.diet === x.id)}</button>`).join('') : `<div class="az-hintline">${I('info', 18)}<span>There is no other diet for ${esc(species(d.sp).name)} yet.</span></div>`;
-  return section('swap_horiz', 'Which new diet?', pick + (d.diet ? `<p class="cap">What changes</p>${linesView(dietDiffGroups(diet(d.base), diet(d.diet)))}` : ''), true);
+  return section('swap_horiz', 'Which new diet?', pick + (d.diet ? `<p class="cap">What changes</p>${linesView(dietDiffGroups(diet(d.base), diet(d.diet)))}${kitchenNote(d)}` : ''), true);
 }
 /* no diet: which day, which feeds */
 function skipSec(d) {
   const w = currentDiet(d), meals = w ? w.diet.meals : FEEDS.map(f => ({ feed: f.id, items: [] })), all = d.feeds === 'all', t1 = addDays(TODAY, 1);
   return section('event_busy', 'Which day and feeds?', `<div class="daychips"><button aria-pressed="${d.date === TODAY}" onclick="S.draft.date='${TODAY}';render()">Today · ${fmtDay(TODAY)}</button><button aria-pressed="${d.date === t1}" onclick="S.draft.date='${t1}';render()">Tomorrow · ${fmtDay(t1)}</button></div>
     <label class="az-field"><span class="az-label">Or pick a day</span><span class="az-input az-input--text">${I('calendar_month')}<input type="date" id="s-date" min="${TODAY}" value="${d.date}" onchange="if(this.value)S.draft.date=this.value;render()"></span></label>
-    <div class="daychips"><button aria-pressed="${all}" onclick="S.draft.feeds='all';render()">All feeds</button>${meals.map(m => `<button aria-pressed="${!all && d.feeds.includes(m.feed)}" onclick="toggleFeed(${m.feed})">${bandText(feed(m.feed))}</button>`).join('')}</div>${skipView(asReq(d))}`, true);
+    <div class="daychips"><button aria-pressed="${all}" onclick="S.draft.feeds='all';render()">All feeds</button>${meals.map(m => `<button aria-pressed="${!all && d.feeds.includes(m.feed)}" onclick="toggleFeed(${m.feed})">${bandText(feed(m.feed))}</button>`).join('')}</div>${skipView(asReq(d))}${kitchenNote(d)}`, true);
 }
 function toggleFeed(f) { const d = S.draft, w = currentDiet(d), every = w ? w.diet.meals.map(m => m.feed) : FEEDS.map(x => x.id); let list = d.feeds === 'all' ? [] : [...d.feeds]; list = list.includes(f) ? list.filter(x => x !== f) : [...list, f].sort(); d.feeds = every.every(x => list.includes(x)) ? 'all' : list; render(); }
-const whenSec = d => section('event', 'When and why', `<div class="az-two"><label class="az-field"><span class="az-label">Start <span class="az-req">*</span></span><span class="az-input az-input--text"><input type="date" id="p-start" min="${TODAY}" value="${d.start}" onchange="S.draft.start=this.value;render()"></span></label>
+const whenSec = d => section('event', 'When', `<div class="az-two"><label class="az-field"><span class="az-label">Start <span class="az-req">*</span></span><span class="az-input az-input--text"><input type="date" id="p-start" min="${TODAY}" value="${d.start}" onchange="S.draft.start=this.value;render()"></span></label>
   <label class="az-field"><span class="az-label">End</span><span class="az-input az-input--text"${d.endMode === 'open' ? ' aria-disabled="true"' : ''}><input type="date" id="p-end" min="${d.start}" value="${d.endMode === 'open' ? '' : d.end}"${d.endMode === 'open' ? ' disabled' : ''} onchange="S.draft.end=this.value;render()"></span></label></div>
-  <button class="az-checkrow" role="checkbox" aria-checked="${d.endMode === 'open'}" onclick="S.draft.endMode=S.draft.endMode==='open'?'date':'open';render()">${I(d.endMode === 'open' ? 'check_box' : 'check_box_outline_blank', 24, d.endMode === 'open')}No end date</button>` + reasonNote(d), true);
-const reasonNote = d => select('Reason', d.reason, `optionSheet('Reason',REASONS[S.draft.kind].map(t=>[t,t]),S.draft.reason,'pickReason')`, { req: true })
-  + `<label class="az-field"><span class="az-label">Note to kitchen (optional)</span><span class="az-input az-input--text az-textarea"><textarea id="d-note" rows="3" placeholder="Preparation, timing, serving" oninput="S.draft.note=this.value">${esc(d.note)}</textarea></span></label>`;
+  <button class="az-checkrow" role="checkbox" aria-checked="${d.endMode === 'open'}" onclick="S.draft.endMode=S.draft.endMode==='open'?'date':'open';render()">${I(d.endMode === 'open' ? 'check_box' : 'check_box_outline_blank', 24, d.endMode === 'open')}No end date</button>`, true);
+const kitchenNote = d => `<label class="az-field"><span class="az-label">Note to kitchen (optional)</span><span class="az-input az-input--text az-textarea"><textarea id="d-note" rows="2" placeholder="Preparation, timing, serving" oninput="S.draft.note=this.value">${esc(d.note)}</textarea></span></label>`;
+const whySec = d => section('label', 'Why', select('Reason', d.reason, `optionSheet('Reason',REASONS[S.draft.kind].map(t=>[t,t]),S.draft.reason,'pickReason')`, { req: true, id: 'f-reason' })
+  + `<label class="az-field"><span class="az-label">Details (optional)</span><span class="az-input az-input--text az-textarea"><textarea id="f-text" rows="3" placeholder="What the approver should know" oninput="S.draft.text=this.value;redrawFoot()">${esc(d.text)}</textarea></span></label>`, true);
 function pickReason(v) { S.draft.reason = v; closeAll(); render(); }
 /* the department's own questions (DEPT_FORMS in data.js) */
 function pickF(k, v) { S.draft.f[k] = v; closeAll(); render(); }
@@ -352,32 +367,53 @@ function deptSection(d) {
 /* attachments (sample files in the prototype) */
 const SAMPLE_FILES = [{ name: 'Vet note.pdf', kind: 'pdf', size: '320 KB' }, { name: 'Photo of the enclosure.jpg', kind: 'image', size: '1.4 MB' }, { name: 'Weight chart.xlsx', kind: 'doc', size: '42 KB' }];
 function addFile() { const d = S.draft, f = SAMPLE_FILES.find(x => !d.files.some(y => y.name === x.name)); if (f) d.files.push(f); render(); }
-const attachSec = d => section('attach_file', 'Add Attachments If Any', `${d.files.length ? `<div class="files">${d.files.map((f, i) => `<span class="file">${I(f.kind === 'image' ? 'image' : f.kind === 'pdf' ? 'picture_as_pdf' : 'description', 20)}${esc(f.name)}<button class="az-iconbtn" style="width:28px;height:28px" onclick="S.draft.files.splice(${i},1);render()" aria-label="Remove ${esc(f.name)}">${I('close', 18)}</button></span>`).join('')}</div>` : ''}
+const attachSec = d => section('attach_file', 'Attachments', `${d.files.length ? `<div class="files">${d.files.map((f, i) => `<span class="file">${I(f.kind === 'image' ? 'image' : f.kind === 'pdf' ? 'picture_as_pdf' : 'description', 20)}${esc(f.name)}<button class="az-iconbtn" style="width:28px;height:28px" onclick="S.draft.files.splice(${i},1);render()" aria-label="Remove ${esc(f.name)}">${I('close', 18)}</button></span>`).join('')}</div>` : ''}
   <button class="az-upload" onclick="addFile()"><i class="az-i" aria-hidden="true">add_photo_alternate</i><b>Add photos or files</b><span>PDF, images or documents</span></button>`);
 /* priority sits at the top right, as the Help Desk app: the Antz flag */
 function prioSheet() { optionSheet('Priority', Object.entries(PRIO).map(([k, [, l]]) => [k, l, PRI_TEXT[k]]), S.draft.prio, 'pickFormPrio'); }
 function pickFormPrio(v) { S.draft.prio = v; closeAll(); render(); }
-function formFoot(d) { return `<div class="az-actionbar"><button class="az-btn" onclick="submitDraft()">${d.edit ? 'Save and Submit' : 'Submit Request'}</button></div>`; }
+/* Your request: what will be sent, said once before sending (design system: Review before sending). The title writes itself from
+   the changes until the person edits it; who approves, who asks and the site are fixed for a diet request, so they are read here */
+function reviewSec(d) {
+  const t = titleOf(d), u = user(S.user), ap = d.approver && user(d.approver), editing = d.tEdit || (d.titleEdited && !t.trim());
+  const title = editing ? `<label class="az-input az-input--text"><input id="f-title" placeholder="Title" value="${esc(t)}" oninput="S.draft.title=this.value;S.draft.titleEdited=true;redrawFoot()" aria-label="Title"></label>`
+    : t ? `<div class="rvtitle"><b>${esc(t)}</b><button class="az-iconbtn" onclick="S.draft.tEdit=true;render();setTimeout(()=>{const i=document.getElementById('f-title');if(i)i.focus()},30)" aria-label="Edit title">${I('edit', 20)}</button></div>` : '';
+  const day = dayText(d.date), when = d.kind === 'skip' ? `${day[0].toUpperCase() + day.slice(1)} · ${d.feeds === 'all' ? 'All feeds' : d.feeds.map(f => bandText(feed(f))).join(', ')}`
+    : d.endMode === 'open' ? `From ${fmtDayY(d.start)} · No end date` : `${fmtDayY(d.start)} → ${fmtDayY(d.end)}`;
+  const row = (icon, k, v) => `<div class="rsec__r">${I(icon)}<span class="t"><span>${k}</span><b>${v}</b></span></div>`;
+  return section('send', 'Your request', title + `<div class="rsec">${[t ? row('event', 'When', when) : '', ap ? row('how_to_reg', 'To be approved by', `${esc(ap.name)} · ${esc(ap.title)}`) : '',
+    row('person', 'Requested by', `${youName(S.user)} · ${esc(u.title)}`), d.site ? row('location_on', 'Requesting site', esc(by('sites', d.site).name)) : ''].join('')}</div>`);
+}
+/* Send looks off until the form is complete (design system); a tap still says what is missing and goes to it. It carries the count */
+function formFoot(d) {
+  const e = err(d), n = d.dept === 'diet' && d.kind === 'items' ? d.changes.length : 0;
+  return `<div class="az-actionbar"><button class="az-btn${e ? ' az-btn--disabled' : ''}" aria-disabled="${!!e}" onclick="submitDraft()">${d.edit ? 'Save and send' : n ? `Send ${plural(n, 'change')}` : 'Send request'}</button></div>`;
+}
 /* where a missing answer is asked, to scroll to it */
-const ERR_AT = [[/title/, '#f-title'], [/description/, '#f-text'], [/dates/, '#p-start'], [/reason/, '#d-note'], [/item/, '.chgcount, .mtab-wrap']];
+const ERR_AT = [[/species/, '#f-sp'], [/^choose the diet/, '#f-diet'], [/title/, '#f-title'], [/description/, '#f-text'], [/dates/, '#p-start'], [/reason/, '#f-reason'], [/item/, '.chgcount, .mtab-wrap']];
 function redrawFoot() { const f = $('#form-foot'); if (f && S.draft) f.innerHTML = formFoot(S.draft); }
+/* a diet request asks, in order: what to do (tiles), for which diet and animals (one card), what changes, when, why; then shows
+   Your request and Send. On the iPad in landscape, Your request stays beside the form */
 function paneForm(q) {
   const d = initDraft(q), close = d.edit ? `#/requests/${d.edit}` : S.back;
   if (d.blocked) return pane('pane--fill', topbar({ back: close, title: 'Edit request' }), empty1('This request can no longer be edited'));
   if (d.ent) return paneEntity(d);
   const secs = [requestDetails(d)];
+  let side = '';
   if (d.dept === 'diet') {
-    secs.push(dietPick(d));
+    secs.push(kindTiles(d), forSec(d));
     const ready = d.kind === 'skip' ? !!d.sp : byDiet(d) ? !!d.slot : d.kind === 'diet' && !!d.sp;
     if (ready && !(d.kind === 'items' && !d.base)) secs.push(d.kind === 'items' ? itemsSec(d) : d.kind === 'diet' ? dietSec(d) : skipSec(d));
     const changed = ready && (d.kind === 'items' ? d.changes.length : d.kind === 'diet' ? d.diet : true);
-    if (changed) secs.push(d.kind === 'skip' ? section('label', 'Why', reasonNote(d), true) : whenSec(d));
-    secs.push(section('subject', 'Title and description', askFields(d), true));
+    if (changed) secs.push(...(d.kind === 'skip' ? [] : [whenSec(d)]), whySec(d));
+    side = reviewSec(d);
   }
   if (DEPT_FORMS[d.dept]) secs.push(deptSection(d));
   secs.push(attachSec(d));
   const prio = `<button class="prio-pick" onclick="prioSheet()" aria-label="Priority: ${PRIO[d.prio][1]}"><span class="prio prio--${d.prio}">${d.prio === 'emergency' ? I('local_fire_department', 16, true) : PRIO[d.prio][0]}</span>${PRIO[d.prio][1]}${I('keyboard_arrow_down', 20)}</button>`;
-  return pane('pane--fill form-page', topbar({ back: close, title: d.edit ? `Edit ${d.edit}` : 'New Request', actions: prio }), `<div class="body">${secs.join('')}</div>`, `<div id="form-foot">${formFoot(d)}</div>`, `form-${d.key}`);
+  const foot = `<div id="form-foot">${formFoot(d)}</div>`, wide = side && isLand();
+  const body = wide ? `<div class="body fgrid"><div class="fgrid__main">${secs.join('')}</div><div class="fgrid__side">${side}${foot}</div></div>` : `<div class="body">${secs.join('')}${side}</div>`;
+  return pane('pane--fill form-page', topbar({ close: `go('${close}')`, title: d.edit ? `Edit ${d.edit}` : d.dept === 'diet' ? 'New diet request' : 'New request', actions: prio }), body, wide ? '' : foot, `form-${d.key}`);
 }
 function submitDraft() {
   const d = S.draft;

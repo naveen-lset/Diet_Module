@@ -19,6 +19,8 @@ function whatOf(r) {
   if (r.kind === 'skip') return `No diet ${onDay(r.date)} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ') + ' only'}`;
   return r.kind === 'items' ? r.changes.map(c => changeText(c, base)).join(', ') : `${base ? base.name : 'No diet'} → ${diet(r.diet).name}`;
 }
+/* the card's second line: what changes, or, when the title already says that (a diet request names itself), who it is for and why */
+const cardLine = r => { const w = whatOf(r); return w !== r.title || !isDiet(r) ? w : [`${species(r.sp).name} · ${placeText(r)}`, r.reason].filter(Boolean).join(' · '); };
 const catOf = r => isDiet(r) ? `Diet · ${KIND[r.kind][0]}` : dept(r.dept).name;
 const siteOf = r => r.site ? by('sites', r.site).name : '';
 const lastComment = r => [...r.events].reverse().find(e => e.kind === 'comment');
@@ -27,7 +29,7 @@ function hdCard(r, cur = false) {
   const s = stateOf(r), c = lastComment(r), low = r.approver === S.user && isOpen(r) && shortOf(r).length;
   return `<a class="hdcard pick" href="#/requests/${r.id}"${cur ? ' aria-current="true"' : ''}>
     <span class="hdcard__top"><span class="grow"><b class="hdcard__id">${r.id}</b><span class="hdcard__cat">${esc(catOf(r))}</span><span class="hdcard__site">${esc(siteOf(r))}</span></span>${flag(r.prio)}</span>
-    <span class="hdcard__body"><b class="hdcard__t">${esc(r.title)}</b><span class="hdcard__d">${esc(whatOf(r))}</span>
+    <span class="hdcard__body"><b class="hdcard__t">${esc(r.title)}</b><span class="hdcard__d">${esc(cardLine(r))}</span>
       <span class="hdcard__by"><b>${youName(r.by)}</b> • ${fmtDayY(r.events[0].at.slice(0, 10))}${low ? ` ${pill('pending', 'Low stock')}` : ''}${r.f && r.f.cost ? `<span class="amt-green">₹ ${(+r.f.cost).toLocaleString('en-IN')}</span>` : ''}${(r.files || []).length ? `<span class="hdcard__files">${I('attach_file', 18)}${r.files.length}</span>` : ''}</span></span>
     ${c ? `<span class="hdcard__cmt">${I('format_quote', 22, true)}<span><i>${esc(c.note)}</i><small>${youName(c.by)} ${fmtDayY(c.at.slice(0, 10))} • ${fmtTime(c.at)}</small></span></span>` : ''}
     <span class="az-strip az-strip--${s.tone}">${I(s.icon, 20)}${esc(s.label)}<span class="az-strip__time">${stripTime(r)}</span></span></a>`;
@@ -59,7 +61,7 @@ function paneRequest(id, { cls = '' } = {}) {
     <span class="rhead__who">${avatar(req.name)}<span class="grow"><span class="az-who__name">${youName(r.by)}</span><span class="az-who__sub">${esc(req.title)}</span></span>${r.by === S.user ? '' : iconBtn('call', `Call ${req.name}`, `toast('Calling ${esc(req.name)}')`) + iconBtn('chat', `Chat with ${req.name}`, `toast('Chat with ${esc(req.name)}')`)}</span></div>`;
   const row = (icon, k, v) => `<div class="rsec__r">${I(icon)}<span class="t"><span>${k}</span>${v}</span></div>`;
   let body = '';
-  const sec1 = [row('subject', 'Request', `<b>${esc(r.title)}</b><p>${esc(r.text)}</p>`)];
+  const sec1 = [row('subject', 'Request', `<b>${esc(r.title)}</b>${r.text ? `<p>${esc(r.text)}</p>` : ''}`)];
   /* the department's own answers */
   const form = DEPT_FORMS[r.dept];
   if (form && r.f) form.fields.forEach(x => { const v = r.f[x.k];

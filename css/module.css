@@ -1030,3 +1030,33 @@ button.step{cursor:pointer}
 .az-menu button{background:var(--white);padding:12px 16px;min-height:44px;display:flex;align-items:center;gap:8px;font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
 .az-menu button.az-danger{color:var(--Error)}
 .az-menu button:active{background:linear-gradient(rgba(0,0,0,.1),rgba(0,0,0,.1)),var(--white)}
+/* New diet request (owner, 3 Nov: "think more, UI & flow"): what to do as choice tiles, one For card, Your request before Send */
+.ktiles{grid-template-columns:1fr}
+.tab .ktiles{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ktiles .az-tile{min-height:64px;text-align:left}
+.ktiles .az-tile > .az-i{flex:none;color:var(--Outline)}
+.ktiles .az-tile[aria-checked="true"] > .az-i{color:var(--Primary)}
+.tab .ktiles .az-tile{align-items:flex-start}
+.forcard{border:1px solid var(--OutlineVariant);border-radius:var(--r-8);background:var(--white);overflow:hidden}
+.forrow{width:100%;display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 12px;text-align:left;background:var(--white)}
+.forrow + .forrow{border-top:1px solid var(--neutral05)}
+.forrow .grow{display:flex;flex-direction:column;gap:2px;min-width:0}
+.forrow b{font:var(--t-minor-medium);color:var(--OnSecondaryContainer)}
+.forrow small{font:var(--t-body-regular);color:var(--OnSurfaceVariant);line-height:18px}
+.forrow > .lnk{flex:none;font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+.forrow > .az-i{flex:none;color:var(--OnSurfaceVariant)}
+.forrow .thumb{width:44px;height:44px;border-radius:var(--r-full)}
+.forrow--pick{display:block;padding:12px}
+.davatar--none{background:var(--SurfaceVariant);color:var(--Outline)}
+.rvtitle{display:flex;align-items:flex-start;gap:8px}
+.rvtitle b{flex:1;font:var(--t-minor-title);line-height:22px;color:var(--OnSecondaryContainer);padding-top:11px}
+.form-page .rsec{border-top:1px solid var(--neutral05)}
+.fgrid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+.fgrid__main{display:flex;flex-direction:column;gap:12px;min-width:0}
+.fgrid__side{position:sticky;top:0}
+.tab-l .form-page .body.fgrid{max-width:1120px}
+.az-btn.az-btn--disabled{cursor:pointer}
+.fgrid__side{display:flex;flex-direction:column;gap:12px}
+.fgrid__side .az-actionbar{padding:0;border:0;background:none}
+.fgrid__side .az-btn{width:100%}
+.ktiles .az-tile__t span{line-height:18px}
