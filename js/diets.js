@@ -128,23 +128,15 @@ const noMatch = (q, clear) => `<div class="empty1"><div>No match for “${esc(q.
 
 /* ---------- a species: its photo, facts, the level chips, then the diets or places of that level ---------- */
 const lvlOf = sp => { const l = S.lvl[sp] || 'species'; return levelsOf(sp).includes(l) ? l : 'species'; };
-/* who eats what: the animals by the level of the diet each one follows; a part opens its level (audit, 2 Nov). Counts only, no inherited diet */
-function coverLine(spId) {
-  if (!slotsOf(spId).length) return '';
-  const n = {};
-  spAnimals(spId, S.site).forEach(an => { const w = currentDiet({ sp: spId, level: 'animal', ref: an.id }); n[w ? w.level : 'none'] = (n[w ? w.level : 'none'] || 0) + 1; });
-  const parts = LEVELS.filter(l => n[l]).map(l => `<button class="cover__p" onclick="pickLevel(${spId},'${l}')"><b>${n[l]}</b> ${l === 'species' ? 'species-wide' : l}</button>`).concat(n.none ? [`<span class="cover__p"><b>${n.none}</b> no diet</span>`] : []);
-  return `<div class="cover"><span class="cover__k">Who eats what</span>${parts.join('<span class="cover__dot">·</span>')}</div>`;
-}
 /* the species header as the Antz app's species page (owner, 18 Nov): dark, "Species", the name and the scientific name,
-   then Population · Sites · Sections · Enclosures big in one box (counted for the site picked). The phone's sheet closes with × */
+   then Population · Sites · Sections · Enclosures big in one box (counted for the site picked). The phone's sheet closes with ×.
+   No "Who eats what" line under it (owner, 18 Nov: removed); the level chips follow straight after */
 function spHead(sp, close = '') {
   const as = spAnimals(sp.id, S.site), n = k => new Set(as.map(a => pathOfAnimal(a)[k])).size;
   const stats = [[as.length, 'Population'], [n('site'), n('site') === 1 ? 'Site' : 'Sites'], [n('section'), n('section') === 1 ? 'Section' : 'Sections'], [n('enclosure'), n('enclosure') === 1 ? 'Enclosure' : 'Enclosures']];
   return `<div class="sphd">${close ? `<div class="sphd__bar"><button class="az-iconbtn" onclick="${close}" aria-label="Close">${I('close')}</button></div>` : ''}<span class="sphd__k">Species</span><b class="sphd__n">${esc(sp.name)}</b><i class="sphd__s">${esc(sp.sci)}</i>
     <div class="sphd__stats">${stats.map(([v, l]) => `<span><b>${v}</b><small>${l}</small></span>`).join('')}</div></div>`;
 }
-const spTop = sp => { const c = coverLine(sp.id); return c ? `<div class="sphead">${c}</div>` : ''; };
 function speciesParts(spId, cur) {
   const l = lvlOf(spId);
   if (!slotsOf(spId).length) return { chips: '', body: `<div class="empty1"><div>No diet added for ${esc(species(spId).name)}${canRaise(me()) ? `<button class="az-btn empty1__btn" onclick="go('#/new?dept=diet&sp=${spId}&kind=new')">${I('add_circle')}Request a diet</button>` : ''}</div></div>` };
@@ -174,14 +166,14 @@ function speciesParts(spId, cur) {
 /* the iPad's species column */
 function paneSpecies(spId, { cls = '', cur = null } = {}) {
   const sp = species(spId), p = speciesParts(spId, cur);
-  return pane(cls + (spFab(spId) ? ' has-fab' : ''), spHead(sp) + spTop(sp) + p.chips, `<div class="body">${p.body}</div>`, '', `sp-${spId}`).replace(/<\/section>$/, `${spFab(spId)}</section>`);
+  return pane(cls + (spFab(spId) ? ' has-fab' : ''), spHead(sp) + p.chips, `<div class="body">${p.body}</div>`, '', `sp-${spId}`).replace(/<\/section>$/, `${spFab(spId)}</section>`);
 }
 /* Raise request from a species: the request starts with it, whole species (a species without a diet has its own button) */
 const spFab = spId => canRaise(me()) && slotsOf(spId).length ? `<button class="az-fab az-fab--pill dfab" onclick="SG=null;go('#/suggest?sp=${spId}')">${I('edit_note')}<span class="dfab__t">Suggest a change</span></button>` : '';
 /* the phone's species: a bottom sheet over Diet, with the species header */
 function speciesSheet(spId) {
   const sp = species(spId), p = speciesParts(spId, null);
-  return `<div class="az-scrim" onclick="if(event.target===this)go('#/diets')"><section class="spsheet" role="dialog" aria-modal="true" aria-label="${esc(sp.name)}" data-k="sps-${spId}">${spHead(sp, "go('#/diets')")}${spTop(sp)}${p.chips}<div class="spsheet__body"><div class="body">${p.body}</div></div>${spFab(spId)}</section></div>`;
+  return `<div class="az-scrim" onclick="if(event.target===this)go('#/diets')"><section class="spsheet" role="dialog" aria-modal="true" aria-label="${esc(sp.name)}" data-k="sps-${spId}">${spHead(sp, "go('#/diets')")}${p.chips}<div class="spsheet__body"><div class="body">${p.body}</div></div>${spFab(spId)}</section></div>`;
 }
 function pickLevel(sp, l) { S.lvl[sp] = l; S.aQ = ''; render(); }
 
