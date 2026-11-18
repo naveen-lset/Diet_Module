@@ -112,6 +112,9 @@ function paneRequest(id, { cls = '' } = {}) {
     const p = r.outcome ? r.outcome : ['pending', 'delayed', 'approved', 'in_progress'].includes(r.state) ? planOf(r) : null;
     if (p && p.lines.length) body += `<p class="secttl">${r.outcome ? 'What changed' : isOpen(r) ? 'When approved' : 'When the kitchen updates it'}</p><div class="forcard effect">${p.lines.map(l => { const v = l.view && !wasApproved(r);
       return `<${v ? 'button' : 'div'} class="forrow${v ? '' : ' forrow--static'}"${v ? ` onclick="reachSheet('${l.view}','${r.id}')"` : ''}><span class="eav">${I(l.icon, 20)}</span><span class="grow"><b>${esc(l.b)}</b>${l.small ? `<small>${esc(l.small)}</small>` : ''}${l.x ? `<small>${esc(l.x)}</small>` : ''}</span>${l.tag ? ktag(l.tag) : v ? I('chevron_right', 20) : ''}</${v ? 'button' : 'div'}>`; }).join('')}</div>${p.block ? `<div class="az-warnline az-warnline--bad">${I('error', 18)}<span>${esc(p.block)}</span></div>` : ''}`;
+    /* once the kitchen updated it, the diet as it is now, so the request leads straight to the diet it changed */
+    if (r.outcome) { const now = [...new Map(D.history.filter(h => h.req === r.id && h.diet && (h.lines || h.follows || h.created)).map(h => [h.diet, asgOfChange(h)])).values()].filter(a => a && !ended(a));
+      if (now.length) body += `<div class="rsec">${row('restaurant', now.length > 1 ? 'Diets now' : 'Diet now', now.map(a => `<a class="lnk" href="#/diets/${a.sp}/${a.id}">${esc(diet(a.diet).name)}${I('chevron_right', 18)}</a>`).join(''))}</div>`; }
   }
   const appr = user(r.approver);
   body += `<div class="rsec">${isDiet(r) ? row('label', 'Reason', `<b>${esc(r.reason)}</b>`) : ''}${row('location_on', 'Requesting site', `<b>${esc(siteOf(r))}</b>`)}

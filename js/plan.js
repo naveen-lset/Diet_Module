@@ -227,8 +227,9 @@ function applyChanges(meals, cs) {
   return out.filter(m => m.items.length);
 }
 const histLines = (X, cs) => cs.map(c => ({ op: c.op, feed: c.feed, was: c.op === 'add' || !X ? null : { ...entryOf(X, c.feed, c.item) }, now: c.op === 'remove' ? null : { item: c.to, qty: c.qty, unit: c.unit, prep: c.prep || '', cut: c.cut || '', days: c.days ?? EVERY_DAY, cad: c.cad || null } }));
-function applyApproval(r, at) {
-  const p = planOf(r), on = at.slice(0, 10), H = { at, by: r.by, approvedBy: r.approver, reason: r.reason, remarks: r.text, req: r.id }, tSp = new Set(targetsOf(r).map(t => t.sp)), pre = !!r.applied;
+/* doneBy: the kitchen person who marked it Diet updated, so the diet can say who changed it */
+function applyApproval(r, at, doneBy = null) {
+  const p = planOf(r), on = at.slice(0, 10), H = { at, by: r.by, approvedBy: r.approver, doneBy, reason: r.reason, remarks: r.text, req: r.id }, tSp = new Set(targetsOf(r).map(t => t.sp)), pre = !!r.applied;
   r.outcome = { lines: p.lines.map(l => ({ ...l, view: '' })), get: p.get.map(a => a.id) };
   const signs = { cert: { by: r.by, at: on }, kcert: { by: r.approver, at: on } };
   p.ops.forEach(o => {

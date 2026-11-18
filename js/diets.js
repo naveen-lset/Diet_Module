@@ -40,6 +40,36 @@ function approvalsRow() {
   const wait = D.requests.filter(r => isDiet(r) && r.approver === S.user && isOpen(r)), delayed = wait.filter(r => r.state === 'delayed').length;
   return `<a class="reqsum" href="#/requests" onclick="S.rTab='pending';S.rDept='diet'"><span class="reqsum__ic">${I('how_to_reg')}</span><span class="grow"><b>Waiting for your approval</b><span class="sub">${wait.length ? `${wait.length - delayed} waiting${delayed ? ` · ${delayed} delayed` : ''}` : 'Nothing waiting'}</span></span><span class="cnt">${wait.length}</span>${I('chevron_right', 20)}</a>`;
 }
+/* a diet and its requests, on top of Overview (owner, 18 Nov: "if the kitchen changed it, the diet has to show changed info"):
+   - updated: the kitchen marked a request Diet updated in the last week; the lines it changed are marked in the table;
+   - on the way: a request on this diet, waiting for the Dietician or for the kitchen (the diet is not changed yet). */
+const CHANGE_DAYS = 7;
+function dietChanged(d) {
+  const h = changesIn({ dietId: d.id }).find(x => x.req && x.doneBy && (x.lines || x.follows || x.created || x.skip));
+  const r = h && by('requests', h.req), done = r && [...r.events].reverse().find(e => e.kind === 'completed');
+  return done && h.at.slice(0, 10) >= addDays(TODAY, -CHANGE_DAYS) ? { h, r, done } : null;
+}
+const touches = (r, a) => r.slot === a.id || r.base === a.diet || (r.ends || []).includes(a.id) || (r.kind === 'diet' && r.diet === a.diet) || (r.kind === 'skip' && targetsOf(r).some(t => samePlace(t, a)));
+const dietComing = a => D.requests.filter(r => isDiet(r) && visibleTo(r, me()) && ['pending', 'delayed', 'approved', 'in_progress'].includes(r.state) && touches(r, a)).sort((x, y) => (lastAt(x) < lastAt(y) ? 1 : -1));
+function changedCard({ h, r, done }) {
+  const see = visibleTo(r, me());
+  return `<button class="dchg pick" onclick="${see ? `go('#/requests/${r.id}')` : `changeSheet('${h.id}')`}"><span class="eav">${I('published_with_changes', 20)}</span><span class="dchg__t"><span class="dchg__top">${pill('positive', 'Updated')}<span>${fmtDay(h.at.slice(0, 10))} · ${r.id}</span></span><b>${esc(changeSummary(h))}</b><small>Updated in the kitchen by ${youName(done.by)}${h.reason ? ` · ${esc(h.reason)}` : ''}</small></span>${I('chevron_right', 20)}</button>`;
+}
+function comingCard(rs) {
+  const r = rs[0], s = stateOf(r);
+  const next = r.state === 'pending' ? (r.approver === S.user ? 'Waiting for your approval' : `Waiting for ${youName(r.approver)}`) : r.state === 'delayed' ? s.label : 'Approved · the kitchen updates it next';
+  return `<a class="dchg pick" href="#/requests/${r.id}"><span class="eav">${I('pending_actions', 20)}</span><span class="dchg__t"><span class="dchg__top">${pill(isOpen(r) ? 'pending' : 'positive', isOpen(r) ? 'Requested' : 'Approved')}<span>${r.id} · ${youName(r.by)}</span></span><b>${esc(r.title)}</b><small>${next}${rs.length > 1 ? ` · ${plural(rs.length - 1, 'more request')}` : ''}</small></span>${I('chevron_right', 20)}</a>`;
+}
+/* the diet with the kitchen's update marked the Kitchen way (yellow with was …, NEW, stopped struck through), for a week after it changed */
+function markedGroups(d, h, day, click) {
+  const L = h.lines || [];
+  return d.meals.map(m => {
+    const rows = m.items.filter(l => fedOn(l, day)).map(l => { const c = L.find(x => x.feed === m.feed && x.op !== 'remove' && x.now && x.now.item === l.item);
+      return { ...(c ? lineRow(c.was, histChange(c)) : lineRow(l)), click: click ? `${click}('${d.id}',${m.feed},${l.item})` : '' }; });
+    L.filter(x => x.feed === m.feed && x.op === 'remove' && fedOn(x.was, day)).forEach(x => rows.push(lineRow(x.was, { op: 'remove' })));
+    return { feed: m.feed, rows };
+  }).filter(g => g.rows.length);
+}
 const dietTabs = cur => `<div class="az-tabs" role="tablist">${thumb(true)}${[['diets', 'Diet wise'], ['species', 'Species wise']].map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${cur === k}" onclick="homeTab('${k}')">${l}</button>`).join('')}</div>`;
 /* switching tabs keeps them pinned if they were, and shows the new list from its start */
 function homeTab(k) {
@@ -247,8 +277,10 @@ function paneDiet(asgId, { cls = '', back = '', wide = isTab() } = {}) {
   const tabs = `<div class="az-tabs dtabs" role="tablist">${thumb(true)}${DTABS.map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${S.dTab === k}" onclick="S.dTab='${k}';render()">${l}</button>`).join('')}</div>`;
   /* the day switch: the design system's segmented control, right above the table it changes and pinned while the table scrolls (audit, 2 Nov) */
   const days = true ? `<div class="dayseg"><div class="az-seg" role="tablist" aria-label="Day">${thumb()}${[[null, 'Full Week'], ...DAYS.map((x, i) => [i, x[0]])].map(([i, l]) => `<span role="tab" tabindex="0" class="${i == null ? 'wide' : ''}" aria-selected="${S.day === i}" aria-label="${i == null ? 'Full week' : DAYS[i]}" onclick="S.day=${i};render();swapFx('.dtable')" onkeydown="if(event.key==='Enter'){S.day=${i};render();swapFx('.dtable')}">${l}</span>`).join('')}</div></div>` : '';
-  const groups = dietGroups(d, S.day, 'itemSheet');
-  const body = S.dTab === 'nu' ? nutriTab(d) : S.dTab === 'ap' ? appliedTo(a) : S.dTab === 'hi' ? historyTab(a, d) : days + `<div class="dtable">${mealTable(groups, wide, S.day == null)}</div>` + notesBlock(d);
+  const chg = ended(a) ? null : dietChanged(d), coming = ended(a) ? [] : dietComing(a);
+  const groups = chg && (chg.h.lines || []).length ? markedGroups(d, chg.h, S.day, 'itemSheet') : dietGroups(d, S.day, 'itemSheet');
+  const cards = (coming.length ? comingCard(coming) : '') + (chg ? changedCard(chg) : '');
+  const body = S.dTab === 'nu' ? nutriTab(d) : S.dTab === 'ap' ? appliedTo(a) : S.dTab === 'hi' ? historyTab(a, d) : cards + days + `<div class="dtable">${mealTable(groups, wide, S.day == null)}</div>` + notesBlock(d);
   const fab = S.dTab === 'ov' && canRaise(me()) && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="raisePick('${a.id}')">${I('edit_note')}<span class="dfab__t">Suggest a change</span></button>` : '';
   return pane(cls + (fab ? ' has-fab' : ''), head + tabs, `<div class="body">${body}</div>`, '', `diet-${asgId}`).replace(/<\/section>$/, `${fab}</section>`);
 }
@@ -291,7 +323,7 @@ function historyTab(a, d) {
   if (d.made && !hist.some(h => h.created && h.diet === d.id)) steps.push({ at: `${d.made.at}T09:00`, o: 0, t: 'Diet created', p: esc(useText(dietUses(d.id)[0] || a)), w: who(d.made.by), day: true });
   if (d.cert) steps.push({ at: `${d.cert.at}T00:00`, o: 2, t: 'Certified by the dietitian', w: who(d.cert.by), day: true });
   if (d.kcert) steps.push({ at: `${d.kcert.at}T00:00`, o: 3, t: 'Certified by Kitchen', w: who(d.kcert.by), day: true });
-  hist.forEach(h => steps.push({ at: h.at, o: h.created ? 0 : 1, t: h.created ? 'Diet created' : HTYPE[h.type], p: `${esc(changeSummary(h))}${h.reason ? ` · ${esc(h.reason)}` : ''}`, w: `${who(h.by)}${h.req ? ` · ${h.req}` : ''}`, open: h.id }));
+  hist.forEach(h => steps.push({ at: h.at, o: h.created ? 0 : 1, t: h.created ? 'Diet created' : HTYPE[h.type], p: `${esc(changeSummary(h))}${h.reason ? ` · ${esc(h.reason)}` : ''}`, w: `${who(h.by)}${h.req ? ` · ${h.req}` : ''}${h.doneBy ? ` · Updated in the kitchen by ${youName(h.doneBy)}` : ''}`, open: h.id }));
   steps.sort((x, y) => x.at.slice(0, 10).localeCompare(y.at.slice(0, 10)) || x.o - y.o || x.at.localeCompare(y.at));
   if (!d.cert) todo.push({ t: 'Certified by the dietitian', p: 'Waiting' });
   if (!d.kcert) todo.push({ t: 'Certified by Kitchen', p: 'Waiting' });

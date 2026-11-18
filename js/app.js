@@ -2,7 +2,7 @@
 // Home › Modules › Diet opens #/diets (and #/history); Home › Modules › Help Desk opens #/requests (and #/new). No bottom navigation:
 // each module goes back to Home from its first screen. URL options: ?f=phone|portrait|landscape, ?as=hydar|suresh|manoj, ?fill.
 
-const STORE = 'antz-diet-module-v12';   // bump whenever the demo data changes (v12: diet requests — the Biologist raises, the Dietician approves, the Kitchen updates; v11: Help Desk In progress and Completed, the team's Job in charge; v10: requests say how long and can be for many places; v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
+const STORE = 'antz-diet-module-v13';   // bump whenever the demo data changes (v13: the diet history says who updated it in the kitchen; v12: diet requests — the Biologist raises, the Dietician approves, the Kitchen updates; v11: Help Desk In progress and Completed, the team's Job in charge; v10: requests say how long and can be for many places; v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
 const AS = { kiran: 'u-kiran', hydar: 'u-hydar', suresh: 'u-suresh', manoj: 'u-manoj' };
 const FRAMES = { phone: 'phone', portrait: 'tab-p', landscape: 'tab-l' };
 function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: TODAY, D, S: { user: S.user, frame: S.frame, site: S.site } })); } catch (e) {} }

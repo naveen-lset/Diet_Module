@@ -351,7 +351,7 @@ REASONS.new = REASONS.diet = REASONS.end = REASONS.items;
 function addHistory(h) { D.history.push({ id: 'CH-' + String(++D.hseq).padStart(3, '0'), ...h }); }
 /* the seed requests that were approved before today changed the diets then */
 /* a diet changes when the kitchen updates it (Completed); the seed's diet for an updated request is already in the data (applied) */
-function seedApprovals() { D.requests.filter(r => isDiet(r) && (r.state === 'completed' || r.applied)).forEach(r => applyApproval(r, (r.events.find(e => e.kind === 'completed') || r.events.find(e => e.kind === 'approved')).at)); }
+function seedApprovals() { D.requests.filter(r => isDiet(r) && (r.state === 'completed' || r.applied)).forEach(r => { const e = r.events.find(x => x.kind === 'completed') || r.events.find(x => x.kind === 'approved'); applyApproval(r, e.at, e.kind === 'completed' ? e.by : null); }); }
 
 function act(r, kind, uid, x = {}) {
   const u = user(uid);
@@ -368,7 +368,7 @@ function act(r, kind, uid, x = {}) {
     case 'cancel': ev('cancelled', { reason: x.reason.trim() }); r.state = 'cancelled'; break;
     case 'start': ev('started'); r.state = 'in_progress'; break;
     case 'assign': ev('assigned', { to: x.to }); r.assignee = x.to; break;
-    case 'complete': if (isDiet(r) && !r.outcome) { if (planOf(r).block) throw new Error(planOf(r).block); applyApproval(r, at); } ev('completed', { note: (x.note || '').trim(), team: Math.max(1, +x.team || 1), people: (x.people || '').trim(), files: [...(x.files || [])] }); r.state = 'completed'; break;
+    case 'complete': if (isDiet(r) && !r.outcome) { if (planOf(r).block) throw new Error(planOf(r).block); applyApproval(r, at, uid); } ev('completed', { note: (x.note || '').trim(), team: Math.max(1, +x.team || 1), people: (x.people || '').trim(), files: [...(x.files || [])] }); r.state = 'completed'; break;
     case 'reopen': ev('reopened', { reason: x.reason.trim() }); r.state = 'in_progress'; break;
     default: throw new Error('Unknown action ' + kind);
   }

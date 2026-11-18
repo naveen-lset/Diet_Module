@@ -20,7 +20,7 @@ function changeView(h) {
   const rows = [
     d ? r('restaurant', 'Diet', `<b>${esc(d.name)}</b>${a && !ended(a) ? `<a class="lnk" href="#/diets/${a.sp}/${a.id}">Open diet${I('chevron_right', 18)}</a>` : ''}`) : '',
     r('person', h.req ? 'Asked by' : 'Changed by', `<b>${youName(h.by)} · ${esc(user(h.by).title)}</b>`),
-    req ? r('assignment', 'From Help Desk request', `${visibleTo(req, me()) ? `<a class="lnk" href="#/requests/${req.id}">${req.id} · ${esc(req.title)}</a>` : `<b>${req.id}</b>`}<p>Approved by ${youName(h.approvedBy)}</p>`) : '',
+    req ? r('assignment', 'From Help Desk request', `${visibleTo(req, me()) ? `<a class="lnk" href="#/requests/${req.id}">${req.id} · ${esc(req.title)}</a>` : `<b>${req.id}</b>`}<p>Approved by ${youName(h.approvedBy)}${h.doneBy ? ` · Updated in the kitchen by ${youName(h.doneBy)}` : ''}</p>`) : '',
     h.reason ? r('label', 'Reason', `<b>${esc(h.reason)}</b>`) : '',
     h.remarks ? r('notes', 'Remarks', `<p>${esc(h.remarks)}</p>`) : '',
   ].join('');
