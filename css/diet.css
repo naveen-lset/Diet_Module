@@ -73,3 +73,12 @@
 /* History: a request step is a link */
 a.step{color:inherit;text-decoration:none}
 .step__t .nw{white-space:nowrap}
+
+/* ---------- spacing (owner, 18 Nov: "check the space here and all") ---------- */
+/* Help Desk list: "Request (n)" sits close under the tabs (or the Approved chips), with the same space above and below it.
+   The sort and filter buttons keep the design system's 36 px but no longer make the row taller */
+.az-countline .hdtools{margin:-4px -6px -4px 0}
+.body > .az-countline:first-child{margin-top:-6px}
+/* the species sheet: "Who eats what" with even space above and below, between the header and the level chips */
+.sphd + .sphead{padding:12px 16px 0}
+.tab .sphd + .sphead{padding:12px 20px 0}

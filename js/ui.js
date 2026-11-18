@@ -148,7 +148,9 @@ const cadTag = c => `<span class="cadtag">${I('event_repeat', 16)}${cadText(c)}<
 const dayMark = r => r.cad ? cadTag(r.cad) : letters(r.mask);
 const letters = mask => `<span class="dayl" aria-label="${daysText(mask)}">${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((x, i) => `<i class="${mask & (1 << i) ? 'on' : ''}">${x}</i>`).join('')}</span>`;
 /* requests, history and the form show their lines in the same Kitchen table as Diet Details, with the change marks (audit, 2 Nov) */
-const linesView = (groups, { act = false } = {}) => mealTable(groups, isTab(), true, { act });
+/* the wide table (Time as a column) only where the pane is wide: iPad landscape. In iPad portrait a request or a change sits in a narrow
+   right pane, so it uses the phone's layout, the time on top of its items (owner, 18 Nov: the table was cut off there) */
+const linesView = (groups, { act = false } = {}) => mealTable(groups, isLand(), true, { act });
 /* the diet as the Kitchen table (owner, 2 Nov): Time | Day | Item | Daily amt, the time and the day spanning their runs of items as live.
    On the phone the time sits on top of its items. showDays: off when one day is picked. A tap on an item opens the line.
    Change marks as the Kitchen: a changed line is yellow with what it was under it, a stopped one red and struck through.
