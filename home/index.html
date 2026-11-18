@@ -22735,57 +22735,14 @@ const DEFAULT_LAYOUT = [
  * for priority; see it for the distinction.
  */
 const V2_LAYOUT = [
-  /* NODE 718:17169 "V2 Design Figma" (24 Sep 2026): four columns of 162 in
-     rows of 144, and these thirteen in this order — first-fit packs them into
-     the frame's cells exactly:
-       row 1  Medical · Housing · Species Management (2)
-       row 2  Hospital photo (2) · Key Insights (2)
-       row 3  Animals list (2×2) · Diet & Kitchen photo (2)
-       — since 29 Sep both Key Insights and the Animals list are gone;
-         Pending Actions (2×2) takes row 2's right half and row 3's, Diet
-         moves to row 3's left, and the rest follow
-       row 4    ↑ continues       · Administer · Mortality
-       row 5  Eggs · Animals count · Users · Security
-     KEY INSIGHTS IS V3's CARD: the frame draws node 506:10269's three equal
-     plates on the same radial ground, so it is seeded here, not forked. The
-     two Animals cards are the frame's own — species.newlist and
-     species.newcount in cardVariants.js. */
-  { variantId: 'medical.default',    size: 'small'  },
-  { variantId: 'housing.default',    size: 'small'  },
-  { variantId: 'species.stats',      size: 'medium' },
-  /* KEY INSIGHTS COMES INTO THE GRID ON THE TABLET TOO (owner, 6 Oct 2026:
-     "for tablet remove the Key Insights, and the same way it has to come
-     under Modules") — the phone's two 2×1 cards (903:2). Four columns pack
-     with no hole: Natality beside Hospital, then Pending with Diet, the four
-     smalls, and Mortality beside Eggs and the Animals count at the foot */
-  { variantId: 'insight.natality',   size: 'medium' },
-  { variantId: 'hospital.photo',     size: 'medium' },
-  /* 29 Sep 2026: Key Insights left the grid ("in the modules section
-     remove Key Insights" — the band above carries it), and the Animals list
-     gave its slot to Pending Actions ("remove the Animals widget instead
-     and add that"), which is that card's anatomy on its blue */
-  /* …and since 29 Sep evening it is three rows tall, taking the place of
-     Eggs and the Animals count ("increase the height of this, in the place
-     of Eggs & Newly added animals") — both cards left the V2 grid */
-  { variantId: 'pending.v2',         size: 'xtall'  },
+  /* DIET MODULE PROTOTYPE (owner, 18 Nov 2026: "here only Diet & Help Desk module only"): the Home shows these two modules and no other */
   { variantId: 'diet.photo',         size: 'medium' },
-  { variantId: 'administer.default', size: 'small'  },
-  { variantId: 'mortality.default',  size: 'small'  },
-  { variantId: 'users.default',      size: 'small'  },
-  { variantId: 'security.default',   size: 'small'  },
-  { variantId: 'insight.mortality',  size: 'medium' },
-  /* …and back again at the END (29 Sep evening, "in the Empty place u can
-     add Eggs & new animal Widgets"): last in the list, first-fit drops them
-     into the two cells the taller card left open */
-  { variantId: 'eggs.default',       size: 'small'  },
-  { variantId: 'species.newcount',   size: 'small'  },
-  /* Helpdesk (17 Oct 2026): the grid was full, so it opens a seventh row */
-  { variantId: 'helpdesk.default',   size: 'small'  },
+  { variantId: 'helpdesk.default',   size: 'medium' },
 ]
 /* THE V2 SEED HAS A NUMBER OF ITS OWN, as V4's does: a v2r grid saved from an
    older seed — the 280:3521 page, or the V4 list V2 borrowed on 24 Sep — is
    dropped for this one rather than kept for ever. */
-const V2_SEED = 8   /* 7: the insight cards (6 Oct 2026) · 8: Helpdesk (17 Oct 2026) */
+const V2_SEED = 10   /* 9: only Diet and Help Desk, for the Diet module prototype (18 Nov 2026) · 7: the insight cards (6 Oct 2026) · 8: Helpdesk (17 Oct 2026) */
 
 /* V2 ON A PHONE · Figma 903:2 "Home · Mobile (5 Oct)", its Module Grid
    (903:533) row by row — two columns of 173 in rows of 115.3, 12 apart:
@@ -22800,22 +22757,11 @@ const V2_SEED = 8   /* 7: the insight cards (6 Oct 2026) · 8: Helpdesk (17 Oct 
    The frame draws no Command Centre banner and no Animals count; neither is
    seeded here (both stay addable). From 744 up V2_LAYOUT is untouched. */
 const V2_PHONE_LAYOUT = [
-  { variantId: 'species.stats',      size: 'medium' },
-  { variantId: 'medical.default',    size: 'small'  },
-  { variantId: 'housing.default',    size: 'small'  },
-  { variantId: 'insight.natality',   size: 'medium' },
-  { variantId: 'pending.v2',         size: 'xtall'  },
-  { variantId: 'hospital.photo',     size: 'medium' },
+  /* DIET MODULE PROTOTYPE (owner, 18 Nov 2026: "here only Diet & Help Desk module only"): the Home shows these two modules and no other */
   { variantId: 'diet.photo',         size: 'medium' },
-  { variantId: 'administer.default', size: 'small'  },
-  { variantId: 'mortality.default',  size: 'small'  },
-  { variantId: 'users.default',      size: 'small'  },
-  { variantId: 'security.default',   size: 'small'  },
-  { variantId: 'insight.mortality',  size: 'medium' },
-  { variantId: 'eggs.default',       size: 'small'  },
-  { variantId: 'helpdesk.default',   size: 'small'  },   /* beside Eggs (17 Oct 2026) */
+  { variantId: 'helpdesk.default',   size: 'medium' },
 ]
-const V2_PHONE_SEED = 2   /* 2: Helpdesk (17 Oct 2026) */
+const V2_PHONE_SEED = 4   /* 3: only Diet and Help Desk (18 Nov 2026) · 2: Helpdesk (17 Oct 2026) */
 
 /* THE WEB'S CARDS ARE THE TABLET'S (owner, 8 Oct 2026: "Tablet View how
    we are Showing same way"): V2_LAYOUT's list, at V2_LAYOUT's sizes, in four
@@ -22833,21 +22779,11 @@ const V2_PHONE_SEED = 2   /* 2: Helpdesk (17 Oct 2026) */
    Observation Notes sits under the grid in the same panel and Pending in the
    right column, so neither is a grid card here. Seed 5. */
 const V2_DESK_LAYOUT = [
-  { variantId: 'medical.default',    size: 'small'  },
-  { variantId: 'housing.default',    size: 'small'  },
-  { variantId: 'pharmacy.default',   size: 'small'  },
-  { variantId: 'lab.default',        size: 'small'  },
-  { variantId: 'species.stats',      size: 'medium' },
-  { variantId: 'hospital.photo',     size: 'medium' },
+  /* DIET MODULE PROTOTYPE (owner, 18 Nov 2026: "here only Diet & Help Desk module only"): the Home shows these two modules and no other */
   { variantId: 'diet.photo',         size: 'medium' },
-  { variantId: 'administer.default', size: 'small'  },
-  { variantId: 'mortality.default',  size: 'small'  },
-  { variantId: 'security.default',   size: 'small'  },
-  { variantId: 'users.default',      size: 'small'  },
-  { variantId: 'eggs.default',       size: 'small'  },
-  { variantId: 'helpdesk.default',   size: 'small'  },   /* the last row's empty fourth cell (17 Oct 2026) */
+  { variantId: 'helpdesk.default',   size: 'medium' },
 ]
-const V2_DESK_SEED = 6   /* 6: Helpdesk (17 Oct 2026) */
+const V2_DESK_SEED = 8   /* 7: only Diet and Help Desk (18 Nov 2026) · 6: Helpdesk (17 Oct 2026) */
 
 /**
  * V3 · NODE 506:10213's OWN ORDER, ROW BY ROW.
@@ -57506,13 +57442,19 @@ if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
   document.body.appendChild(__ag);
 }
 </script>
+<style>
+/* Diet module prototype: under Modules, only Diet and Help Desk (owner, 18 Nov 2026), so the Command Centre banner is not shown */
+.hero--estate{display:none!important}
+</style>
 <script>
-/* Added for the Antz Diet module prototype (diet-module/). The only other change in this copy: the person is Yeswanth (was Sourav Tambe).
+/* Added for the Antz Diet module prototype (diet-module/). The other changes in this copy: the person is Yeswanth (was Sourav Tambe), and the module grid seeds only Diet and Help Desk (V2_LAYOUT, V2_PHONE_LAYOUT, V2_DESK_LAYOUT; owner, 18 Nov 2026).
    the Diet and Help Desk modules open the new Diet and Help Desk screens instead of their placeholder pages. */
 (function () {
   var OPEN = { diet: 'diets', helpdesk: 'requests' };
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-mod]');
+    /* a module's own tile (All Modules) carries data-mod; a card on the Home grid carries its variant (diet.photo, helpdesk.default) */
+    var c = e.target.closest('#moduleGrid .card[data-variant]'), t = e.target.closest('[data-mod]');
+    if (c && !c.closest('.is-editing') && OPEN[c.getAttribute('data-variant').split('.')[0]]) { t = c; t.setAttribute('data-mod', c.getAttribute('data-variant').split('.')[0]); }
     if (!t || t.closest('.mpage') || !OPEN[t.getAttribute('data-mod')]) return;
     if (e.target.closest('.mview__act, .mview__kbd')) return;   /* the list's Add to Home / Remove stays the sheet's own */
     e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();

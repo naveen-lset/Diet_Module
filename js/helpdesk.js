@@ -4,9 +4,10 @@
 // details on a Field fill, What changes for a diet request, Activity with the comment box on top, and one current-status bar.
 
 /* ---------- the list ---------- */
-function hdList(tab, deptId = S.rDept) {
+/* sub: under Approved, the app's chips (approved · in_progress · completed); 'all' for the tab counts */
+function hdList(tab, deptId = S.rDept, sub = 'all') {
   const u = me(), q = S.rQ.trim().toLowerCase();
-  return D.requests.filter(r => visibleTo(r, u) && (tab === 'all' || tabOf(r) === tab) && (deptId === 'all' || r.dept === deptId) && (S.rPrio === 'all' || r.prio === S.rPrio)
+  return D.requests.filter(r => visibleTo(r, u) && (tab === 'all' || tabOf(r) === tab) && (tab !== 'approved' || sub === 'all' || r.state === sub) && (deptId === 'all' || r.dept === deptId) && (S.rPrio === 'all' || r.prio === S.rPrio)
     && (!q || [r.id, r.title, r.text, dept(r.dept).name, isDiet(r) ? species(r.sp).name : ''].some(x => (x || '').toLowerCase().includes(q))))
     .sort((a, b) => (S.rSort === 'priority' ? PRIO_RANK[a.prio] - PRIO_RANK[b.prio] : 0) || (lastAt(a) < lastAt(b) ? 1 : -1));
 }
@@ -27,7 +28,7 @@ const cardLine = r => { const w = whatOf(r); return w !== r.title || !isDiet(r) 
 const catOf = r => isDiet(r) ? `Diet · ${KIND[r.kind][0]}` : dept(r.dept).name;
 const siteOf = r => r.site ? by('sites', r.site).name : '';
 const lastComment = r => [...r.events].reverse().find(e => e.kind === 'comment');
-const stripTime = r => isOpen(r) ? `Since ${ago(lastAt(r))}` : fmtDay(lastAt(r).slice(0, 10));
+const stripTime = r => isOpen(r) || r.state === 'in_progress' ? `Since ${ago(lastAt(r))}` : fmtDay(lastAt(r).slice(0, 10));
 function hdCard(r, cur = false) {
   const s = stateOf(r), c = lastComment(r), low = r.approver === S.user && isOpen(r) && shortOf(r).length;
   return `<a class="hdcard pick" href="#/requests/${r.id}"${cur ? ' aria-current="true"' : ''}>
@@ -41,11 +42,13 @@ function paneHelpDesk({ cls = '', cur = null } = {}) {
   const deptsHere = DEPTS.filter(x => D.requests.some(r => r.dept === x.id && visibleTo(r, me())));
   if (S.rDept !== 'all' && !deptsHere.some(x => x.id === S.rDept)) S.rDept = 'all';
   const tabs = `<div class="az-counttabs" role="tablist">${HDTABS.map(([k, l]) => `<button class="az-counttab" role="tab" aria-selected="${S.rTab === k}" onclick="S.rTab='${k}';go('#/requests')"><span class="az-counttab__in"><b>${hdList(k).length}</b><span>${l}</span></span></button>`).join('')}</div>`;
-  const chips = `<div class="az-chips" role="tablist" aria-label="Department">${[{ id: 'all', name: 'All' }, ...deptsHere].map(x => `<button class="az-chip" role="tab" aria-selected="${S.rDept === x.id}" onclick="S.rDept='${x.id}';go('#/requests')">${x.name} - ${hdList(S.rTab, x.id).length}</button>`).join('')}</div>`;
+  const chips = `<div class="az-chips" role="tablist" aria-label="Department">${[{ id: 'all', name: 'All' }, ...deptsHere].map(x => `<button class="az-chip" role="tab" aria-selected="${S.rDept === x.id}" onclick="S.rDept='${x.id}';go('#/requests')">${x.name} - ${hdList(S.rTab, x.id, S.rSub).length}</button>`).join('')}</div>`;
   const search = S.rSearch ? `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="hd-q" placeholder="Search requests" value="${esc(S.rQ)}" oninput="S.rQ=this.value;render()" aria-label="Search requests"></label></div>` : '';
-  const list = hdList(S.rTab), filt = S.rPrio !== 'all';
+  /* under Approved, as the Help Desk app: All · Approved · In progress · Completed, each with its count */
+  const subs = S.rTab === 'approved' ? `<div class="az-chips az-chips--sub" role="tablist" aria-label="Approved requests">${HDSUB.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S.rSub === k}" onclick="S.rSub='${k}';go('#/requests')">${l} - ${hdList('approved', S.rDept, k).length}</button>`).join('')}</div>` : '';
+  const list = hdList(S.rTab, S.rDept, S.rSub), filt = S.rPrio !== 'all';
   const count = `<p class="az-countline">Request (${list.length})<span class="hdtools">${iconBtn('swap_vert', `Sort: ${S.rSort === 'priority' ? 'priority' : 'newest'}`, "S.rSort=S.rSort==='priority'?'newest':'priority';render();toast('Sorted by '+(S.rSort==='priority'?'priority':'newest'))")}<button class="az-iconbtn${filt ? ' on' : ''}" onclick="hdFilterSheet()" aria-label="Filter">${I('tune')}</button></span></p>`;
-  const body = `<div class="body">${count}${list.length ? `<div class="list list--16">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1('No requests here')}</div>${isPhone() ? `<a class="az-fab" href="#/new" aria-label="New request">${I('add_circle', 32)}</a>` : `<a class="az-fab az-fab--pill az-fab--no-nav" href="#/new">${I('add_circle')}New Request</a>`}`;
+  const body = `<div class="body">${subs}${count}${list.length ? `<div class="list list--16">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1('No requests here')}</div>${isPhone() ? `<a class="az-fab" href="#/new" aria-label="New request">${I('add_circle', 32)}</a>` : `<a class="az-fab az-fab--pill az-fab--no-nav" href="#/new">${I('add_circle')}New Request</a>`}`;
   return pane(cls, topbar({ back: '#/home', title: 'Help Desk', actions: iconBtn('search', 'Search requests', "S.rSearch=!S.rSearch;S.rQ='';render();setTimeout(()=>{const i=document.getElementById('hd-q');if(i)i.focus()},30)") }) + search + chips + tabs, body, '', 'hd');
 }
 function hdFilterSheet() { optionSheet('Priority', [['all', 'All priorities'], ...Object.entries(PRIO).map(([k, [, l]]) => [k, l, PRI_TEXT[k]])], S.rPrio, 'pickRPrio'); }
@@ -53,18 +56,24 @@ function pickRPrio(v) { S.rPrio = v; closeAll(); render(); }
 
 /* ---------- one request (record layout) ---------- */
 const lastEv = (r, k) => [...r.events].reverse().find(e => e.kind === k);
-const EVT = { raised: ['Request raised', 'send', ''], edited: ['Request edited', 'edit', ''], delayed: ['Delayed', 'timer', 'wait'], approved: ['Approved', 'check', 'ok'], rejected: ['Rejected', 'close', 'bad'], cancelled: ['Canceled', 'do_not_disturb_on', 'bad'] };
+const EVT = { raised: ['Request raised', 'send', ''], edited: ['Request edited', 'edit', ''], delayed: ['Delayed', 'timer', 'wait'], approved: ['Approved', 'check', 'ok'], rejected: ['Rejected', 'close', 'bad'], cancelled: ['Canceled', 'do_not_disturb_on', 'bad'],
+  started: ['Moved to In progress', 'progress_activity', 'ok'], assigned: ['Job in charge', 'badge', ''], completed: ['Completed', 'task_alt', 'ok'], reopened: ['Moved back to In progress', 'undo', 'wait'] };
+/* what the team wrote when completing: the notes, the team, the files */
+const teamText = e => [plural(e.team || 1, 'person', 'people'), e.people].filter(Boolean).join(' · ');
+const fileBtns = fs => `<span class="files">${fs.map(f => `<button class="file" onclick="toast('Opens ${esc(f.name)}')">${I(f.kind === 'image' ? 'image' : f.kind === 'pdf' ? 'picture_as_pdf' : 'description', 20)}${esc(f.name)}</button>`).join('')}</span>`;
 function paneRequest(id, { cls = '' } = {}) {
   const r = by('requests', id), back = isPhone() ? '#/requests' : '';
   if (!r || !visibleTo(r, me())) return pane(cls, topbar({ back, title: 'Request' }), empty1('Not one of your requests'));
-  const acts = actionsFor(r, me()), more = acts.length ? iconBtn('more_vert', 'More', `moreMenu('${r.id}',this)`) : '';
-  const req = user(r.by);
-  const head = `<div class="rhead"><span class="rhead__row"><span class="az-dept">${I(isDiet(r) ? KIND[r.kind][1] : dept(r.dept).icon, 20)}</span><span class="rhead__catn">${esc(catOf(r))}</span>${flag(r.prio)}</span>
-    <span class="meta">${wday(r.events[0].at.slice(0, 10))} ${fmtAt(r.events[0].at)}</span>
+  /* as the Help Desk app's RequestDetails: the ⋮ menu always (Clone request), then a dark summary (department, priority, when, Edited, the requester), one
+     container of rows (Requesting site, Request, …, the approval, attachments), Activity with its filter, and the status bar (owner, 18 Nov 2026) */
+  const acts = actionsFor(r, me()), more = iconBtn('more_vert', 'More', `moreMenu('${r.id}',this)`);
+  const req = user(r.by), edited = r.events.some(e => e.kind === 'edited');
+  const head = `<div class="rhead rhead--dark"><span class="rhead__row"><span class="az-dept">${I(isDiet(r) ? KIND[r.kind][1] : dept(r.dept).icon, 20)}</span><span class="rhead__catn">${esc(catOf(r))}</span>${flag(r.prio)}</span>
+    <span class="meta">${wday(r.events[0].at.slice(0, 10))} ${fmtAt(r.events[0].at)}${edited ? '<span class="rhead__edited">Edited</span>' : ''}</span>
     <span class="rhead__who">${avatar(req.name)}<span class="grow"><span class="az-who__name">${youName(r.by)}</span><span class="az-who__sub">${esc(req.title)}</span></span>${r.by === S.user ? '' : iconBtn('call', `Call ${req.name}`, `toast('Calling ${esc(req.name)}')`) + iconBtn('chat', `Chat with ${req.name}`, `toast('Chat with ${esc(req.name)}')`)}</span></div>`;
   const row = (icon, k, v) => `<div class="rsec__r">${I(icon)}<span class="t"><span>${k}</span>${v}</span></div>`;
   let body = '';
-  const sec1 = [row('subject', 'Request', `<b>${esc(r.title)}</b>${r.text ? `<p>${esc(r.text)}</p>` : ''}`)];
+  const sec1 = [row('location_on', 'Requesting site', `<b>${esc(siteOf(r))}</b>`), row('subject', 'Request', `<b>${esc(r.title)}</b>${r.text ? `<p>${esc(r.text)}</p>` : ''}`)];
   /* the department's own answers */
   const form = DEPT_FORMS[r.dept];
   if (form && r.f) form.fields.forEach(x => { const v = r.f[x.k];
@@ -76,11 +85,30 @@ function paneRequest(id, { cls = '' } = {}) {
     sec1.push(row('pets', 'For', `<b>${esc(forText)}</b><button class="lnk" onclick="animalsSheet('${r.id}')">${plural(n, 'animal')}${I('chevron_right', 18)}</button>`));
     if (s && diet(r.base)) sec1.push(row('restaurant', 'Diet to change', `<b>${esc(diet(r.base).name)}</b><span>Set for ${esc(whereSet(s))}</span>${!ended(s) ? `<a class="lnk" href="#/diets/${s.sp}/${s.id}">Open diet${I('chevron_right', 18)}</a>` : ''}`));
     if (r.kind === 'items' && r.base === 'many') sec1.push(row('restaurant', 'Diets to change', '<b>All their diets, changed by item</b>'));
-    if (r.kind === 'new') sec1.push(row('restaurant', 'New diet', `<b>${esc(r.name || 'New diet')}</b><span>${r.base && diet(r.base) ? `From ${esc(diet(r.base).name)}` : 'Made from empty'}</span>`));
+    if (r.kind === 'new') sec1.push(row('restaurant', 'New diet', `<b>${esc(r.name || (planOf(r).ops.find(o => o.type === 'new') || {}).name || 'New diet')}</b><span>${r.base && diet(r.base) ? `From ${esc(diet(r.base).name)}` : 'Made from empty'}</span>`));
     if (r.kind === 'diet' && r.base && diet(r.base)) sec1.push(row('restaurant', 'Instead of', `<b>${esc(diet(r.base).name)}</b>`));
     if (r.kind === 'end') sec1.push(row('restaurant', 'Diet to end', (r.ends || []).map(id => { const a = by('assigns', id); return `<b>${esc(diet(a.diet).name)}</b><span>Set for ${esc(whereSet(a))}</span>`; }).join('')));
-    sec1.push(row('event', r.kind === 'end' ? 'Last day' : r.kind === 'skip' ? 'When' : 'How long', `<b>${r.kind === 'skip' ? `${wday(r.date)} ${fmtDayY(r.date)} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ')}` : r.kind === 'end' ? `${wday(r.stop)} ${fmtDayY(r.stop)}` : howText(r)}</b>${r.how && r.kind !== 'skip' ? ktag(HOW_KIND[r.how]) : ''}`));
+    const JI = { 'Needed from': 'event', 'Start from': 'restaurant', Food: 'restaurant', When: 'event', With: 'schedule', Medicine: 'medication', Dose: 'science', 'Mix into': 'schedule', For: 'date_range', 'Which feed': 'schedule', 'What was wrong': 'report' };
+    if (JOB_KINDS.includes(r.kind)) ((r.f && r.f.rows) || []).forEach(([k, v]) => sec1.push(row(JI[k] || 'info', k, `<b>${esc(v)}</b>`)));
+    else sec1.push(row('event', r.kind === 'end' ? 'Last day' : r.kind === 'skip' ? 'When' : 'How long', `<b>${r.kind === 'skip' ? `${wday(r.date)} ${fmtDayY(r.date)} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ')}` : r.kind === 'end' ? `${wday(r.stop)} ${fmtDayY(r.stop)}` : howText(r)}</b>${r.how && r.kind !== 'skip' ? ktag(HOW_KIND[r.how]) : ''}`));
   }
+  /* the work after approval: who is in charge (the team can change it while in progress), and what the team wrote when completing */
+  if (['in_progress', 'completed'].includes(r.state)) {
+    const can = acts.includes('assign'), who = r.assignee ? user(r.assignee) : null, done = r.state === 'completed' ? lastEv(r, 'completed') : null;
+    const rows = sec1;
+    if (who || can) rows.push(row('badge', 'Job in charge', `${who ? `<span class="person">${avatar(who.name, '24')}<span><b>${youName(r.assignee)}</b><span>${esc(who.title)}</span></span></span>` : ''}${can ? `<button class="lnk" onclick="assignSheet('${r.id}')">${who ? 'Change' : `${I('add', 18)}Add`}</button>` : ''}`));
+    if (done) {
+      if (done.note) rows.push(row('task_alt', 'Completion notes', `<p>${esc(done.note)}</p>`));
+      if (!isDiet(r)) rows.push(row('groups', 'Team', `<b>${esc(teamText(done))}</b>`));
+      if ((done.files || []).length) rows.push(row('attach_file', 'Completion files', fileBtns(done.files)));
+    }
+  }
+  if (isDiet(r) && r.reason) sec1.push(row('label', 'Reason', `<b>${esc(r.reason)}</b>`));
+  /* the approval, as the app: its label follows the status, the approver's card, and View for the Approvers List */
+  { const ap = user(r.approver), rej = r.state === 'rejected', ok = wasApproved(r), e = lastEv(r, rej ? 'rejected' : 'approved');
+    sec1.push(row(rej ? 'block' : ok ? 'verified' : 'how_to_reg', rej ? 'Approval rejected' : ok ? 'Approved' : 'Awaiting approval', `<span class="person">${avatar(ap.name, '24')}<span><b>${youName(r.approver)}</b><span>${esc(ap.title)}${(ok || rej) && e ? ` · ${fmtAt(e.at)}` : ''}</span></span></span><button class="lnk" onclick="approversSheet('${r.id}')">View${I('chevron_right', 18)}</button>`)); }
+  if (r.note) sec1.push(row('sticky_note_2', 'Note to kitchen', `<p>${esc(r.note)}</p>`));
+  if ((r.files || []).length) sec1.push(row('attach_file', plural(r.files.length, 'Attachment'), fileBtns(r.files)));
   body += `<div class="rsec">${sec1.join('')}</div>`;
   if (r.approver === S.user && isOpen(r)) shortOf(r).forEach(x => body += `<div class="az-warnline">${I('warning', 18)}<span class="grow"><b>${esc(x.item.name)} is low.</b> ${x.have <= 0 ? 'None' : 'Only ' + stockText(x.item)} in stock; the kitchen needs ${x.need} a day.</span><button class="lnk" onclick="delaySheet('${r.id}')">Delay</button></div>`);
   if (isDiet(r)) {
@@ -88,23 +116,40 @@ function paneRequest(id, { cls = '' } = {}) {
     const lines = many ? `<div class="rsec">${(r.rules || []).map(u => `<div class="rsec__r">${I(RULE_IC[u.op])}<span class="t"><b>${esc(ruleText(u))}</b></span></div>`).join('')}</div>`
       : r.kind === 'items' ? linesView(changeGroups(diet(r.base), r.changes)) : r.kind === 'new' ? linesView(dietDiffGroups(r.base && diet(r.base), fresh)) : r.kind === 'diet' ? linesView(dietDiffGroups(r.base && diet(r.base), diet(r.diet))) : r.kind === 'skip' ? skipView(r) : '';
     if (lines) body += `<p class="secttl">${r.kind === 'items' ? 'What changes' : r.kind === 'new' ? `The new diet${r.base && diet(r.base) ? ' · what differs' : ''}` : r.kind === 'diet' ? `New diet · ${esc(diet(r.diet).name)}` : 'Feeds'}</p>${lines}`;
-    /* When approved: what Kitchen & Diet does (worked out while it is open; as it was done once approved) */
-    const p = r.state === 'approved' && r.outcome ? r.outcome : ['pending', 'delayed'].includes(r.state) ? planOf(r) : null;
-    if (p && p.lines.length) body += `<p class="secttl">${r.state === 'approved' ? 'What approval did' : 'When approved'}</p><div class="forcard effect">${p.lines.map(l => { const v = l.view && r.state !== 'approved';
-      return `<${v ? 'button' : 'div'} class="forrow${v ? '' : ' forrow--static'}"${v ? ` onclick="reachSheet('${l.view}','${r.id}')"` : ''}><span class="eav">${I(l.icon, 20)}</span><span class="grow"><b>${esc(l.b)}</b>${l.small ? `<small>${esc(l.small)}</small>` : ''}${l.x ? `<small>${esc(l.x)}</small>` : ''}</span>${l.tag ? ktag(l.tag) : v ? I('chevron_right', 20) : ''}</${v ? 'button' : 'div'}>`; }).join('')}</div>${p.block ? `<div class="az-warnline az-warnline--bad">${I('error', 18)}<span>${esc(p.block)}</span></div>` : ''}`;
+    body += saveAsSec(r);
+    /* When approved: what Kitchen & Diet does (worked out until the kitchen updates the diet; as it was done after) */
+    const p = r.outcome ? r.outcome : ['pending', 'delayed', 'approved', 'in_progress'].includes(r.state) ? planOf(r) : null;
+    if (p && p.lines.length) body += effectView(r, p);
+    /* once the kitchen updated it, the diet as it is now, so the request leads straight to the diet it changed */
+    if (r.outcome) { const now = [...new Map(D.history.filter(h => h.req === r.id && h.diet && (h.lines || h.follows || h.created)).map(h => [h.diet, asgOfChange(h)])).values()].filter(a => a && !ended(a));
+      if (now.length) body += `<div class="rsec">${row('restaurant', now.length > 1 ? 'Diets now' : 'Diet now', now.map(a => `<a class="lnk" href="#/diets/${a.sp}/${a.id}">${esc(diet(a.diet).name)}${I('chevron_right', 18)}</a>`).join(''))}</div>`; }
   }
-  const appr = user(r.approver);
-  body += `<div class="rsec">${isDiet(r) ? row('label', 'Reason', `<b>${esc(r.reason)}</b>`) : ''}${row('location_on', 'Requesting site', `<b>${esc(siteOf(r))}</b>`)}
-    ${row('how_to_reg', 'To be approved by', `<span class="person">${avatar(appr.name, '24')}<span><b>${youName(r.approver)}</b><span>${esc(appr.title)}</span></span></span>`)}
-    ${r.note ? row('sticky_note_2', 'Note to kitchen', `<p>${esc(r.note)}</p>`) : ''}
-    ${(r.files || []).length ? row('attach_file', 'Attachments', `<span class="files">${r.files.map(f => `<button class="file" onclick="toast('Opens ${esc(f.name)}')">${I(f.kind === 'image' ? 'image' : f.kind === 'pdf' ? 'picture_as_pdf' : 'description', 20)}${esc(f.name)}</button>`).join('')}</span>`) : ''}</div>`;
-  body += `<p class="secttl">Activity</p><div class="act-list"><div class="az-composer">${avatar(me().name)}<input id="cmt" placeholder="Add a comment" onkeydown="if(event.key==='Enter')addComment('${r.id}')" aria-label="Add a comment"><button class="send" onclick="addComment('${r.id}')" aria-label="Send">${I('send', 20)}</button></div>
-    <div class="az-timeline">${[...r.events].reverse().map(e => {
-      if (e.kind === 'comment') return `<div class="az-tl"><span class="az-tl__dot">${avatar(user(e.by).name, '24')}</span><span class="az-tl__text"><span class="az-tl__title">${youName(e.by)}</span><span class="az-tl__meta">${fmtAt(e.at)}</span><p>${esc(e.note)}</p></span></div>`;
-      const [t, ic, tone] = EVT[e.kind];
-      return `<div class="az-tl"><span class="az-tl__dot ${tone}">${I(ic, 20)}</span><span class="az-tl__text"><span class="az-tl__title">${t}${e.kind === 'delayed' ? ` till ${fmtDay(e.until)}` : ''}</span><span class="az-tl__meta">${youName(e.by)} • ${fmtAt(e.at)}</span>${e.reason || e.note ? `<p class="plain">${esc([e.reason, e.note].filter(Boolean).join('. '))}</p>` : ''}</span></div>`; }).join('')}</div></div>`;
+  body += activityView(r);
   /* the record header scrolls away with the request; only the top bar and the status bar stay */
   return pane(cls, topbar({ back, title: r.id, actions: more }), head + `<div class="body">${body}</div>`, statusBar(r), `req-${r.id}`);
+}
+/* Activity, as the app's: Show all · Comments · Status updates, "Add your comment", and each status change as old → new in its colour */
+const ST_TO = { raised: 'Awaiting approval', edited: 'Awaiting approval', delayed: 'Delayed', approved: 'Approved', rejected: 'Rejected', cancelled: 'Canceled', started: 'In progress', completed: 'Completed', reopened: 'In progress' };
+const ST_TONE = { 'Awaiting approval': 'wait', Delayed: 'wait', Approved: 'ok', 'In progress': 'prog', Completed: 'done', 'Diet updated': 'done', Rejected: 'bad', Canceled: 'cancel' };
+const stPill = t => `<span class="stp stp--${ST_TONE[t] || 'wait'}">${esc(t)}</span>`;
+function activityView(r) {
+  const f = S.actF || 'all'; let prev = null;
+  const items = r.events.map(e => { if (e.kind === 'comment' || e.kind === 'assigned') return { e }; const to = e.kind === 'completed' && changesDiet(r) ? 'Diet updated' : ST_TO[e.kind], x = { e, from: e.kind === 'raised' ? null : prev, to }; prev = to; return x; })
+    .filter(x => f === 'all' || (f === 'c' ? x.e.kind === 'comment' : x.e.kind !== 'comment')).reverse();
+  const card = x => { const e = x.e, who = `<span class="act__who">${avatar(user(e.by).name, '24')}<b>${youName(e.by)}</b><span>${fmtAt(e.at)}</span></span>`;
+    if (e.kind === 'comment') return `<div class="act">${who}<p>${esc(e.note)}</p></div>`;
+    if (e.kind === 'assigned') return `<div class="act">${who}<p>Job in charge: <b>${youName(e.to)}</b></p></div>`;
+    const t = e.kind === 'raised' ? 'Request raised' : e.kind === 'edited' ? 'Request edited' : e.kind === 'delayed' ? `Delayed till ${fmtDay(e.until)}` : '';
+    return `<div class="act act--st">${who}<p class="act__st">${t ? `<span class="act__t">${t}</span>` : ''}${x.from && x.from !== x.to ? `${stPill(x.from)}${I('arrow_forward', 16)}` : ''}${stPill(x.to)}</p>${e.reason || e.note ? `<p>${esc([e.reason, e.note].filter(Boolean).join('. '))}</p>` : ''}${e.kind === 'completed' && !isDiet(r) ? `<p class="plain">${esc(teamText(e))}</p>` : ''}${(e.files || []).length ? fileBtns(e.files) : ''}</div>`; };
+  return `<div class="act-head"><p class="secttl">Activity</p><div class="az-chips act-f" role="tablist" aria-label="Show">${[['all', 'Show all'], ['c', 'Comments'], ['s', 'Status updates']].map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${f === k}" onclick="S.actF='${k}';render()">${l}</button>`).join('')}</div></div>
+    <div class="act-list"><div class="az-composer">${avatar(me().name)}<input id="cmt" placeholder="Add your comment" onkeydown="if(event.key==='Enter')addComment('${r.id}')" aria-label="Add your comment"><button class="send" onclick="addComment('${r.id}')" aria-label="Send">${I('send', 20)}</button></div>
+    <div class="acts">${items.map(card).join('') || '<p class="act__none">Nothing here yet</p>'}</div></div>`;
+}
+/* the Approvers List, as the app's: who approved (or rejected) on top, then the others who could have, faded */
+function approversSheet(id) {
+  const r = by('requests', id), rej = r.state === 'rejected', ok = wasApproved(r), others = (isDiet(r) ? DIET_APPROVERS : [r.approver]).filter(u => u !== r.approver);
+  const card = (uid, faded) => { const x = user(uid); return `<div class="apr${faded ? ' apr--faded' : ''}${rej && !faded ? ' apr--bad' : ''}">${avatar(x.name)}<span class="grow"><b>${youName(uid)}</b><span>${esc(x.title)}</span></span>${uid === S.user || faded ? '' : iconBtn('call', `Call ${x.name}`, `toast('Calling ${esc(x.name)}')`)}</div>`; };
+  openSheet(() => ({ title: 'Approvers List', bottom: true, body: `<p class="apr__h">${rej ? 'Rejected by' : ok ? 'Approved by' : 'To be approved by'}</p>${card(r.approver)}${others.length ? `<p class="apr__h">Could also approve</p>${others.map(u => card(u, true)).join('')}` : ''}` }));
 }
 /* no diet for a day: each feed time of the diet in force, given or not */
 function skipView(r) {
@@ -117,22 +162,36 @@ function nextLine(r) {
   const mineToDecide = r.approver === S.user, name = user(r.approver).name;
   if (r.state === 'pending') return mineToDecide ? 'Waiting for your approval' : `Waiting for ${name}`;
   if (r.state === 'delayed') return `${r.delay.reason}${r.delay.note ? '. ' + r.delay.note : ''}`;
+  if (r.state === 'in_progress') { const back = [...r.events].reverse().find(e => ['started', 'reopened'].includes(e.kind));
+    return back && back.kind === 'reopened' ? `${youName(back.by)}: ${esc(back.reason)}` : r.assignee ? `Job in charge: ${youName(r.assignee)}` : back ? `By ${youName(back.by)}` : ''; }
+  if (r.state === 'completed') return `By ${youName(lastEv(r, 'completed').by)}`;
   const e = lastEv(r, r.state === 'cancelled' ? 'cancelled' : r.state);
-  if (r.state === 'approved') return isDiet(r) ? `By ${youName(e.by)} · ${approvedWhen(r)}` : `By ${youName(e.by)}`;
+  if (r.state === 'approved') return isDiet(r) ? `By ${youName(e.by)} · ${onTeam(r, me()) ? 'update the diet' : 'with the kitchen'}` : `By ${youName(e.by)}`;
   return `${youName(e.by)}: ${e.reason}`;
 }
+/* the status bar, as the app's ButtonLogsComponent: Current Status · time, the status, a big line once it is decided ("You Approved",
+   "Request Rejected"…), and this person's buttons. Approve goes at once, as the app; Reject asks a reason. The requester's Edit and
+   Cancel are in the ⋮ menu, as the app */
 function statusBar(r) {
-  const a = actionsFor(r, me()), at = r.events.filter(e => e.kind !== 'comment').pop().at, s = stateOf(r);
+  const a = actionsFor(r, me()), at = r.events.filter(e => !['comment', 'assigned'].includes(e.kind)).pop().at, s = stateOf(r), mine = e => e && e.by === S.user;
+  const big = r.state === 'approved' ? (mine(lastEv(r, 'approved')) ? 'You Approved' : 'Approved') : r.state === 'rejected' ? 'Request Rejected' : r.state === 'cancelled' ? (mine(lastEv(r, 'cancelled')) ? 'You Canceled' : 'Request Canceled') : r.state === 'completed' ? (changesDiet(r) ? 'Diet updated' : 'Request Completed') : '';
+  const tone = r.state === 'rejected' ? ' az-statusbar--bad' : r.state === 'cancelled' ? ' az-statusbar--cancel' : r.state === 'approved' && mine(lastEv(r, 'approved')) ? ' az-statusbar--ok' : '';
   let btns = '';
-  /* Reject and Approve side by side on every device, so the request keeps most of the phone screen (audit, 2 Nov) */
-  if (a.includes('approve')) btns = `<button class="az-btn az-btn--reject" onclick="reasonSheet('${r.id}','reject')">Reject</button><button class="az-btn az-btn--approve" onclick="approveSheet('${r.id}')">${I('check')}Approve</button>`;
-  else if (a.includes('edit')) btns = `<button class="az-btn az-btn--outline az-btn--approve" onclick="reasonSheet('${r.id}','cancel')">Cancel request</button><button class="az-btn az-btn--approve" onclick="go('#/new?edit=${r.id}')">${I('edit')}Edit request</button>`;
-  return `<div class="az-statusbar"><span>Current status • ${ago(at)} ago</span><b class="tone-${s.tone}">${esc(s.label)}</b><span>${nextLine(r)}</span>${btns ? `<div class="az-statusbar__actions">${btns}</div>` : ''}</div>`;
+  if (a.includes('approve')) btns = `<button class="az-btn az-btn--reject" onclick="reasonSheet('${r.id}','reject')">Reject</button><button class="az-btn az-btn--approve" onclick="doAct('${r.id}','approve')">${I('check')}Approve</button>`;
+  /* the team's one next step, as the Help Desk app (the design system: one main green button; going back is outline) */
+  else if (a.includes('start')) btns = `<button class="az-btn az-btn--approve" onclick="doAct('${r.id}','start')">${I('progress_activity')}Move to In progress</button>`;
+  else if (a.includes('complete')) btns = `<button class="az-btn az-btn--approve" onclick="completeSheet('${r.id}')">${I('task_alt')}${changesDiet(r) ? 'Diet updated' : isDiet(r) ? 'Done' : 'Move to Completed'}</button>`;
+  else if (a.includes('reopen')) btns = `<button class="az-btn az-btn--outline az-btn--approve" onclick="reasonSheet('${r.id}','reopen')">${I('undo')}Move back to In progress</button>`;
+  return `<div class="az-statusbar${tone}"><span>Current Status • ${ago(at)} ago</span>${big ? `<b class="az-statusbar__big">${big}</b>` : `<b class="tone-${s.tone}">${esc(s.label)}</b>`}<span>${nextLine(r)}</span>${btns ? `<div class="az-statusbar__actions">${btns}</div>` : ''}</div>`;
 }
+const MENU_ACTS = ['assign', 'delay', 'edit', 'cancel'];
 /* the more menu: what is not the main decision. The design system's Menu, not a sheet: record actions go in a menu (3 Nov) */
 function moreMenu(id, btn) {
   const r = by('requests', id), a = actionsFor(r, me()), item = (icon, l, js, danger) => `<button role="menuitem"${danger ? ' class="az-danger"' : ''} onclick="closeMenu();${js}">${I(icon, 20)}${l}</button>`;
-  openMenu(btn, [a.includes('delay') ? item('timer', r.state === 'delayed' ? 'Change the delay' : 'Delay', `delaySheet('${id}')`) : '', a.includes('edit') ? item('edit', 'Edit request', `go('#/new?edit=${id}')`) : '', a.includes('cancel') ? item('do_not_disturb_on', 'Cancel request', `reasonSheet('${id}','cancel')`, true) : ''].join(''));
+  const clone = isDiet(r) ? canRaise(me()) : true;
+  openMenu(btn, [clone ? item('content_copy', 'Clone request', isDiet(r) && r.kind === 'new' ? `SG=null;go('#/suggest?clone=${id}')` : `S.draft=null;go('#/new?clone=${id}')`) : '',
+    a.includes('assign') ? item('badge', 'Job in charge', `assignSheet('${id}')`) : '', a.includes('delay') ? item('timer', r.state === 'delayed' ? 'Change the delay' : 'Delay', `delaySheet('${id}')`) : '',
+    a.includes('edit') ? item('edit', 'Edit request', `go('#/new?edit=${id}')`) : '', a.includes('cancel') ? item('do_not_disturb_on', 'Cancel request', `reasonSheet('${id}','cancel')`, true) : ''].join('') || `<p class="az-menu__none">Nothing to do here</p>`);
 }
 
 /* ---------- sheets: approve · delay · reject or cancel · the animals ---------- */
@@ -156,12 +215,28 @@ function delayHtml() {
 }
 let RS = {};
 function reasonSheet(id, kind) { RS = { id, kind, reason: '' }; openSheet(() => {
-  const r = by('requests', RS.id), rej = RS.kind === 'reject';
-  return { title: `${rej ? 'Reject' : 'Cancel'} ${r.id}?`, sub: rej ? `${esc(user(r.by).name)} sees your reason` : `${esc(user(r.approver).name)} sees your reason`,
+  const r = by('requests', RS.id), rej = RS.kind === 'reject', back = RS.kind === 'reopen';
+  return { title: back ? 'Move back to In progress?' : `${rej ? 'Reject' : 'Cancel'} ${r.id}?`, sub: rej || back ? `${esc(user(r.by).name)} sees your reason` : `${esc(user(r.approver).name)} sees your reason`,
     form: true, body: `<label class="az-field"><span class="az-label">Reason <span class="az-req">*</span></span><span class="az-input az-input--text az-textarea"><textarea id="rs-reason" rows="4" oninput="RS.reason=this.value;document.getElementById('rs-go').disabled=this.value.trim().length<3">${esc(RS.reason)}</textarea></span></label>`,
-    foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button id="rs-go" class="az-btn az-btn--reject"${RS.reason.trim().length < 3 ? ' disabled' : ''} onclick="doAct(RS.id,'${RS.kind}',{reason:RS.reason})">${rej ? 'Reject request' : 'Cancel request'}</button>` };
+    foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button id="rs-go" class="az-btn ${back ? '' : 'az-btn--reject'}"${RS.reason.trim().length < 3 ? ' disabled' : ''} onclick="doAct(RS.id,'${RS.kind}',{reason:RS.reason})">${back ? `${I('undo')}Move back` : rej ? 'Reject request' : 'Cancel request'}</button>` };
 }); setTimeout(() => { const t = $('#rs-reason'); if (t) t.focus(); }, 30); }
-const DONE = { approve: 'Approved', delay: 'Delayed', reject: 'Rejected', cancel: 'Canceled' };
+/* Job in charge: one of the department's team, as the Help Desk app's Job Incharge */
+let ASG = null;
+function assignSheet(id) { ASG = id; const r = by('requests', id), x = dept(r.dept); optionSheet('Job in charge', (x.team || [x.head]).map(u => [u, user(u).name, user(u).title]), r.assignee, 'pickAssignee'); }
+function pickAssignee(v) { doAct(ASG, 'assign', { to: v }); }
+/* Complete request, as the Help Desk app: completion notes, team size, people involved, attachments */
+let CP = {};
+function completeSheet(id) { if (isDiet(by('requests', id))) return dietDoneSheet(id); const r = by('requests', id); CP = { id, note: '', team: 1, people: '', files: [] }; openSheet(() => ({
+  title: `Complete ${r.id}?`, sub: esc(r.title), form: true,
+  body: `<label class="az-field"><span class="az-label">Completion notes</span><span class="az-input az-input--text az-textarea"><textarea id="cp-note" rows="3" oninput="CP.note=this.value">${esc(CP.note)}</textarea></span></label>
+    <div class="az-field"><span class="az-label">Team size</span><div class="qtyf"><button class="qtyf__b" aria-label="Fewer" onclick="CP.team=Math.max(1,CP.team-1);redrawSheet()">${I('remove')}</button><input id="cp-team" type="number" inputmode="numeric" min="1" value="${CP.team}" oninput="CP.team=Math.max(1,+this.value||1)" aria-label="Team size"><span class="qtyf__u">${CP.team === 1 ? 'person' : 'people'}</span><button class="qtyf__b" aria-label="More" onclick="CP.team++;redrawSheet()">${I('add')}</button></div></div>
+    <label class="az-field"><span class="az-label">People involved</span><span class="az-input az-input--text"><input id="cp-people" placeholder="Names" value="${esc(CP.people)}" oninput="CP.people=this.value"></span></label>
+    <div class="az-field"><span class="az-label">Attachments</span>${CP.files.length ? `<div class="files">${CP.files.map((f, i) => `<span class="file">${I(f.kind === 'image' ? 'image' : f.kind === 'pdf' ? 'picture_as_pdf' : 'description', 20)}${esc(f.name)}<button class="az-iconbtn" style="width:28px;height:28px" onclick="CP.files.splice(${i},1);redrawSheet()" aria-label="Remove ${esc(f.name)}">${I('close', 18)}</button></span>`).join('')}</div>` : ''}
+    <button class="az-upload" onclick="addCpFile()"><i class="az-i" aria-hidden="true">add_photo_alternate</i><b>Add photos or files</b><span>PDF, images or documents</span></button></div>`,
+  foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button class="az-btn" onclick="doAct(CP.id,'complete',CP)">${I('task_alt')}Complete request</button>` })); }
+const CP_FILES = [{ name: 'First feed served.jpg', kind: 'image', size: '1.8 MB' }, { name: 'Feed sheet.pdf', kind: 'pdf', size: '180 KB' }];
+function addCpFile() { const f = CP_FILES.find(x => !CP.files.some(y => y.name === x.name)); if (f) CP.files.push(f); redrawSheet(); }
+const DONE = { approve: 'Approved', delay: 'Delayed', reject: 'Rejected', cancel: 'Canceled', start: 'In progress', assign: 'Job in charge set', complete: 'Completed', reopen: 'Back to In progress' };
 function doAct(id, kind, x = {}) {
   const r = by('requests', id);
   try { act(r, kind, S.user, x); } catch (e) { toast(e.message); return; }

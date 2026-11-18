@@ -3,9 +3,9 @@
 
 const S = {
   user: 'u-hydar', frame: 'phone', site: 'all',
-  land: 'diets', spTab: 'all', spCls: 'all', dCert: 'all', fold: {}, spQ: '', dKind: 'all', dQ: '', lvl: {}, animAll: false, spView: 'diets', spHLvl: 'all', anim: 'with', aQ: '', day: null, dTab: 'items',
+  land: 'species', spTab: 'all', spCls: 'all', dCert: 'all', fold: {}, spQ: '', dKind: 'all', dQ: '', lvl: {}, animAll: false, spView: 'diets', spHLvl: 'all', anim: 'with', aQ: '', day: null, dTab: 'items',
   hView: 'date', hWeek: 0, hDay: null, hType: 'all', hLvl: 'all', hBack: '#/history',
-  rTab: 'pending', rDept: 'all', rSort: 'newest', rPrio: 'all', rSearch: false, rQ: '', back: '#/requests', draft: null,
+  rTab: 'pending', rSub: 'all', rDept: 'all', rSort: 'newest', rPrio: 'all', rSearch: false, rQ: '', back: '#/requests', draft: null,
 };
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -148,7 +148,9 @@ const cadTag = c => `<span class="cadtag">${I('event_repeat', 16)}${cadText(c)}<
 const dayMark = r => r.cad ? cadTag(r.cad) : letters(r.mask);
 const letters = mask => `<span class="dayl" aria-label="${daysText(mask)}">${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((x, i) => `<i class="${mask & (1 << i) ? 'on' : ''}">${x}</i>`).join('')}</span>`;
 /* requests, history and the form show their lines in the same Kitchen table as Diet Details, with the change marks (audit, 2 Nov) */
-const linesView = (groups, { act = false } = {}) => mealTable(groups, isTab(), true, { act });
+/* the wide table (Time as a column) only where the pane is wide: iPad landscape. In iPad portrait a request or a change sits in a narrow
+   right pane, so it uses the phone's layout, the time on top of its items (owner, 18 Nov: the table was cut off there) */
+const linesView = (groups, { act = false } = {}) => mealTable(groups, isLand(), true, { act });
 /* the diet as the Kitchen table (owner, 2 Nov): Time | Day | Item | Daily amt, the time and the day spanning their runs of items as live.
    On the phone the time sits on top of its items. showDays: off when one day is picked. A tap on an item opens the line.
    Change marks as the Kitchen: a changed line is yellow with what it was under it, a stopped one red and struck through.
@@ -208,8 +210,8 @@ function dietStatus(a) {
 }
 /* a diet in a species' list: the Diet wise row (avatar, name, kind and when) with its state and its animals (audit, 2 Nov: one diet card) */
 function dietCard(a, { current = false } = {}) {
-  const d = diet(a.diet), n = followersOf(a).length, [tone, label] = dietStatus(a);
-  return `<a class="sprow dietrow pick${ended(a) ? ' dietrow--ended' : ''}" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotText(a))}</span><span class="dfoot"><span class="dfoot__tags">${pill(tone, label)}${!d.cert ? pill('negative', 'Not certified') : ''}</span><span class="dfoot__n">${plural(n, 'animal')}</span></span></span></a>`;
+  const d = diet(a.diet), [tone, label] = dietStatus(a);
+  return `<a class="sprow dietrow pick${ended(a) ? ' dietrow--ended' : ''}" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotText(a))}</span><span class="dfoot"><span class="dfoot__tags">${pill(tone, label)}${!d.cert ? pill('negative', 'Not certified') : ''}</span></span></span></a>`;
 }
 /* one diet set at a place, as a row of its card */
 function placeDietRow(a, current) {
