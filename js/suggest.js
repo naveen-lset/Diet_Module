@@ -110,16 +110,6 @@ function sgFind(q) {
   D.animals.forEach(a => { if (animalName(a).toLowerCase().includes(q) || String(a.id).includes(q)) out.push({ sp: a.sp, level: 'animal', ref: a.id }); });
   return out.slice(0, 12);
 }
-const sgPlaceRow = t => `<button class="sg-pick" onclick="sgPick(${t.sp},'${t.level}',${t.ref ?? 'null'})">${spThumb(species(t.sp))}<span class="grow"><b>${esc(sgName(t))}</b><span>${esc(sgWhere(t))} · ${esc(species(t.sp).name)} · ${plural(tAnimals(t).length, 'animal')}</span></span>${I('chevron_right', 20)}</button>`;
-function sgWho() {
-  const found = sgFind(SG.q);
-  return `<p class="sg-lead">Who is it for?</p>
-    <button class="sg-scan" onclick="sgScan()">${I('qr_code_scanner')}<span class="grow"><b>Scan the enclosure QR</b><span>Opens the animals there</span></span></button>
-    <label class="az-input az-input--text sg-search">${I('search')}<input id="sg-q" type="search" placeholder="Search animal, enclosure, section or species" value="${esc(SG.q)}" oninput="SG.q=this.value;render()" autocomplete="off" aria-label="Search"></label>
-    ${SG.q.trim() ? (found.length ? `<p class="sg-cap">Results</p><div class="sg-list">${found.map(sgPlaceRow).join('')}</div>` : `<p class="sg-none">No match for “${esc(SG.q.trim())}”</p>`)
-      : `<p class="sg-cap">Recent</p><div class="sg-list">${sgRecent().map(sgPlaceRow).join('')}</div>`}`;
-}
-
 /* ---------- the diet as they eat it today, to change in place ---------- */
 const sgStepper = (minus, plus, text, name) => `<span class="sg-step"><button onclick="${minus}" aria-label="Less ${esc(name)}">${I('remove', 20)}</button><b>${text}</b><button onclick="${plus}" aria-label="More ${esc(name)}">${I('add', 20)}</button></span>`;
 const sgSub = l => [garText(l), (l.days ?? EVERY_DAY) !== EVERY_DAY || l.cad ? lineDays(l) : ''].filter(Boolean).join(' · ') || 'As it comes';
@@ -132,7 +122,7 @@ function sgRow(f, l, off) {
 const sgAddRow = (c, off) => `<div class="sg-row sg-row--add"><button class="sg-row__m" onclick="sgAddSheet(${c.feed},${c.to})"${off ? ' disabled' : ''}><b>${esc(item(c.to).name)}</b><span>${esc(sgSub(c))}</span><em>New</em></button>${off ? `<b class="sg-q">${qtyText(c.qty, c.unit)}</b>` : sgStepper(`sgStepAdd(${c.feed},${c.to},-1)`, `sgStepAdd(${c.feed},${c.to},1)`, qtyText(c.qty, c.unit), item(c.to).name)}</div>`;
 function sgEditor() {
   const t = SG.t, ls = sgEat(), d = sgDiet(), n = tAnimals(t).length;
-  const forCard = `<div class="sg-for">${spThumb(species(t.sp))}<span class="grow"><b>${esc(sgName(t))}</b><span>${esc(sgWhere(t))} · ${esc(species(t.sp).name)} · ${plural(n, 'animal')}</span></span>${SG.edit || SG.form ? '' : `<button class="lnk" onclick="SG.t=null;SG.changes=[];SG.skip=null;render()">Change</button>`}</div>`;
+  const forCard = `<div class="sg-for">${spThumb(species(t.sp))}<span class="grow"><b>${esc(sgName(t))}</b><span>${esc(sgWhere(t))} · ${esc(species(t.sp).name)} · ${plural(n, 'animal')}</span></span>${SG.edit || SG.form ? '' : `<button class="lnk" onclick="SG.pick=whoNew(SG.t);SG.t=null;SG.changes=[];SG.skip=null;render()">Change</button>`}</div>`;
   if (!d) return forCard + `<div class="empty1"><div>No diet here yet. Ask ${esc(first(user(dept('diet').head).name))}, the dietician, to add one.</div></div>`;
   const eats = ls.length > 1 ? `<p class="sg-cap">They eat ${ls.length} diets · pick one to change</p><div class="sg-diets">${ls.map(e => `<button class="az-chip" aria-selected="${e.diet.id === SG.base}" onclick="sgBaseTo('${e.diet.id}')">${esc(e.diet.name)} · ${e.animals.length}</button>`).join('')}</div>`
     : SG.kind === 'new' ? `<p class="sg-eats">A new diet from <b>${esc(d.name)}</b></p>` : `<p class="sg-eats">Eats today · <b>${esc(d.name)}</b></p>`;
@@ -254,8 +244,9 @@ function paneSuggest(q) {
   { const e = q.get('edit') && by('requests', q.get('edit')); if ((q.get('dept') === 'diet' && !q.get('form')) || (e && isDiet(e) && e.kind !== 'new')) return paneForm(q); }
   const d = sgInit(q), top = topbar({ close: d.form ? 'sgFormBack(false)' : 'sgClose()', title: d.form ? 'Change food' : d.edit ? 'Edit Request' : 'Suggest a change', actions: d.t && sgCount() ? iconBtn('restart_alt', 'Start again', 'sgClear()') : '' });
   if (!canRaise(me()) && !d.edit) return pane('pane--fill', top, empty1(`Biologists suggest diet changes. ${esc(me().title)}s see them in Help Desk.`), '', 'sg-no');
+  if (!d.t) return whoPage(d.pick || (d.pick = whoNew(null)), 'SG.pick', { back: 'sgClose()', done: 'sgWhoDone()' });
   const n = sgCount(), foot = d.t && sgDiet() ? (n ? `<button class="sg-cart" onclick="${d.form ? 'sgFormBack(true)' : 'sgReview()'}"><span class="sg-cart__n">${n}</span><span class="grow">${n === 1 ? 'change' : 'changes'}</span>${d.form ? 'Done' : 'Review'}${I(d.form ? 'check' : 'arrow_forward', 20)}</button>` : '<div class="sg-hint">Change a food to start</div>') : '';
-  return pane('pane--fill sg-page', top, `<div class="body sg-body">${d.t ? sgEditor() : sgWho()}</div>`, foot, d.t ? 'sg-edit' : 'sg-who');
+  return pane('pane--fill sg-page', top, `<div class="body sg-body">${sgEditor()}</div>`, foot, d.t ? 'sg-edit' : 'sg-who');
 }
 
 /* ---------- on the request: a tracker (Sent · Dietician · Kitchen · Live), "Save it as" for the dietician, and the kitchen's "Diet updated" ---------- */
@@ -328,3 +319,52 @@ function effectView(r, p) {
   rows.push(R('event', 'When', `<b>${esc(when[0])}</b>${when[1] ? `<span>${esc(when[1])}</span>` : ''}`));
   return `<p class="secttl">${r.outcome ? 'What changed' : isOpen(r) ? 'When approved' : 'When the kitchen updates it'}</p><div class="rsec effect2">${rows.join('')}</div>${p.block ? `<div class="az-warnline az-warnline--bad">${I('error', 18)}<span>${esc(p.block)}</span></div>` : ''}`;
 }
+
+/* ---------- Select Species (owner, 18 Nov: "Select Species page needs more work"): who a request is for, as a page in two steps ----------
+   1 · search (with the QR scan), Recent places, every species with its photo, scientific name and animal count;
+   2 · inside a species: Whole species · Enclosures (by section; a section can be picked whole) · Animals (search, number, sex, age),
+   and Done saying what was picked. Used by New Request (form.js, S.draft.pick) and by Suggest a change (SG.pick) */
+const whoNew = t => ({ sp: t ? t.sp : null, q: '', aq: '', tab: !t || t.level === 'species' ? 'all' : t.level === 'animal' ? 'ani' : 'enc', sel: t ? { sp: t.sp, level: t.level, ref: t.ref ?? null } : null });
+const whoJs = o => JSON.stringify(o).replace(/"/g, '&quot;');
+const ageText = m => m == null ? '' : m >= 24 ? `${Math.floor(m / 12)} y` : `${m} m`;
+const SEX = { M: ['male', 'Male'], F: ['female', 'Female'] };
+/* as the Antz app (18 Nov): species cards as SpeciesCustomCard (round photo, scientific name, M / F / UD chips, the count big on the right);
+   sections and enclosures as MedicalEnclosureCard (round icon, count chips, a tint and a tick when picked); animals as NewAnimalCustomCard
+   (photo with the sex badge, AAID, name, enclosure and age); the QR scan inside the search bar */
+const sexChips = list => { const n = k => list.filter(a => (a.sex || 'U') === k).length; return `<span class="who-sx">${[['M', 'm'], ['F', 'f'], ['U', 'u']].filter(([k]) => n(k)).map(([k, c]) => `<em class="${c}">${k === 'U' ? 'UD' : k} - ${n(k)}</em>`).join('')}</span>`; };
+const cnt = (l, n) => `<em>${l} ${n}</em>`;
+function whoPage(P, ref, { back, done, title = 'Select Species' }) {
+  const top = topbar({ lead: iconBtn('arrow_back', 'Back', back), title }), on = t => P.sel && samePlace(P.sel, t) && (P.sel.level !== 'species' || t.level === 'species');
+  const pickJs = t => `${ref}.sel=${whoJs(t)};render()`, tick = t => on(t) ? `<span class="who-chk">${I('check_circle', 22, true)}</span>` : '';
+  const scan = `${ref}.sel=${whoJs(sgRecent()[0])};${ref}.sp=${sgRecent()[0].sp};${ref}.tab='enc';render();toast('Scanned the QR on ${esc(sgName(sgRecent()[0]))}')`;
+  const search = (id, val, ph, js, qr) => `<label class="az-input az-input--text who-q">${I('search')}<input id="${id}" type="search" placeholder="${ph}" value="${esc(val)}" oninput="${js}" autocomplete="off" aria-label="${ph}">${qr ? `<button class="who-qr" onclick="event.preventDefault();${scan}" aria-label="Scan the enclosure QR">${I('qr_code_scanner')}</button>` : ''}</label>`;
+  let body = '';
+  if (!P.sp) {
+    const q = P.q.trim().toLowerCase(), sps = D.species.filter(s => !q || s.name.toLowerCase().includes(q) || s.sci.toLowerCase().includes(q) || String(s.id).includes(q)), places = q ? sgFind(P.q).filter(t => t.level !== 'species') : [];
+    body = search('who-q', P.q, 'Search species, enclosure or animal', `${ref}.q=this.value;render()`, true)
+      + (q ? '' : `<p class="who-h">Recent</p><div class="who-recent">${sgRecent().map(t => `<button class="who-rc" onclick="${ref}.sp=${t.sp};${ref}.tab='${whoNew(t).tab}';${ref}.sel=${whoJs(t)};render()">${spThumb(species(t.sp))}<span><b>${esc(sgName(t))}</b><small>${esc(sgWhere(t))}</small></span></button>`).join('')}</div>`)
+      + (places.length ? `<p class="who-h">Enclosures and animals</p><div class="who-list">${places.map(t => `<button class="who-row" onclick="${ref}.sp=${t.sp};${ref}.tab='${whoNew(t).tab}';${ref}.sel=${whoJs(t)};render()"><span class="who-av">${I(t.level === 'animal' ? 'pets' : t.level === 'section' ? 'grid_view' : 'fence', 22)}</span><span class="grow"><b>${esc(sgName(t))}</b><span class="who-cc">${cnt(sgWhere(t), '')}${cnt('Animals', tAnimals(t).length)}</span></span>${I('chevron_right', 20)}</button>`).join('')}</div>` : '')
+      + `<p class="who-h">Species · ${sps.length}</p>${sps.map(s => { const as = spAnimals(s.id);
+        return `<button class="who-spc" onclick="${ref}.sp=${s.id};${ref}.tab='all';${ref}.sel=${whoJs({ sp: s.id, level: 'species', ref: null })};render()">${spThumb(s)}<span class="grow"><b>${esc(s.name)}</b><i>${esc(s.sci)}</i>${sexChips(as)}</span><span class="who-big">${as.length}</span></button>`; }).join('') || `<p class="sg-none">No species by that name</p>`}`;
+  } else {
+    const s = species(P.sp), all = spAnimals(s.id), tabs = [['all', 'Whole species'], ['enc', 'Enclosures'], ['ani', 'Animals']];
+    body = `<div class="who-spc who-spc--head">${spThumb(s)}<span class="grow"><b>${esc(s.name)}</b><i>${esc(s.sci)}</i>${sexChips(all)}</span><button class="lnk" onclick="${ref}.sp=null;${ref}.sel=null;render()">Change</button></div>
+      <div class="az-segment who-seg" role="tablist" aria-label="Who">${thumb()}${tabs.map(([k, l]) => `<button role="tab" aria-selected="${P.tab === k}" onclick="${ref}.tab='${k}';render()">${l}</button>`).join('')}</div>`;
+    if (P.tab === 'all') { const t = { sp: s.id, level: 'species', ref: null };
+      body += `<button class="who-all${on(t) ? ' on' : ''}" onclick="${pickJs(t)}"><span class="who-av">${I('pets', 22)}</span><span class="grow"><b>All ${esc(s.name)}</b><span class="who-cc">${cnt('Enclosures', new Set(all.map(a => a.enc)).size)}${cnt('Animals', all.length)}</span></span>${tick(t)}</button>`; }
+    if (P.tab === 'enc') {
+      body += `<p class="who-h">Choose a section or an enclosure</p>` + [...new Set(all.map(a => pathOfAnimal(a).section))].map(sid => { const sec = by('sections', sid), ts = { sp: s.id, level: 'section', ref: sid }, encs = [...new Set(all.filter(a => pathOfAnimal(a).section === sid).map(a => a.enc))];
+        return `<div class="who-list"><button class="who-row who-row--sec${on(ts) ? ' on' : ''}" onclick="${pickJs(ts)}"><span class="who-av">${I('grid_view', 22)}</span><span class="grow"><b>${esc(sec.name)}</b><span class="who-cc">${cnt('Enclosures', encs.length)}${cnt('Animals', tAnimals(ts).length)}</span></span>${tick(ts)}</button>
+          ${encs.map(eid => { const te = { sp: s.id, level: 'enclosure', ref: eid }; return `<button class="who-row${on(te) ? ' on' : ''}" onclick="${pickJs(te)}"><span class="who-av who-av--sm">${I('fence', 20)}</span><span class="grow"><b>${esc(by('enclosures', eid).name)}</b><span class="who-cc">${cnt('Animals', tAnimals(te).length)}</span></span>${tick(te)}</button>`; }).join('')}</div>`; }).join('');
+    }
+    if (P.tab === 'ani') {
+      const q = P.aq.trim().toLowerCase(), list = all.filter(a => !q || animalName(a).toLowerCase().includes(q) || String(a.id).includes(q) || by('enclosures', a.enc).name.toLowerCase().includes(q));
+      body += search('who-aq', P.aq, 'Search Animal', `${ref}.aq=this.value;render()`, false)
+        + `<div class="who-anl">${list.slice(0, 60).map(a => { const t = { sp: s.id, level: 'animal', ref: a.id }, sx = a.sex === 'M' ? 'm' : a.sex === 'F' ? 'f' : 'u';
+          return `<button class="who-an${on(t) ? ' on' : ''}" onclick="${pickJs(t)}"><span class="who-an__img">${spThumb(s)}<em class="who-sxb ${sx}">${a.sex === 'M' ? 'M' : a.sex === 'F' ? 'F' : 'UD'}</em></span><span class="grow"><b>AAID: ${a.id}</b>${a.name ? `<span class="nm">${esc(a.name)}</span>` : ''}<span>${esc([by('enclosures', a.enc).name, ageText(a.ageM)].filter(Boolean).join(' · '))}</span></span><span class="who-radio${on(t) ? ' on' : ''}" aria-hidden="true"></span></button>`; }).join('') || '<p class="sg-none">No animal by that number or name</p>'}</div>`;
+    }
+  }
+  const sel = P.sel, foot = `<button class="az-btn" ${sel ? `onclick="${done}"` : 'disabled'}>${sel ? `Done · ${esc(sgName(sel))} · ${plural(tAnimals(sel).length, 'animal')}` : 'Choose who it is for'}</button>`;
+  return pane('pane--fill who-page', top, `<div class="body who-body">${body}</div>`, foot, 'who-' + (P.sp || 'list') + '-' + P.tab);
+}
+function sgWhoDone() { const t = SG.pick.sel; SG.pick = null; sgPick(t.sp, t.level, t.ref); }
