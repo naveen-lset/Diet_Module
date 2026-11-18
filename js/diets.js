@@ -57,7 +57,7 @@ function changedCard({ h, r, done }) {
 }
 function comingCard(rs) {
   const r = rs[0], s = stateOf(r);
-  const next = r.state === 'pending' ? (r.approver === S.user ? 'Waiting for your approval' : `Waiting for ${youName(r.approver)}`) : r.state === 'delayed' ? s.label : 'Approved · the kitchen updates it next';
+  const next = r.state === 'pending' ? (r.approver === S.user ? 'Waiting for your approval' : `Waiting for ${youName(r.approver)}`) : r.state === 'delayed' ? s.label : changesDiet(r) ? 'Approved · the kitchen updates it next' : 'Approved · with the kitchen';
   return `<a class="dchg pick" href="#/requests/${r.id}"><span class="eav">${I('pending_actions', 20)}</span><span class="dchg__t"><span class="dchg__top">${pill(isOpen(r) ? 'pending' : 'positive', isOpen(r) ? 'Requested' : 'Approved')}<span>${r.id} · ${youName(r.by)}</span></span><b>${esc(r.title)}</b><small>${next}${rs.length > 1 ? ` · ${plural(rs.length - 1, 'more request')}` : ''}</small></span>${I('chevron_right', 20)}</a>`;
 }
 /* the diet with the kitchen's update marked the Kitchen way (yellow with was …, NEW, stopped struck through), for a week after it changed */
@@ -358,8 +358,8 @@ function reqNow(r) {
   switch (r.state) {
     case 'pending': return `Waiting for ${youName(r.approver)}`;
     case 'delayed': return `Delayed till ${fmtDay(r.delay.until)}`;
-    case 'approved': case 'in_progress': return `Approved by ${by1('approved')} · the kitchen updates it next`;
-    case 'completed': return `Diet updated by ${by1('completed')}`;
+    case 'approved': case 'in_progress': return `Approved by ${by1('approved')} · ${changesDiet(r) ? 'the kitchen updates it next' : 'with the kitchen'}`;
+    case 'completed': return `${changesDiet(r) ? 'Diet updated' : 'Completed'} by ${by1('completed')}`;
     case 'rejected': return `Not approved by ${by1('rejected')}`;
     case 'cancelled': return 'Cancelled';
     default: return esc(stateOf(r).label);

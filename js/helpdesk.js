@@ -88,7 +88,9 @@ function paneRequest(id, { cls = '' } = {}) {
     if (r.kind === 'new') sec1.push(row('restaurant', 'New diet', `<b>${esc(r.name || (planOf(r).ops.find(o => o.type === 'new') || {}).name || 'New diet')}</b><span>${r.base && diet(r.base) ? `From ${esc(diet(r.base).name)}` : 'Made from empty'}</span>`));
     if (r.kind === 'diet' && r.base && diet(r.base)) sec1.push(row('restaurant', 'Instead of', `<b>${esc(diet(r.base).name)}</b>`));
     if (r.kind === 'end') sec1.push(row('restaurant', 'Diet to end', (r.ends || []).map(id => { const a = by('assigns', id); return `<b>${esc(diet(a.diet).name)}</b><span>Set for ${esc(whereSet(a))}</span>`; }).join('')));
-    sec1.push(row('event', r.kind === 'end' ? 'Last day' : r.kind === 'skip' ? 'When' : 'How long', `<b>${r.kind === 'skip' ? `${wday(r.date)} ${fmtDayY(r.date)} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ')}` : r.kind === 'end' ? `${wday(r.stop)} ${fmtDayY(r.stop)}` : howText(r)}</b>${r.how && r.kind !== 'skip' ? ktag(HOW_KIND[r.how]) : ''}`));
+    const JI = { 'Needed from': 'event', 'Start from': 'restaurant', Food: 'restaurant', When: 'event', With: 'schedule', Medicine: 'medication', Dose: 'science', 'Mix into': 'schedule', For: 'date_range', 'Which feed': 'schedule', 'What was wrong': 'report' };
+    if (JOB_KINDS.includes(r.kind)) ((r.f && r.f.rows) || []).forEach(([k, v]) => sec1.push(row(JI[k] || 'info', k, `<b>${esc(v)}</b>`)));
+    else sec1.push(row('event', r.kind === 'end' ? 'Last day' : r.kind === 'skip' ? 'When' : 'How long', `<b>${r.kind === 'skip' ? `${wday(r.date)} ${fmtDayY(r.date)} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ')}` : r.kind === 'end' ? `${wday(r.stop)} ${fmtDayY(r.stop)}` : howText(r)}</b>${r.how && r.kind !== 'skip' ? ktag(HOW_KIND[r.how]) : ''}`));
   }
   /* the work after approval: who is in charge (the team can change it while in progress), and what the team wrote when completing */
   if (['in_progress', 'completed'].includes(r.state)) {
@@ -132,7 +134,7 @@ const ST_TONE = { 'Awaiting approval': 'wait', Delayed: 'wait', Approved: 'ok', 
 const stPill = t => `<span class="stp stp--${ST_TONE[t] || 'wait'}">${esc(t)}</span>`;
 function activityView(r) {
   const f = S.actF || 'all'; let prev = null;
-  const items = r.events.map(e => { if (e.kind === 'comment' || e.kind === 'assigned') return { e }; const to = e.kind === 'completed' && isDiet(r) ? 'Diet updated' : ST_TO[e.kind], x = { e, from: e.kind === 'raised' ? null : prev, to }; prev = to; return x; })
+  const items = r.events.map(e => { if (e.kind === 'comment' || e.kind === 'assigned') return { e }; const to = e.kind === 'completed' && changesDiet(r) ? 'Diet updated' : ST_TO[e.kind], x = { e, from: e.kind === 'raised' ? null : prev, to }; prev = to; return x; })
     .filter(x => f === 'all' || (f === 'c' ? x.e.kind === 'comment' : x.e.kind !== 'comment')).reverse();
   const card = x => { const e = x.e, who = `<span class="act__who">${avatar(user(e.by).name, '24')}<b>${youName(e.by)}</b><span>${fmtAt(e.at)}</span></span>`;
     if (e.kind === 'comment') return `<div class="act">${who}<p>${esc(e.note)}</p></div>`;
@@ -172,13 +174,13 @@ function nextLine(r) {
    Cancel are in the ⋮ menu, as the app */
 function statusBar(r) {
   const a = actionsFor(r, me()), at = r.events.filter(e => !['comment', 'assigned'].includes(e.kind)).pop().at, s = stateOf(r), mine = e => e && e.by === S.user;
-  const big = r.state === 'approved' ? (mine(lastEv(r, 'approved')) ? 'You Approved' : 'Approved') : r.state === 'rejected' ? 'Request Rejected' : r.state === 'cancelled' ? (mine(lastEv(r, 'cancelled')) ? 'You Canceled' : 'Request Canceled') : r.state === 'completed' ? (isDiet(r) ? 'Diet updated' : 'Request Completed') : '';
+  const big = r.state === 'approved' ? (mine(lastEv(r, 'approved')) ? 'You Approved' : 'Approved') : r.state === 'rejected' ? 'Request Rejected' : r.state === 'cancelled' ? (mine(lastEv(r, 'cancelled')) ? 'You Canceled' : 'Request Canceled') : r.state === 'completed' ? (changesDiet(r) ? 'Diet updated' : 'Request Completed') : '';
   const tone = r.state === 'rejected' ? ' az-statusbar--bad' : r.state === 'cancelled' ? ' az-statusbar--cancel' : r.state === 'approved' && mine(lastEv(r, 'approved')) ? ' az-statusbar--ok' : '';
   let btns = '';
   if (a.includes('approve')) btns = `<button class="az-btn az-btn--reject" onclick="reasonSheet('${r.id}','reject')">Reject</button><button class="az-btn az-btn--approve" onclick="doAct('${r.id}','approve')">${I('check')}Approve</button>`;
   /* the team's one next step, as the Help Desk app (the design system: one main green button; going back is outline) */
   else if (a.includes('start')) btns = `<button class="az-btn az-btn--approve" onclick="doAct('${r.id}','start')">${I('progress_activity')}Move to In progress</button>`;
-  else if (a.includes('complete')) btns = `<button class="az-btn az-btn--approve" onclick="completeSheet('${r.id}')">${I('task_alt')}${isDiet(r) ? 'Diet updated' : 'Move to Completed'}</button>`;
+  else if (a.includes('complete')) btns = `<button class="az-btn az-btn--approve" onclick="completeSheet('${r.id}')">${I('task_alt')}${changesDiet(r) ? 'Diet updated' : isDiet(r) ? 'Done' : 'Move to Completed'}</button>`;
   else if (a.includes('reopen')) btns = `<button class="az-btn az-btn--outline az-btn--approve" onclick="reasonSheet('${r.id}','reopen')">${I('undo')}Move back to In progress</button>`;
   return `<div class="az-statusbar${tone}"><span>Current Status • ${ago(at)} ago</span>${big ? `<b class="az-statusbar__big">${big}</b>` : `<b class="tone-${s.tone}">${esc(s.label)}</b>`}<span>${nextLine(r)}</span>${btns ? `<div class="az-statusbar__actions">${btns}</div>` : ''}</div>`;
 }
@@ -186,8 +188,8 @@ const MENU_ACTS = ['assign', 'delay', 'edit', 'cancel'];
 /* the more menu: what is not the main decision. The design system's Menu, not a sheet: record actions go in a menu (3 Nov) */
 function moreMenu(id, btn) {
   const r = by('requests', id), a = actionsFor(r, me()), item = (icon, l, js, danger) => `<button role="menuitem"${danger ? ' class="az-danger"' : ''} onclick="closeMenu();${js}">${I(icon, 20)}${l}</button>`;
-  const clone = isDiet(r) ? canRaise(me()) && ['items', 'new', 'skip'].includes(r.kind) : true;
-  openMenu(btn, [clone ? item('content_copy', 'Clone request', isDiet(r) ? `SG=null;go('#/suggest?clone=${id}')` : `S.draft=null;go('#/new?clone=${id}')`) : '',
+  const clone = isDiet(r) ? canRaise(me()) : true;
+  openMenu(btn, [clone ? item('content_copy', 'Clone request', isDiet(r) && r.kind === 'new' ? `SG=null;go('#/suggest?clone=${id}')` : `S.draft=null;go('#/new?clone=${id}')`) : '',
     a.includes('assign') ? item('badge', 'Job in charge', `assignSheet('${id}')`) : '', a.includes('delay') ? item('timer', r.state === 'delayed' ? 'Change the delay' : 'Delay', `delaySheet('${id}')`) : '',
     a.includes('edit') ? item('edit', 'Edit request', `go('#/new?edit=${id}')`) : '', a.includes('cancel') ? item('do_not_disturb_on', 'Cancel request', `reasonSheet('${id}','cancel')`, true) : ''].join('') || `<p class="az-menu__none">Nothing to do here</p>`);
 }

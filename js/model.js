@@ -268,7 +268,7 @@ function stateOf(r) {
     case 'approved': return { label: 'Approved', tone: 'positive', icon: 'check_circle' };
     /* the work after approval, as the Help Desk app: the department moves it to In progress, then to Completed. Positive like Approved (the design system's Positive is "active, approved, done"); the label and icon tell them apart */
     case 'in_progress': return { label: 'In progress', tone: 'positive', icon: 'progress_activity' };
-    case 'completed': return { label: isDiet(r) ? 'Diet updated' : 'Completed', tone: 'positive', icon: 'task_alt' };
+    case 'completed': return { label: changesDiet(r) ? 'Diet updated' : 'Completed', tone: 'positive', icon: 'task_alt' };
     case 'rejected': return { label: 'Rejected', tone: 'negative', icon: 'cancel' };
     case 'cancelled': return { label: 'Canceled', tone: 'neutral', icon: 'do_not_disturb_on' };
     case 'deleted': return { label: 'Deleted', tone: 'neutral', icon: 'delete' };
