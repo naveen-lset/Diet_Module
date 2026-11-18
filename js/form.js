@@ -609,6 +609,7 @@ function redrawFoot() { const f = $('#form-foot'); if (f && S.draft) f.innerHTML
 function paneForm(q) {
   const d = initDraft(q), close = d.edit ? `#/requests/${d.edit}` : S.back;
   if (d.blocked) return pane('pane--fill', topbar({ back: close, title: 'Edit request' }), empty1('This request can no longer be edited'));
+  if (d.pick) return whoPage(d.pick, 'S.draft.pick', { back: 'S.draft.pick=null;render()', done: 'dfWhoDone()' });
   if (d.ent) return paneEntity(d);
   const prio = `<button class="prio-pick" onclick="prioSheet()" aria-label="Priority: ${PRIO[d.prio][1]}"><span class="prio prio--${d.prio}">${d.prio === 'emergency' ? I('local_fire_department', 16, true) : PRIO[d.prio][0]}</span>${PRIO[d.prio][1]}${I('keyboard_arrow_down', 20)}</button>`;
   const top = topbar({ close: `go('${close}')`, title: d.edit ? 'Edit Request' : 'New Request', actions: prio }), foot = `<div id="form-foot">${formFoot(d)}</div>`;
@@ -669,6 +670,10 @@ const DTYPES = [
   ['other', 'other', 'Something else', 'Anything else for the diet team', 'more_horiz', 'Other diet requests'],
 ];
 const dtOf = k => DTYPES.find(x => x[0] === k);
+/* each type has its own colour, so the choice reads at a glance (owner, 18 Nov: "more prominent, remove outline and all") */
+const DT_TONE = { change: '#00AFD6', newdiet: '#37BD69', move: '#1F515B', end: '#FA6140', skip: '#6B7775', extra: '#E4B819', medicine: '#00A99F', quality: '#E93353', other: '#7A8684' };
+const dtTile = (k, on, js) => { const [, , l, h, ic] = dtOf(k); return `<button class="dtt${on ? ' on' : ''}" onclick="${js}" aria-pressed="${on}"><span class="dtt__ic" style="--dt:${DT_TONE[k]}">${I(ic)}</span><b>${l}</b><small>${h}</small>${on ? `<span class="dtt__ok">${I('check_circle', 20, true)}</span>` : ''}</button>`; };
+const dtGrid = (cur, js) => [...new Set(DTYPES.map(x => x[5]))].map(g => `<p class="dtg__h">${g}</p><div class="dtg">${DTYPES.filter(x => x[5] === g).map(([k]) => dtTile(k, cur === k, js(k))).join('')}</div>`).join('');
 const JOB_KINDS = ['ask', 'extra', 'medicine', 'quality', 'other'];
 Object.assign(KIND, { ask: ['New diet', 'add_circle'], extra: ['Extra feed', 'cookie'], medicine: ['Medicine with food', 'medication'], quality: ['Food quality', 'report'], other: ['Other', 'more_horiz'] });
 /* a request that changes a diet (the rules engine); the others are jobs, and their kitchen step is Done, not Diet updated */
@@ -685,7 +690,9 @@ function dfRows(d) {
   }
 }
 const QUALITY = ['Spoiled', 'Wrong cut', 'Wrong amount', 'Wrong food', 'Late', 'Not clean'];
-const dchips = (opts, on, js) => `<div class="sg-chips">${opts.map(([v, l]) => `<button class="az-chip" aria-selected="${on(v)}" onclick="${js(v)}">${esc(l)}</button>`).join('')}</div>`;
+/* choice chips: the picked one shows a tick; a day chip says its date, a feed chip its clock (owner, 18 Nov: "other things also some work") */
+const dchips = (opts, on, js, icon = '') => `<div class="sg-chips dchips">${opts.map(([v, l, sub]) => `<button class="az-chip" aria-selected="${on(v)}" onclick="${js(v)}">${on(v) ? I('check', 18) : icon ? I(icon, 18) : ''}<span>${esc(l)}${sub ? `<small>${esc(sub)}</small>` : ''}</span></button>`).join('')}</div>`;
+const dayOpt = (n, l) => [n, l, `${wday(addDays(TODAY, n))} ${+addDays(TODAY, n).slice(8)} ${MON[+addDays(TODAY, n).slice(5, 7) - 1]}`];
 const dfield = (label, body, req = false) => `<div class="az-field"><span class="az-label">${label}${req ? ' <span class="az-req">*</span>' : ''}</span>${body}</div>`;
 const dfEat = d => d.targets[0] ? eatNow([d.targets[0]]).list : [];
 const dfFeeds = d => { const e = dfEat(d)[0]; return e ? e.diet.meals.map(m => m.feed) : FEEDS.map(f => f.id); };
@@ -713,7 +720,7 @@ function dfAuto(d) {
     case 'newdiet': return `New diet for ${p}`;
     case 'move': return d.diet ? `Move ${p} to ${diet(d.diet).name}` : '';
     case 'end': return d.ends.length ? `End ${diet(by('assigns', d.ends[0]).diet).name} early` : '';
-    case 'skip': return d.feeds === 'all' || d.feeds.length ? autoTitle(r) + ` · ${p}` : '';
+    case 'skip': return d.feeds === 'all' ? `No feed ${dayText(d.date)} · ${p}` : d.feeds.length ? `Skip the ${d.feeds.map(f => feed(f).from).join(' and ')} feed ${dayText(d.date)} · ${p}` : '';
     case 'extra': return d.f.item ? `Extra ${item(d.f.item).name} for ${p}` : '';
     case 'medicine': return d.f.med ? `${d.f.med} with food for ${p}` : '';
     case 'quality': return (d.f.issues || []).length ? `Food issue: ${d.f.issues.join(', ').toLowerCase()} · ${p}` : '';
@@ -745,21 +752,21 @@ function dtypeFields(d) {
     ${d.how === 'once' ? dchips([[3, '3 days'], [7, '7 days'], [14, '14 days'], [30, '30 days']], v => d.days === v, v => `S.draft.days=${v};render()`) : ''}
     ${d.how === 'yearly' ? dchips(SG_SEASONS.map(([s, a, b]) => [s, `${s} · ${mdText(a)} – ${mdText(b)}`]), v => d.season === v, v => `S.draft.season='${v}';render()`) : ''}
     ${d.how && d.how !== 'yearly' ? dchips([[0, 'From today'], [1, 'From tomorrow']], v => d.from === v, v => `S.draft.from=${v};render()`) : ''}`, true);
-  const feedChips = (cur, js, all = true) => dchips([...(all ? [['all', 'Whole day']] : []), ...dfFeeds(d).map(f => [f, bandText(feed(f))])], v => v === 'all' ? cur === 'all' : cur !== 'all' && (cur || []).includes(v), js);
+  const feedChips = (cur, js, all = true) => dchips([...(all ? [['all', 'Whole day', 'All feeds']] : []), ...dfFeeds(d).map(f => [f, bandText(feed(f))])], v => v === 'all' ? cur === 'all' : cur !== 'all' && (cur || []).includes(v), js, 'schedule');
   if (k === 'change') {
     out.push(dfield('Changes', !d.base ? '<p class="sg-none">No diet here yet. Choose New diet instead.</p>'
       : d.changes.length ? `<div class="sg-sum"><div class="sg-sum__h"><span class="sg-cap">${esc(diet(d.base).name)} · ${plural(d.changes.length, 'change')}</span><button class="lnk" onclick="dfEditFood()">Edit</button></div>${d.changes.map(c => `<div class="sg-sum__r">${I('edit', 18)}<span>${esc(changeText(c, diet(d.base)))}</span></div>`).join('')}</div>`
       : `<button class="az-btn az-btn--outline df-edit" id="f-name" onclick="dfEditFood()">${I('edit_note')}Change the food in ${esc(diet(d.base).name)}</button>`, true));
     if (d.changes.length) out.push(how(), why(SG_REASONS));
   }
-  if (k === 'newdiet') out.push(dfield('Needed from', dchips([[0, 'Today'], [1, 'Tomorrow'], [7, 'Next week']], v => (d.f.from ?? 1) === v, v => `S.draft.f.from=${v};render()`)),
+  if (k === 'newdiet') out.push(dfield('Needed from', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(7, 'Next week')], v => (d.f.from ?? 1) === v, v => `S.draft.f.from=${v};render()`)),
     dfield('Start from', dchips([['', 'Nothing'], ...dfEat(d).map(e => [e.diet.id, e.diet.name])], v => (d.f.start || '') === v, v => `S.draft.f.start='${v}';render()`)), why(SG_REASONS));
   if (k === 'move') { const now = dfEat(d)[0], opts = [...new Set(D.assigns.filter(a => a.sp === d.targets[0].sp && !ended(a)).map(a => a.diet))].filter(id => !now || id !== now.diet.id);
     out.push(dfield('Move to', opts.length ? dchips(opts.map(id => [id, diet(id).name]), v => d.diet === v, v => `S.draft.diet='${v}';render()`) : '<p class="sg-none">No other diet for this species</p>', true), how(), why(SG_REASONS)); }
   if (k === 'end') { const es = endable(d);
     out.push(dfield('Diet to end', es.length ? dchips(es.map(a => [a.id, diet(a.diet).name]), v => d.ends.includes(v), v => `S.draft.ends=['${v}'];render()`) : '<p class="sg-none">No diet here ends early: only Seasonal, Time-bound or place diets do</p>', true),
-      dfield('Last day', dchips([[0, 'Today'], [1, 'Tomorrow'], [2, 'In 2 days']], v => d.stop === addDays(TODAY, v), v => `S.draft.stop='${addDays(TODAY, v)}';render()`), true), why(SG_REASONS)); }
-  if (k === 'skip') out.push(dfield('Day', dchips([[0, 'Today'], [1, 'Tomorrow']], v => d.date === addDays(TODAY, v), v => `S.draft.date='${addDays(TODAY, v)}';render()`), true),
+      dfield('Last day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(2, 'In 2 days')], v => d.stop === addDays(TODAY, v), v => `S.draft.stop='${addDays(TODAY, v)}';render()`), true), why(SG_REASONS)); }
+  if (k === 'skip') out.push(dfield('Day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow')], v => d.date === addDays(TODAY, v), v => `S.draft.date='${addDays(TODAY, v)}';render()`), true),
     dfield('Feeds', feedChips(d.feeds, v => v === 'all' ? `S.draft.feeds='all';render()` : `dfToggleFeed(${v})`), true), why(REASONS.skip));
   if (k === 'extra') out.push(select('Food', d.f.item ? item(d.f.item).name : '', 'dfItemSheet()', { req: true, placeholder: 'Choose food', id: 'f-item' }),
     d.f.item ? dfield('Amount, per animal', `<div class="qtyf"><button class="qtyf__b" aria-label="Less" onclick="S.draft.f.qty=Math.max(${sgStepOf(d.f.unit)},round(S.draft.f.qty-${sgStepOf(d.f.unit)}));render()">${I('remove')}</button><span class="qtyf__v">${qtyText(d.f.qty, d.f.unit)}</span><button class="qtyf__b" aria-label="More" onclick="S.draft.f.qty=round(S.draft.f.qty+${sgStepOf(d.f.unit)});render()">${I('add')}</button></div>`) : '',
@@ -779,8 +786,9 @@ function dietForm(d) {
   const t = d.targets[0], dt = d.dtype && dtOf(d.dtype), ap = d.approver && user(d.approver);
   return section('category', 'Request Details', [
     select('Requesting to', 'Diet', 'deptSheet()', { disabled: !!d.edit }),
-    select('Request type', dt ? dt[2] : '', 'dtypeSheet()', { req: true, placeholder: 'Select request type', id: 'f-dtype', disabled: !!d.edit }),
-    dt ? select('For', t ? `${sgName(t)} · ${sgWhere(t)} · ${plural(tAnimals(t).length, 'animal')}` : '', 'dwhoSheet()', { req: true, placeholder: 'Choose animals or a place', id: 'f-sp' }) : '',
+    !dt ? `<div class="az-field" id="f-dtype"><span class="az-label">What do you need? <span class="az-req">*</span></span>${dtGrid(null, k => `dfType('${k}')`)}</div>`
+      : `<div class="az-field"><span class="az-label">Request type</span><button class="dtsel" style="--dt:${DT_TONE[d.dtype]}" onclick="dtypeSheet()"${d.edit ? ' disabled' : ''}><span class="dtt__ic">${I(dt[4])}</span><span class="grow"><b>${dt[2]}</b><small>${dt[3]}</small></span>${d.edit ? '' : '<span class="lnk">Change</span>'}</button></div>`,
+    dt ? select('For', t ? `${sgName(t)} · ${sgWhere(t)} · ${plural(tAnimals(t).length, 'animal')}` : '', 'dfWho()', { req: true, placeholder: 'Choose the species, a place or an animal', id: 'f-sp' }) : '',
     dt && t ? dtypeFields(d) : '',
     dt ? `<span class="az-label">What are you requesting?</span>
       <label class="az-input az-input--text"><input id="f-title" placeholder="Title" value="${esc(dfTitle(d))}" oninput="S.draft.title=this.value;S.draft.titleEdited=true;redrawFoot()" aria-label="Title"></label>
@@ -792,20 +800,11 @@ function dietForm(d) {
 }
 /* the sheets: Request type · For */
 function dtypeSheet() {
-  openSheet(() => { const cur = S.draft && S.draft.dtype, groups = [...new Set(DTYPES.map(x => x[5]))];
-    return { title: 'Request type', bottom: true, body: groups.map(g => `<p class="deptsel__n">${g}</p><div class="deptsel" role="radiogroup" aria-label="${g}">${DTYPES.filter(x => x[5] === g).map(([k, , l, s, ic]) => `<button class="deptsel__r dtype__r" role="radio" aria-checked="${cur === k}" onclick="dfType('${k}')"><span class="dtype__ic">${I(ic)}</span><span class="grow"><b>${l}</b><small>${s}</small></span><span class="deptsel__radio${cur === k ? ' on' : ''}" aria-hidden="true"></span></button>`).join('')}</div>`).join('') };
-  });
+  openSheet(() => ({ title: 'Request type', bottom: true, body: `<div class="dtg-sheet">${dtGrid(S.draft && S.draft.dtype, k => `dfType('${k}')`)}</div>` }));
 }
-function dfType(k) { const d = S.draft; if (d.dtype !== k) Object.assign(d, { dtype: k, changes: [], diet: null, ends: [], f: {}, reason: null, titleEdited: false, title: '', how: k === 'move' ? 'once' : null, feeds: 'all', date: addDays(TODAY, 1), stop: addDays(TODAY, 1) }); closeAll(); render(); if (!d.targets[0]) setTimeout(dwhoSheet, 60); }
-let DWQ = '';
-function dwhoSheet() {
-  DWQ = '';
-  openSheet(() => { const found = DWQ.trim() ? sgFind(DWQ) : sgRecent();
-    return { title: 'Who is it for?', bottom: true, body: `<button class="sg-scan" onclick="dfPick(sgRecent()[0]);toast('Scanned the QR on '+sgName(sgRecent()[0]))">${I('qr_code_scanner')}<span class="grow"><b>Scan the enclosure QR</b><span>Opens the animals there</span></span></button>
-      <label class="az-input az-input--text sg-search">${I('search')}<input id="dwq" type="search" placeholder="Search animal, enclosure, section or species" value="${esc(DWQ)}" oninput="DWQ=this.value;redrawSheet()" autocomplete="off" aria-label="Search"></label>
-      <p class="sg-cap">${DWQ.trim() ? 'Results' : 'Recent'}</p><div class="sg-list">${found.map(t => `<button class="sg-pick" onclick='dfPick(${JSON.stringify({ sp: t.sp, level: t.level, ref: t.ref ?? null })})'>${spThumb(species(t.sp))}<span class="grow"><b>${esc(sgName(t))}</b><span>${esc(sgWhere(t))} · ${esc(species(t.sp).name)} · ${plural(tAnimals(t).length, 'animal')}</span></span>${I('chevron_right', 20)}</button>`).join('') || '<p class="sg-none">No match</p>'}</div>` };
-  });
-}
+function dfType(k) { const d = S.draft; if (d.dtype !== k) Object.assign(d, { dtype: k, changes: [], diet: null, ends: [], f: {}, reason: null, titleEdited: false, title: '', how: k === 'move' ? 'once' : null, feeds: 'all', date: addDays(TODAY, 1), stop: addDays(TODAY, 1) }); closeAll(); if (!d.targets[0]) d.pick = whoNew(null); render(); }
+function dfWho() { S.draft.pick = whoNew(S.draft.targets[0]); render(); }
+function dfWhoDone() { const t = S.draft.pick.sel; S.draft.pick = null; dfPick(t); }
 function dfPick(t) { const d = S.draft; d.targets = [{ sp: t.sp, level: t.level, ref: t.ref ?? null }]; d.site = sgSite(d.targets[0]); const e = dfEat(d)[0]; d.base = e ? e.diet.id : null; d.changes = []; d.diet = null; d.ends = []; closeAll(); render(); }
 let DFQ = '';
 function dfItemSheet() {
