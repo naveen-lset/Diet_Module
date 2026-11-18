@@ -4,7 +4,8 @@ Phone and iPad prototype of the Antz **Diet** module and the **Help Desk** diet 
 
 **Live:** https://antz-diet-module.pages.dev
 
-- **Diet:** browse diets by diet or by species. A species shows its diets at every level (species, site, section, enclosure, animal). A diet shows its details, certifications, notes, nutrition and its own change history. The app only views diets; editing stays on the web.
+- **Diet:** browse diets by species (first) or by diet. Nothing sits above the Species wise | Diet wise tabs; requests live in Help Desk. A species opens with a dark header as the Antz app's species page (name, scientific name, Population · Sites · Sections · Enclosures). Cards show no animal count. Diet Details has a **PDF** icon that opens the diet as Kitchen & Diet's diet PDF, full screen (tap the page to zoom).
+- **Diet (more):** A species shows its diets at every level (species, site, section, enclosure, animal). A diet shows its details, certifications, notes, nutrition and its own change history. The app only views diets; editing stays on the web.
 - **Help Desk:** list, raise and approve requests. Diet is one department; Dieticians raise diet requests and the Kitchen Head approves them. Approving a diet request changes the diets and writes the diet history.
 - **After approval** (as the Antz app's Help Desk): the department's team moves a request to **In progress**, can set a **Job in charge**, then moves it to **Completed** with completion notes, team size, people involved and attachments. A completed request can be moved back to In progress, with a reason. The Approved tab has the chips All · Approved · In progress · Completed.
 - **The diet shows its requests:** Diet Details › Overview shows a request on the way (Requested, or Approved for the kitchen to update). After the kitchen marks it **Diet updated**, an **Updated** card says what changed and who updated it in the kitchen, and the changed lines stay marked for 7 days. The request links to the diet as it is now, and the diet's History says who updated it in the kitchen.
@@ -39,10 +40,10 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
 
 | Person | Role | Diet | Help Desk |
 |---|---|---|---|
-| Kiran Rao (`kiran`) | Biologist | View; **Suggest a diet change** | Raises Diet requests; follows them on a tracker |
+| Kiran Rao (`kiran`) | Biologist | View; **Suggest a change** on a species or a diet | Raises Diet requests; follows them on a tracker |
 | Hydar Ali (`hydar`) | Dietician | View | Approves, delays or rejects Diet requests; chooses **Save it as** (only those animals, or everyone on that diet) |
-| Suresh Gowda (`suresh`) | Kitchen Head | View; Diet updates row | Kitchen team: marks an approved Diet request **Diet updated**, which changes the diet |
-| Manoj Kumar (`manoj`) | Kitchen Operator | View; Diet updates row | Kitchen team, as Suresh; own Maintenance request |
+| Suresh Gowda (`suresh`) | Kitchen Head | View | Kitchen team: marks an approved Diet request **Diet updated**, which changes the diet |
+| Manoj Kumar (`manoj`) | Kitchen Operator | View | Kitchen team, as Suresh; own Maintenance request |
 
 ## Project structure
 
@@ -50,7 +51,8 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
 .
 ├── index.html            Entry point: device frame, scripts in load order
 ├── css/
-│   └── module.css        Frames, layouts, diet parts, Help Desk cards, forms, motion
+│   ├── module.css        Frames, layouts, diet parts, Help Desk cards, forms, motion
+│   └── diet.css          The Diet side's own rules: the Updated card, the species header, the diet PDF viewer and page
 ├── js/                   Plain scripts sharing globals; load order is set in index.html
 │   ├── masters.js        Sites, sections, enclosures, species, animals, items, stock (generated, do not edit)
 │   ├── data.js           People, departments, feed times, diets, nutrients, seed requests, change history
@@ -61,6 +63,7 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
 │   ├── helpdesk.js       Help Desk list and request details
 │   ├── form.js           New Request (and Edit) for the other departments
 │   ├── suggest.js        Diet change: Suggest a change (Biologist), the request's tracker, Save it as, Diet updated
+│   ├── pdf.js            The diet PDF: one A4 page as Kitchen & Diet prints it, in a full-screen viewer
 │   └── app.js            Router, Home frame, prototype controls, saving, frame fitting
 ├── assets/               Antz Design phone and tablet system (copied unchanged, do not edit)
 │   ├── tokens.css

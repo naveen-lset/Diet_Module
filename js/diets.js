@@ -70,7 +70,7 @@ function markedGroups(d, h, day, click) {
     return { feed: m.feed, rows };
   }).filter(g => g.rows.length);
 }
-const dietTabs = cur => `<div class="az-tabs" role="tablist">${thumb(true)}${[['diets', 'Diet wise'], ['species', 'Species wise']].map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${cur === k}" onclick="homeTab('${k}')">${l}</button>`).join('')}</div>`;
+const dietTabs = cur => `<div class="az-tabs" role="tablist">${thumb(true)}${[['species', 'Species wise'], ['diets', 'Diet wise']].map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${cur === k}" onclick="homeTab('${k}')">${l}</button>`).join('')}</div>`;
 /* switching tabs keeps them pinned if they were, and shows the new list from its start */
 function homeTab(k) {
   const b = document.querySelector('.pane--home .pane__body'), r = b && b.querySelector('.reqsum');
@@ -104,7 +104,7 @@ function listHead(tab, n) {
 const listToggle = (key, opts) => `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Certification">${thumb()}${opts.map(([k, l]) => `<button role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l}</button>`).join('')}</div></div>`;
 /* the page scrolls as one: the requests row, search and chips go up with the list; Diet wise | Species wise stays pinned under the top bar */
 function paneDietHome({ cls = '', cur = null } = {}) {
-  const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true }), head = sgStartRow() + myRequestsRow() + approvalsRow() + kitchenRow() + dietTabs(tab);
+  const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true }), head = dietTabs(tab);   /* owner, 18 Nov: no request rows above the tabs; requests live in Help Desk */
   const chips = (key, opts, count) => `<div class="az-chips" role="tablist">${opts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l} - ${count(k)}</button>`).join('')}</div>`;
   if (tab === 'diets') {
     const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species, place or ID" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label></div>`;
@@ -115,11 +115,11 @@ function paneDietHome({ cls = '', cur = null } = {}) {
   }
   const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="sp-q" placeholder="Search species or taxonomy ID" value="${esc(S.spQ)}" oninput="S.spQ=this.value;render()" aria-label="Search species"></label></div>`;
   const list = speciesFor(S.spTab), clsChips = chips('spCls', [['all', 'All'], ...CLASSES.map(c => [c, c]), ['Other', 'Other']], c => speciesFor(S.spTab, c).length);
-  /* a species card: photo, name, scientific name, animal count, and its diet count big in a tile */
+  /* a species card: photo, name, scientific name, and its diet count big in a tile (no animal count: owner, 18 Nov) */
   const none = S.spQ.trim() && !speciesFor('all', 'all').length;
   const rows = list.length ? list.map(s => { const all = slotsOf(s.id).length;
-    return speciesRow(s, { href: `#/diets/${s.id}`, current: cur === s.id, sub: plural(spAnimals(s.id, S.site).length, 'animal'),
-      end: `<span class="sprow__n${all ? '' : ' sprow__n--none'}"><b>${all ? activeDiets(s.id) : 0}</b><span>Diets</span></span>` }); }).join('') : none ? noMatch(S.spQ, "S.spQ=''") : empty1('No species here');
+    return speciesRow(s, { href: `#/diets/${s.id}`, current: cur === s.id,
+      end: `<span class="sprow__n${all ? '' : ' sprow__n--none'}"><b>${all ? activeDiets(s.id) : 0}</b><span>${all && activeDiets(s.id) === 1 ? 'Diet' : 'Diets'}</span></span>` }); }).join('') : none ? noMatch(S.spQ, "S.spQ=''") : empty1('No species here');
   return pane(`${cls} pane--home`, top, head + search + clsChips + `<div class="body">${none ? '' : listToggle('spTab', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified'], ['without', 'No diet']])}<div class="list list--8">${rows}</div></div>`, '', 'home');
 }
 
@@ -128,10 +128,6 @@ const noMatch = (q, clear) => `<div class="empty1"><div>No match for “${esc(q.
 
 /* ---------- a species: its photo, facts, the level chips, then the diets or places of that level ---------- */
 const lvlOf = sp => { const l = S.lvl[sp] || 'species'; return levelsOf(sp).includes(l) ? l : 'species'; };
-function spFacts(sp) {
-  const as = spAnimals(sp.id, S.site), n = k => new Set(as.map(a => pathOfAnimal(a)[k])).size, w = (k, one, many) => `<span><b>${n(k)}</b> ${n(k) === 1 ? one : many}</span>`;
-  return `<div class="facts"><span><b>${as.length}</b> animals</span>${w('site', 'site', 'sites')}${w('section', 'section', 'sections')}${w('enclosure', 'enclosure', 'enclosures')}</div>${coverLine(sp.id)}`;
-}
 /* who eats what: the animals by the level of the diet each one follows; a part opens its level (audit, 2 Nov). Counts only, no inherited diet */
 function coverLine(spId) {
   if (!slotsOf(spId).length) return '';
@@ -140,9 +136,15 @@ function coverLine(spId) {
   const parts = LEVELS.filter(l => n[l]).map(l => `<button class="cover__p" onclick="pickLevel(${spId},'${l}')"><b>${n[l]}</b> ${l === 'species' ? 'species-wide' : l}</button>`).concat(n.none ? [`<span class="cover__p"><b>${n.none}</b> no diet</span>`] : []);
   return `<div class="cover"><span class="cover__k">Who eats what</span>${parts.join('<span class="cover__dot">·</span>')}</div>`;
 }
-/* the photo header of a species: the photo as it is, a shade only behind the words */
-const shade = 'linear-gradient(180deg,rgba(0,0,0,.42) 0%,rgba(0,0,0,0) 30%,rgba(0,0,0,0) 48%,rgba(0,0,0,.66) 100%)';
-const spHero = (sp, close = '') => `<div class="sphero" style="background-image:${shade},url('${spPhoto(sp.id)}')">${close ? `<button class="sphero__x" onclick="${close}" aria-label="Close">${I('close')}</button>` : ''}<span class="sphero__t"><b>${esc(sp.name)}</b><span><i>${esc(sp.sci)}</i> · ${esc(sp.cls)}</span></span></div>`;
+/* the species header as the Antz app's species page (owner, 18 Nov): dark, "Species", the name and the scientific name,
+   then Population · Sites · Sections · Enclosures big in one box (counted for the site picked). The phone's sheet closes with × */
+function spHead(sp, close = '') {
+  const as = spAnimals(sp.id, S.site), n = k => new Set(as.map(a => pathOfAnimal(a)[k])).size;
+  const stats = [[as.length, 'Population'], [n('site'), n('site') === 1 ? 'Site' : 'Sites'], [n('section'), n('section') === 1 ? 'Section' : 'Sections'], [n('enclosure'), n('enclosure') === 1 ? 'Enclosure' : 'Enclosures']];
+  return `<div class="sphd">${close ? `<div class="sphd__bar"><button class="az-iconbtn" onclick="${close}" aria-label="Close">${I('close')}</button></div>` : ''}<span class="sphd__k">Species</span><b class="sphd__n">${esc(sp.name)}</b><i class="sphd__s">${esc(sp.sci)}</i>
+    <div class="sphd__stats">${stats.map(([v, l]) => `<span><b>${v}</b><small>${l}</small></span>`).join('')}</div></div>`;
+}
+const spTop = sp => { const c = coverLine(sp.id); return c ? `<div class="sphead">${c}</div>` : ''; };
 function speciesParts(spId, cur) {
   const l = lvlOf(spId);
   if (!slotsOf(spId).length) return { chips: '', body: `<div class="empty1"><div>No diet added for ${esc(species(spId).name)}${canRaise(me()) ? `<button class="az-btn empty1__btn" onclick="go('#/new?dept=diet&sp=${spId}&kind=new')">${I('add_circle')}Request a diet</button>` : ''}</div></div>` };
@@ -172,14 +174,14 @@ function speciesParts(spId, cur) {
 /* the iPad's species column */
 function paneSpecies(spId, { cls = '', cur = null } = {}) {
   const sp = species(spId), p = speciesParts(spId, cur);
-  return pane(cls + (spFab(spId) ? ' has-fab' : ''), spHero(sp) + `<div class="sphead">${spFacts(sp)}</div>` + p.chips, `<div class="body">${p.body}</div>`, '', `sp-${spId}`).replace(/<\/section>$/, `${spFab(spId)}</section>`);
+  return pane(cls + (spFab(spId) ? ' has-fab' : ''), spHead(sp) + spTop(sp) + p.chips, `<div class="body">${p.body}</div>`, '', `sp-${spId}`).replace(/<\/section>$/, `${spFab(spId)}</section>`);
 }
 /* Raise request from a species: the request starts with it, whole species (a species without a diet has its own button) */
 const spFab = spId => canRaise(me()) && slotsOf(spId).length ? `<button class="az-fab az-fab--pill dfab" onclick="SG=null;go('#/suggest?sp=${spId}')">${I('edit_note')}<span class="dfab__t">Suggest a change</span></button>` : '';
-/* the phone's species: a bottom sheet over Diet, with its photo */
+/* the phone's species: a bottom sheet over Diet, with the species header */
 function speciesSheet(spId) {
   const sp = species(spId), p = speciesParts(spId, null);
-  return `<div class="az-scrim" onclick="if(event.target===this)go('#/diets')"><section class="spsheet" role="dialog" aria-modal="true" aria-label="${esc(sp.name)}" data-k="sps-${spId}">${spHero(sp, "go('#/diets')")}<div class="sphead">${spFacts(sp)}</div>${p.chips}<div class="spsheet__body"><div class="body">${p.body}</div></div>${spFab(spId)}</section></div>`;
+  return `<div class="az-scrim" onclick="if(event.target===this)go('#/diets')"><section class="spsheet" role="dialog" aria-modal="true" aria-label="${esc(sp.name)}" data-k="sps-${spId}">${spHead(sp, "go('#/diets')")}${spTop(sp)}${p.chips}<div class="spsheet__body"><div class="body">${p.body}</div></div>${spFab(spId)}</section></div>`;
 }
 function pickLevel(sp, l) { S.lvl[sp] = l; S.aQ = ''; render(); }
 
@@ -271,7 +273,7 @@ function paneDiet(asgId, { cls = '', back = '', wide = isTab() } = {}) {
   if (S.dTabFor !== asgId) { S.dTab = 'ov'; S.dTabFor = asgId; }
   /* Back returns to the screen the diet was opened from; `back` is where to go when there is none (a link, a reload) */
   const lead = back ? `<button class="az-iconbtn" onclick="goBack('${back}')" aria-label="Back">${I('arrow_back')}</button>` : '';
-  const head = `<div class="dhead dhead--doodle">${doodleSvg()}<div class="dhead__bar">${lead}<b>Diet Details</b>${iconBtn('info', 'Diet info', `dietInfoSheet('${a.id}')`)}</div>
+  const head = `<div class="dhead dhead--doodle">${doodleSvg()}<div class="dhead__bar">${lead}<b>Diet Details</b>${iconBtn('picture_as_pdf', 'Diet PDF', `dietPdf('${a.id}')`)}${iconBtn('info', 'Diet info', `dietInfoSheet('${a.id}')`)}</div>
     <div class="dhead__card"><span class="davatar">${I('restaurant')}</span><span class="dhead__t"><span class="dhead__name">${esc(d.name)}</span><span class="dhead__sub">Diet type : <b>${esc(slotKind(a))}${a.group ? ` · ${esc(a.group.label)}` : ''}</b>${when ? ` · ${esc(when)}` : ''}</span>
     <span class="dhead__tags">${pill(tone, state)}</span></span></div></div>`;
   const tabs = `<div class="az-tabs dtabs" role="tablist">${thumb(true)}${DTABS.map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${S.dTab === k}" onclick="S.dTab='${k}';render()">${l}</button>`).join('')}</div>`;
