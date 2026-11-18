@@ -12,6 +12,8 @@ let SG = null;
 
 /* ---------- the draft ---------- */
 function sgInit(q) {
+  /* Change food from the New Request form: the form's own draft, opened here (dfEditFood) */
+  if (q.get('form') && SG && SG.form) return SG;
   const key = [S.user, q.get('edit') || '', q.get('clone') || '', q.get('asg') || '', q.get('sp') || ''].join(':');
   if (SG && SG.key === key) return SG;
   SG = { key, edit: null, t: null, base: null, changes: [], skip: null, skipDay: 1, how: null, days: 14, from: 1, season: 'Winter', reason: null, more: false, text: '', note: false, files: [], prio: 'normal', q: '', aq: '', approver: dept('diet').head, kind: 'items', name: '' };
@@ -86,6 +88,12 @@ function sgClear() { Object.assign(SG, { changes: [], skip: null }); render(); t
 function sgPick(sp, level, ref) { SG.t = { sp, level, ref }; SG.q = ''; SG.changes = []; SG.skip = null; SG.base = null; sgFixBase(); render(); }
 function sgScan() { const t = sgRecent()[0]; sgPick(t.sp, t.level, t.ref); toast(`Scanned the QR on ${sgName(t)}`); }
 function sgBaseTo(id) { if (SG.base === id) return; SG.base = id; if (SG.changes.length) toast('Changes cleared for the other diet'); SG.changes = []; render(); }
+/* back to the New Request form, with the changes (Done) or without (×) */
+function sgFormBack(save) {
+  const d = S.draft;
+  if (save && d) { Object.assign(d, { base: SG.base, changes: SG.changes.map(c => ({ ...c })) }); if (!d.how && SG.how) d.how = SG.how; if (!d.reason && SG.reason) d.reason = SG.reason; if (SG.how === 'once' && SG.days) d.days = SG.days; }
+  SG = null; closeAll(); go(S.sgBack || '#/new');
+}
 function sgClose() { const back = SG && SG.edit ? `#/requests/${SG.edit}` : S.back; SG = null; closeAll(); go(back && !back.startsWith('#/suggest') ? back : '#/diets'); }
 
 /* ---------- who it is for: scan, recent places, search ---------- */
@@ -124,12 +132,12 @@ function sgRow(f, l, off) {
 const sgAddRow = (c, off) => `<div class="sg-row sg-row--add"><button class="sg-row__m" onclick="sgAddSheet(${c.feed},${c.to})"${off ? ' disabled' : ''}><b>${esc(item(c.to).name)}</b><span>${esc(sgSub(c))}</span><em>New</em></button>${off ? `<b class="sg-q">${qtyText(c.qty, c.unit)}</b>` : sgStepper(`sgStepAdd(${c.feed},${c.to},-1)`, `sgStepAdd(${c.feed},${c.to},1)`, qtyText(c.qty, c.unit), item(c.to).name)}</div>`;
 function sgEditor() {
   const t = SG.t, ls = sgEat(), d = sgDiet(), n = tAnimals(t).length;
-  const forCard = `<div class="sg-for">${spThumb(species(t.sp))}<span class="grow"><b>${esc(sgName(t))}</b><span>${esc(sgWhere(t))} · ${esc(species(t.sp).name)} · ${plural(n, 'animal')}</span></span>${SG.edit ? '' : `<button class="lnk" onclick="SG.t=null;SG.changes=[];SG.skip=null;render()">Change</button>`}</div>`;
+  const forCard = `<div class="sg-for">${spThumb(species(t.sp))}<span class="grow"><b>${esc(sgName(t))}</b><span>${esc(sgWhere(t))} · ${esc(species(t.sp).name)} · ${plural(n, 'animal')}</span></span>${SG.edit || SG.form ? '' : `<button class="lnk" onclick="SG.t=null;SG.changes=[];SG.skip=null;render()">Change</button>`}</div>`;
   if (!d) return forCard + `<div class="empty1"><div>No diet here yet. Ask ${esc(first(user(dept('diet').head).name))}, the dietician, to add one.</div></div>`;
   const eats = ls.length > 1 ? `<p class="sg-cap">They eat ${ls.length} diets · pick one to change</p><div class="sg-diets">${ls.map(e => `<button class="az-chip" aria-selected="${e.diet.id === SG.base}" onclick="sgBaseTo('${e.diet.id}')">${esc(e.diet.name)} · ${e.animals.length}</button>`).join('')}</div>`
     : SG.kind === 'new' ? `<p class="sg-eats">A new diet from <b>${esc(d.name)}</b></p>` : `<p class="sg-eats">Eats today · <b>${esc(d.name)}</b></p>`;
   const off = !!SG.skip;
-  const quick = off ? '' : `<div class="sg-quick">${[['more', 'add_circle', 'More food'], ['less', 'do_not_disturb_on', 'Less food'], ['soft', 'healing', 'Soft food'], ['skip', 'no_meals', 'Skip a feed']].map(([k, ic, l]) => `<button class="sg-qchip" onclick="sgQuick('${k}')">${I(ic, 20)}${l}</button>`).join('')}</div>`;
+  const quick = off ? '' : `<div class="sg-quick">${[['more', 'add_circle', 'More food'], ['less', 'do_not_disturb_on', 'Less food'], ['soft', 'healing', 'Soft food'], ...(SG.form ? [] : [['skip', 'no_meals', 'Skip a feed']])].map(([k, ic, l]) => `<button class="sg-qchip" onclick="sgQuick('${k}')">${I(ic, 20)}${l}</button>`).join('')}</div>`;
   const skip = off ? `<div class="sg-skip">${I('no_meals')}<span class="grow"><b>${esc(sgSkipText())}</b><span>No diet change. The kitchen holds the feed.</span></span><button class="lnk" onclick="SG.skip=null;render()">Undo</button></div>` : '';
   const feeds = d.meals.map(m => `<div class="sg-feed${off ? ' sg-feed--off' : ''}"><div class="sg-band">${I('schedule', 20)}<span class="grow">${bandText(feed(m.feed))}</span>${SG.skip && (SG.skip.feeds === 'all' || SG.skip.feeds.includes(m.feed)) ? '<em>Skipped</em>' : ''}</div>
     ${m.items.map(l => sgRow(m.feed, l, off)).join('')}${SG.changes.filter(c => c.op === 'add' && c.feed === m.feed).map(c => sgAddRow(c, off)).join('')}
@@ -242,10 +250,11 @@ function sgSite(r) { const a = r.level === 'animal' ? by('animals', r.ref) : tAn
 
 /* ---------- the page ---------- */
 function paneSuggest(q) {
-  { const e = q.get('edit') && by('requests', q.get('edit')); if (e && isDiet(e) && !SG_KINDS.includes(e.kind)) return paneForm(q); }
-  const d = sgInit(q), top = topbar({ close: 'sgClose()', title: d.edit ? 'Edit Request' : 'Suggest a change', actions: d.t && sgCount() ? iconBtn('restart_alt', 'Start again', 'sgClear()') : '' });
+  /* New Request with Diet, and Edit Request, are the Help Desk form (form.js); this screen keeps Suggest a change, Change food from that form, and the new-diet requests' editor */
+  { const e = q.get('edit') && by('requests', q.get('edit')); if ((q.get('dept') === 'diet' && !q.get('form')) || (e && isDiet(e) && e.kind !== 'new')) return paneForm(q); }
+  const d = sgInit(q), top = topbar({ close: d.form ? 'sgFormBack(false)' : 'sgClose()', title: d.form ? 'Change food' : d.edit ? 'Edit Request' : 'Suggest a change', actions: d.t && sgCount() ? iconBtn('restart_alt', 'Start again', 'sgClear()') : '' });
   if (!canRaise(me()) && !d.edit) return pane('pane--fill', top, empty1(`Biologists suggest diet changes. ${esc(me().title)}s see them in Help Desk.`), '', 'sg-no');
-  const n = sgCount(), foot = d.t && sgDiet() ? (n ? `<button class="sg-cart" onclick="sgReview()"><span class="sg-cart__n">${n}</span><span class="grow">${n === 1 ? 'change' : 'changes'}</span>Review${I('arrow_forward', 20)}</button>` : '<div class="sg-hint">Change a food to start</div>') : '';
+  const n = sgCount(), foot = d.t && sgDiet() ? (n ? `<button class="sg-cart" onclick="${d.form ? 'sgFormBack(true)' : 'sgReview()'}"><span class="sg-cart__n">${n}</span><span class="grow">${n === 1 ? 'change' : 'changes'}</span>${d.form ? 'Done' : 'Review'}${I(d.form ? 'check' : 'arrow_forward', 20)}</button>` : '<div class="sg-hint">Change a food to start</div>') : '';
   return pane('pane--fill sg-page', top, `<div class="body sg-body">${d.t ? sgEditor() : sgWho()}</div>`, foot, d.t ? 'sg-edit' : 'sg-who');
 }
 
@@ -276,14 +285,14 @@ function sgScope(id, k) {
 }
 let SGDONE = { note: '' };
 function dietDoneSheet(id) {
-  const r = by('requests', id); SGDONE = { note: '' };
-  openSheet(() => { const sh = r.kind === 'skip' ? [] : stockCheck(r);
-    return { title: 'Diet updated?', sub: esc(r.title), bottom: true, form: true,
+  const r = by('requests', id), job = !changesDiet(r); SGDONE = { note: '' };
+  openSheet(() => { const sh = r.kind === 'skip' || job ? [] : stockCheck(r);
+    return { title: job ? 'Done?' : 'Diet updated?', sub: esc(r.title), bottom: true, form: true,
       body: `<div class="sg-sum">${dietTrackLine(r)}${sh.map(x => `<div class="sg-sum__r">${I(x.status === 'ok' ? 'inventory_2' : 'warning', 18)}<span>${esc(x.item.name)}: ${x.status === 'ok' ? `in store, ${esc(x.need)} a day` : x.status === 'out' ? 'none in store' : `only ${esc(stockText(x.item))} in store`}</span></div>`).join('')}</div>
         <label class="az-field"><span class="az-label">Note (optional)</span><span class="az-input az-input--text az-textarea"><textarea id="dd-note" rows="2" placeholder="For example, from the evening feed" oninput="SGDONE.note=this.value">${esc(SGDONE.note)}</textarea></span></label>`,
-      foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button class="az-btn" onclick="doAct('${id}','complete',SGDONE)">${I('task_alt')}Diet updated</button>` }; });
+      foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button class="az-btn" onclick="doAct('${id}','complete',SGDONE)">${I('task_alt')}${job ? 'Done' : 'Diet updated'}</button>` }; });
 }
-const dietTrackLine = r => `<div class="sg-sum__r">${I('pets', 18)}<span>${esc(r.kind === 'skip' ? autoTitle(r) : `${plural(animalsIn(r).length, 'animal')} · ${approvedWhen(r)}`)}</span></div>`;
+const dietTrackLine = r => `<div class="sg-sum__r">${I('pets', 18)}<span>${esc(r.kind === 'skip' ? autoTitle(r) : !changesDiet(r) ? `${plural(animalsIn(r).length, 'animal')} · ${r.title}` : `${plural(animalsIn(r).length, 'animal')} · ${approvedWhen(r)}`)}</span></div>`;
 
 /* ---------- Diet home: the Biologist starts here; the Kitchen sees what it must update ---------- */
 function sgStartRow() {
