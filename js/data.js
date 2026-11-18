@@ -3,6 +3,7 @@
 
 /* people, as the Kitchen & Diet roles (antz_kitchen_backend prisma/migrations): the three "Viewing as" people first; the rest appear in the data */
 const USERS = [
+  { id: 'u-kiran', name: 'Kiran Rao', title: 'Biologist', role: 'biologist', roles: 'Biologist', place: 'Cow Land' },
   { id: 'u-hydar', name: 'Hydar Ali', title: 'Dietician', role: 'dietician', roles: 'Diet Manager · Dietician' },
   { id: 'u-suresh', name: 'Suresh Gowda', title: 'Kitchen Head', role: 'head', roles: 'Kitchen Head', place: 'Central Kitchen' },
   { id: 'u-manoj', name: 'Manoj Kumar', title: 'Kitchen Operator', role: 'viewer', roles: 'Kitchen Operator', place: 'Central Kitchen' },
@@ -13,16 +14,27 @@ const USERS = [
   { id: 'u-kavya', name: 'Kavya R', title: 'Horticulture Head', role: 'other' },
   { id: 'u-arjun', name: 'Arjun P', title: 'IT Head', role: 'other' },
 ];
-const VIEWERS = ['u-hydar', 'u-suresh', 'u-manoj'];
-const APPROVER = 'u-suresh';
-/* Help Desk departments: who approves by default; Diet requests need the Dietician permission */
+const VIEWERS = ['u-kiran', 'u-hydar', 'u-suresh', 'u-manoj'];
+/* diet requests (owner, 18 Nov): the Biologist raises, the Dietician approves, then the Kitchen updates the diet */
+const APPROVER = 'u-hydar';
+/* Help Desk departments: who approves by default; Diet requests need the Dietician permission.
+   team: the department's members, who do the work once a request is approved (In progress → Completed), as the Help Desk app's department members; the head alone when not given */
 const DEPTS = [
-  { id: 'diet', name: 'Diet', icon: 'restaurant', head: 'u-suresh', what: 'Diet change requests: items, diets, no-diet days' },
+  { id: 'diet', name: 'Diet', icon: 'restaurant', head: 'u-hydar', team: ['u-suresh', 'u-manoj'], what: 'Diet change requests: items, diets, no-diet days' },
   { id: 'maintenance', name: 'Maintenance', icon: 'build', head: 'u-raghav', what: 'Repairs in kitchens, stores and enclosures' },
   { id: 'procurement', name: 'Procurement', icon: 'shopping_cart', head: 'u-priya', what: 'Buying items and equipment' },
   { id: 'horticulture', name: 'Horticulture', icon: 'park', head: 'u-kavya', what: 'Browse, plants and grounds' },
   { id: 'it', name: 'IT', icon: 'computer', head: 'u-arjun', what: 'Devices, network and app access' },
+  /* the rest of the Help Desk app's 25 departments (owner's screenshot, 18 Nov 2026): works go to the Maintenance Head, stores to Procurement */
+  ...[['carpentry', 'Carpentry Work', 'carpenter'], ['shutter', 'Rolling Shutter', 'garage'], ['splitac', 'Split AC', 'ac_unit'], ['painting', 'Painting Work', 'format_paint'], ['hvac', 'HVAC', 'mode_fan'],
+    ['welding', 'Welding Work', 'construction'], ['plumbing', 'Plumbing', 'plumbing'], ['electrical', 'Electrical', 'electrical_services'], ['civil', 'Civil Work', 'foundation'], ['housekeeping', 'Housekeeping', 'cleaning_services'],
+    ['cctv', 'CCTV', 'videocam'], ['water', 'Water Supply', 'water_drop'], ['waste', 'Waste Management', 'delete'], ['transport', 'Transport', 'local_shipping'], ['fencing', 'Fencing', 'fence'], ['pest', 'Pest Control', 'pest_control']]
+    .map(([id, name, icon]) => ({ id, name, icon, head: 'u-raghav', what: name })),
+  ...[['stores', 'Stores', 'inventory_2'], ['stationery', 'Stationery', 'edit_note'], ['uniforms', 'Uniforms', 'checkroom'], ['events', 'Events', 'celebration']]
+    .map(([id, name, icon]) => ({ id, name, icon, head: 'u-priya', what: name })),
 ];
+/* who may approve a diet request (owner, 18 Nov 2026: "Approver has to be Dietician, or Kitchen Operator") */
+const DIET_APPROVERS = ['u-hydar', 'u-amruth', 'u-manoj'];
 /* each department asks its own questions in the New Request form (Diet has the diet sections) */
 const DEPT_FORMS = {
   maintenance: { title: 'Maintenance details', fields: [
@@ -181,53 +193,67 @@ function SEED_REQUESTS(t) {
   const d = n => addDays(t, n), at = (n, hm) => `${d(n)}T${hm}`;
   const item = n => ITEM_ID[n];
   return [
-    { id: 'REQ38-00513', kind: 'skip', sp: 150254, level: 'enclosure', ref: 19996, by: 'u-hydar', prio: 'normal', reason: 'Fasting day',
+    { id: 'REQ38-00513', kind: 'skip', sp: 150254, level: 'enclosure', ref: 19996, by: 'u-kiran', prio: 'normal', reason: 'Fasting day',
       title: 'Fasting day for Q Pen 1', text: 'Both birds in quarantine are on their weekly fast. Hold every feed for the day.', note: '', files: [],
-      date: d(-6), feeds: 'all', state: 'approved',
-      events: [{ kind: 'raised', by: 'u-hydar', at: at(-9, '10:20') }, { kind: 'approved', by: 'u-suresh', at: at(-8, '09:05'), note: '' }] },
-    { id: 'REQ38-00514', kind: 'diet', sp: 195022, level: 'species', ref: null, by: 'u-hydar', prio: 'normal', reason: 'Behavioural',
+      date: d(-6), feeds: 'all', state: 'completed', assignee: 'u-manoj',
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(-9, '10:20') }, { kind: 'approved', by: 'u-hydar', at: at(-8, '09:05'), note: '' },
+        { kind: 'started', by: 'u-manoj', at: at(-7, '16:00') },
+        { kind: 'completed', by: 'u-manoj', at: at(-6, '18:10'), note: 'No feed given in Q Pen 1 all day. Water as usual. Both birds back on feed the next morning.', team: 1, people: '', files: [] }] },
+    { id: 'REQ38-00514', kind: 'diet', sp: 195022, level: 'species', ref: null, by: 'u-kiran', prio: 'normal', reason: 'Behavioral',
       title: 'Meerkats onto the insectivore diet', text: 'More foraging time: move the mob to the insectivore diet with mealworm scatter feeds.', note: 'Scatter the mealworm across the sand, not in a bowl.', files: [],
       base: 'D-331', diet: 'D-330', start: d(-6), end: null, state: 'rejected',
-      events: [{ kind: 'raised', by: 'u-hydar', at: at(-8, '11:40') },
-        { kind: 'rejected', by: 'u-suresh', at: at(-7, '14:10'), reason: 'Mealworm is out of stock and the supplier has no date yet. Raise it again with another protein.' }] },
-    { id: 'REQ38-00515', kind: 'diet', sp: 135332, level: 'animal', ref: 215920, by: 'u-hydar', prio: 'high', reason: 'Post-op recovery',
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(-8, '11:40') },
+        { kind: 'rejected', by: 'u-hydar', at: at(-7, '14:10'), reason: 'Mealworm is out of stock and the supplier has no date yet. Raise it again with another protein.' }] },
+    { id: 'REQ38-00515', kind: 'diet', sp: 135332, level: 'animal', ref: 215920, by: 'u-kiran', prio: 'high', reason: 'Post-op recovery',
       title: 'Soft recovery diet for #215920', text: 'Jaw surgery on Friday. Soft, mashed food for two weeks while the stitches heal.', note: 'Mash fully. No whole pieces.', files: [{ name: 'Surgery notes #215920.pdf', kind: 'pdf', size: '640 KB' }],
-      base: 'D-273', diet: 'D-502', start: d(-3), end: d(11), state: 'approved', applied: true,
-      events: [{ kind: 'raised', by: 'u-hydar', at: at(-5, '16:30') }, { kind: 'approved', by: 'u-suresh', at: at(-4, '08:50'), note: 'Morning shift will do the mashing.' }] },
-    { id: 'REQ38-00516', kind: 'skip', sp: 161818, level: 'section', ref: 904, by: 'u-amruth', prio: 'normal', reason: 'Transfer',
+      base: 'D-273', diet: 'D-502', start: d(-3), end: d(11), state: 'completed', assignee: 'u-manoj', applied: true,
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(-5, '16:30') }, { kind: 'approved', by: 'u-hydar', at: at(-4, '08:50'), note: 'Morning shift will do the mashing.' },
+        { kind: 'completed', by: 'u-manoj', at: at(-4, '09:40'), note: 'Diet updated. Mashed from the evening feed.', team: 1, people: '', files: [] }] },
+    { id: 'REQ38-00516', kind: 'skip', sp: 161818, level: 'section', ref: 904, by: 'u-kiran', prio: 'normal', reason: 'Transfer',
       title: 'Skip morning feed in Primate House', text: 'The group moves to the new night enclosures. Skip the morning feed so they travel on an empty stomach.', note: '', files: [],
       date: d(-2), feeds: [2], state: 'cancelled',
-      events: [{ kind: 'raised', by: 'u-amruth', at: at(-4, '12:15') }, { kind: 'cancelled', by: 'u-amruth', at: at(-3, '09:30'), reason: 'The transfer moved to next week.' }] },
-    { id: 'REQ38-00517', kind: 'items', sp: 134467, level: 'section', ref: 170, by: 'u-amruth', prio: 'normal', reason: 'Seasonal change',
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(-4, '12:15') }, { kind: 'cancelled', by: 'u-kiran', at: at(-3, '09:30'), reason: 'The transfer moved to next week.' }] },
+    { id: 'REQ38-00517', kind: 'items', sp: 134467, level: 'section', ref: 170, by: 'u-kiran', prio: 'normal', reason: 'Seasonal change',
       title: 'More fruit for Sherwood lovebirds', text: 'Cooler nights coming. A little more apple and some pomegranate for the Sherwood flock.', note: '', files: [],
       base: 'D-283', changes: [{ op: 'change', feed: 2, item: item('Apple'), qty: 20, unit: 'g' }, { op: 'add', feed: 4, to: item('Pomegranate'), qty: 5, unit: 'g', prep: 'Fresh', cut: 'Whole' }],
       start: d(5), end: null, state: 'approved',
-      events: [{ kind: 'raised', by: 'u-amruth', at: at(-3, '15:00') }, { kind: 'comment', by: 'u-suresh', at: at(-2, '10:12'), note: 'Pomegranate comes from the Fruit Store. Can start on the 5th.' }, { kind: 'approved', by: 'u-suresh', at: at(-1, '11:45'), note: '' }] },
-    { id: 'REQ38-00518', kind: 'items', sp: 195064, level: 'species', ref: null, by: 'u-hydar', prio: 'normal', reason: 'Underweight animal',
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(-3, '15:00') }, { kind: 'comment', by: 'u-suresh', at: at(-2, '10:12'), note: 'Pomegranate comes from the Fruit Store. Can start on the 5th.' }, { kind: 'approved', by: 'u-hydar', at: at(-1, '11:45'), note: '' }] },
+    { id: 'REQ38-00518', kind: 'items', sp: 195064, level: 'species', ref: null, by: 'u-kiran', prio: 'normal', reason: 'Underweight animal',
       title: 'Add a boiled egg for the polecats', text: 'Three polecats lost weight after the moult. One boiled egg each in the morning until they are back to weight.', note: 'Cool the eggs before serving.', files: [{ name: 'Weight chart – polecats.xlsx', kind: 'doc', size: '48 KB' }],
       base: 'D-286', changes: [{ op: 'add', feed: 2, to: item('Egg'), qty: 1, unit: 'pcs', prep: 'Boiled', cut: 'Halved' }],
       start: d(1), end: null, state: 'delayed', delay: { until: d(2), reason: 'Ingredient not in stock', note: 'Egg delivery comes in two days. 13 a day from then.' },
-      events: [{ kind: 'raised', by: 'u-hydar', at: at(-2, '10:05') },
-        { kind: 'delayed', by: 'u-suresh', at: at(-1, '15:20'), until: d(2), reason: 'Ingredient not in stock', note: 'Egg delivery comes in two days. 13 a day from then.' },
-        { kind: 'comment', by: 'u-hydar', at: at(-1, '16:02'), note: 'Thanks. That works.' }] },
-    { id: 'REQ38-00519', kind: 'items', sp: 161818, level: 'section', ref: 178, by: 'u-amruth', prio: 'normal', reason: 'Health',
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(-2, '10:05') },
+        { kind: 'delayed', by: 'u-hydar', at: at(-1, '15:20'), until: d(2), reason: 'Ingredient not in stock', note: 'Egg delivery comes in two days. 13 a day from then.' },
+        { kind: 'comment', by: 'u-kiran', at: at(-1, '16:02'), note: 'Thanks. That works.' }] },
+    { id: 'REQ38-00519', kind: 'items', sp: 161818, level: 'section', ref: 178, by: 'u-kiran', prio: 'normal', reason: 'Health',
       title: 'Guava instead of grapes for Ayodhya', text: 'Grapes look linked to loose stools in the Ayodhya marmosets. Try guava for a month.', note: '', files: [],
       base: 'D-320', changes: [{ op: 'change', feed: 3, item: item('Grapes'), to: item('Guava'), qty: 20, unit: 'g', prep: 'Washed', cut: 'Diced 1 cm' }],
       start: d(1), end: d(30), state: 'pending',
-      events: [{ kind: 'raised', by: 'u-amruth', at: at(-1, '17:25') }] },
-    { id: 'REQ38-00520', kind: 'skip', sp: 360599, level: 'enclosure', ref: 19981, by: 'u-hydar', prio: 'emergency', reason: 'Vet procedure',
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(-1, '17:25') }] },
+    { id: 'REQ38-00520', kind: 'skip', sp: 360599, level: 'enclosure', ref: 19981, by: 'u-kiran', prio: 'emergency', reason: 'Vet procedure',
       title: 'No feed today: shell checks in Ril enclosure', text: 'All the tortoises here go under light sedation for shell and beak checks this morning. Hold all feeds today.', note: 'Water stays as usual.', files: [{ name: 'Sedation plan.pdf', kind: 'pdf', size: '310 KB' }],
       date: d(0), feeds: 'all', state: 'pending',
-      events: [{ kind: 'raised', by: 'u-hydar', at: at(0, '07:15') }] },
-    { id: 'REQ38-00521', kind: 'items', sp: 135332, level: 'enclosure', ref: 15224, by: 'u-hydar', prio: 'high', reason: 'Post-op recovery',
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(0, '07:15') }] },
+    { id: 'REQ38-00521', kind: 'items', sp: 135332, level: 'enclosure', ref: 15224, by: 'u-kiran', prio: 'high', reason: 'Post-op recovery',
       title: 'Soft roots for Coypu 1 after dental work', text: 'Two coypu in Coypu 1 had their molars trimmed. Swap carrot for steamed sweet potato and halve the maize for two weeks.', note: 'Steam until soft, serve cool.', files: [{ name: 'Dental report – Coypu 1.pdf', kind: 'pdf', size: '1.2 MB' }],
       base: 'D-273', changes: [{ op: 'change', feed: 2, item: item('Carrot'), to: item('Sweet Potato'), qty: 300, unit: 'g', prep: 'Steamed', cut: 'Cubes 2 cm' }, { op: 'change', feed: 4, item: item('Maize'), qty: 50, unit: 'g' }],
       start: d(1), end: d(14), state: 'pending',
-      events: [{ kind: 'raised', by: 'u-hydar', at: at(0, '08:10') }] },
-    { id: 'REQ38-00522', kind: 'diet', sp: 150254, level: 'enclosure', ref: 19990, by: 'u-amruth', prio: 'normal', reason: 'Breeding',
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(0, '08:10') }] },
+    { id: 'REQ38-00522', kind: 'diet', sp: 150254, level: 'enclosure', ref: 19990, by: 'u-kiran', prio: 'normal', reason: 'Breeding',
       title: 'Breeding diet for Paddock A', text: 'The breeding pair and two hens in Paddock A start the laying season. Move them to the breeding diet.', note: 'Boil the eggs fully and cool before serving.', files: [{ name: 'Paddock A pairing.jpg', kind: 'image', size: '2.4 MB' }],
       base: 'D-313', diet: 'D-311', start: d(2), end: d(60), state: 'pending',
-      events: [{ kind: 'raised', by: 'u-amruth', at: at(0, '08:40') }] },
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(0, '08:40') }] },
+    /* a new diet for some animals of a species (the females), every year: Kitchen & Diet's Seasonal, sex-based diet */
+    { id: 'REQ38-00523', kind: 'new', sp: 135332, level: 'species', ref: null, targets: [{ sp: 135332, level: 'species', ref: null, group: { kind: 'sex', sex: 'F', label: 'Female' } }], by: 'u-kiran', prio: 'normal', reason: 'Breeding',
+      title: 'Breeding Coypu Diet for females', text: 'The females come into the breeding season in December. More beans and some sweet potato every year until February.', note: 'Boil the sweet potato soft, serve cool.', files: [],
+      base: 'D-273', changes: [{ op: 'change', feed: 2, item: item('Beans'), qty: 200, unit: 'g' }, { op: 'add', feed: 2, to: item('Sweet Potato'), qty: 100, unit: 'g', prep: 'Boiled', cut: 'Cubes 2 cm' }],
+      how: 'yearly', start: '12-01', end: '02-28', state: 'pending',
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(0, '09:10') }] },
+    /* ending an exception early: the animal goes back to the diet of its place */
+    { id: 'REQ38-00524', kind: 'end', sp: 135332, level: 'animal', ref: 215920, by: 'u-kiran', prio: 'normal', reason: 'Recovery',
+      title: 'End Soft Recovery Coypu Diet early', text: 'The stitches are out and he eats normally. Back to the usual diet after Wednesday.', note: '', files: [],
+      ends: ['AS-5'], stop: d(2), state: 'pending',
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(0, '09:40') }] },
   ];
 }
 
@@ -242,8 +268,9 @@ const GENERIC_REQUESTS = t => {
       events: [{ kind: 'raised', by: 'u-hydar', at: at(-1, '08:30') }, { kind: 'comment', by: 'u-raghav', at: at(-1, '11:05'), note: 'Technician comes tomorrow at 9. Move the greens to the cold room till then.' }] },
     { id: 'REQ38-00509', dept: 'maintenance', by: 'u-manoj', approver: 'u-raghav', site: 29, prio: 'normal', f: { issue: 'Plumbing', where: 'Vegetable wash station, second tap', risk: false }, title: 'Leaking tap at the wash station', text: 'The second tap at the vegetable wash station drips all day.', files: [], state: 'pending',
       events: [{ kind: 'raised', by: 'u-manoj', at: at(0, '07:50') }] },
-    { id: 'REQ38-00511', dept: 'procurement', by: 'u-suresh', approver: 'u-priya', site: 29, prio: 'normal', f: { items: [{ name: 'Weighing scale, 30 kg', qty: 1 }, { name: 'Scale cover', qty: 2 }], needBy: d(3), cost: 18500 }, title: 'Second weighing scale for Central Kitchen', text: 'One scale for 140 diets slows packing. A second 30 kg scale for the fruit line.', files: [{ name: 'Scale quote.pdf', kind: 'pdf', size: '220 KB' }], state: 'approved',
-      events: [{ kind: 'raised', by: 'u-suresh', at: at(-6, '10:10') }, { kind: 'comment', by: 'u-priya', at: at(-5, '12:40'), note: 'Ordered from the usual vendor. Delivery in a week.' }, { kind: 'approved', by: 'u-priya', at: at(-5, '12:42'), note: '' }] },
+    { id: 'REQ38-00511', dept: 'procurement', by: 'u-suresh', approver: 'u-priya', site: 29, prio: 'normal', f: { items: [{ name: 'Weighing scale, 30 kg', qty: 1 }, { name: 'Scale cover', qty: 2 }], needBy: d(3), cost: 18500 }, title: 'Second weighing scale for Central Kitchen', text: 'One scale for 140 diets slows packing. A second 30 kg scale for the fruit line.', files: [{ name: 'Scale quote.pdf', kind: 'pdf', size: '220 KB' }], state: 'in_progress', assignee: 'u-priya',
+      events: [{ kind: 'raised', by: 'u-suresh', at: at(-6, '10:10') }, { kind: 'comment', by: 'u-priya', at: at(-5, '12:40'), note: 'Ordered from the usual vendor. Delivery in a week.' }, { kind: 'approved', by: 'u-priya', at: at(-5, '12:42'), note: '' },
+        { kind: 'started', by: 'u-priya', at: at(-5, '12:45') }] },
   ];
 };
 
@@ -317,7 +344,7 @@ function SEED(t) {
   const siteOfPlace = r => { const a = r.level === 'animal' ? animals.find(x => x.id === r.ref) : null, enc = a ? a.enc : r.level === 'enclosure' ? r.ref : null;
     if (enc) return secOf[encOf[enc].section].site; if (r.level === 'section') return secOf[r.ref].site; if (r.level === 'site') return r.ref;
     return secOf[encOf[animals.find(x => x.sp === r.sp).enc].section].site; };
-  const requests = SEED_REQUESTS(t).map(r => ({ ...r, dept: 'diet', approver: APPROVER, site: siteOfPlace(r) })).concat(GENERIC_REQUESTS(t)), dietOf = Object.fromEntries(diets.map(x => [x.id, x]));
+  const requests = SEED_REQUESTS(t).map(r => ({ ...r, dept: 'diet', approver: APPROVER, site: siteOfPlace(r), ...(['skip', 'end'].includes(r.kind) || r.how ? {} : { how: r.end ? 'once' : 'always' }) })).concat(GENERIC_REQUESTS(t)), dietOf = Object.fromEntries(diets.map(x => [x.id, x]));
   requests.forEach(r => (r.changes || []).forEach(c => {
     if (c.op === 'add') Object.assign(c, { prep: '', cut: '', days: WK.daily, ...c });
     if (c.op === 'change') { const was = dietOf[r.base].meals.find(m => m.feed === c.feed).items.find(i => i.item === c.item); Object.assign(c, { to: was.item, qty: was.qty, unit: was.unit, prep: was.prep, cut: was.cut, days: was.days, ...c }); }
