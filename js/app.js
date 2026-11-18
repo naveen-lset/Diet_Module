@@ -40,7 +40,7 @@ function baseView() {
 /* the Antz Home, loaded once and kept, so coming back finds it as it was */
 function showHome(on) {
   const fr = $('#homefr');
-  if (on && !fr.src) fr.src = 'home/index.html?v=3';
+  if (on && !fr.src) fr.src = 'home/index.html?v=4';
   fr.hidden = !on; $('#app').hidden = on;
 }
 addEventListener('message', e => { const r = e.data && e.data.antzOpen; if (r === 'diets' || r === 'requests') { if (r === 'requests') { S.rDept = 'all'; S.rTab = 'pending'; S.rSub = 'all'; } go('#/' + r); } });
