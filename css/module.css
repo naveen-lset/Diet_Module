@@ -1137,3 +1137,9 @@ button.step{cursor:pointer}
 .tab .wiz-foot .az-btn{flex:0 0 auto;min-width:140px}
 .tab .wiz .ktiles{grid-template-columns:repeat(2,minmax(0,1fr))}
 .tab-l .wiz .ktiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* ---------- Help Desk: the Approved tab's chips (All · Approved · In progress · Completed), as the app; they sit in the list, on the page colour ---------- */
+.az-chips--sub{background:none;box-shadow:none;padding:0 16px;margin:0 -16px}
+.tab .az-chips--sub{padding:0 20px;margin:0 -20px}
+.az-chips--sub .az-chip{background:var(--white)}
+.az-chips--sub .az-chip[aria-selected="true"]{background:var(--OnPrimaryContainer)}

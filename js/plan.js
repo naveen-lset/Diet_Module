@@ -210,7 +210,7 @@ function plan0(r) {
 /* the animals a request is for: who gets it (an approved request keeps the list it had) */
 function animalsIn(t) {
   if (t.kind === 'skip') return targetsOf(t).flatMap(tAnimals);
-  if (t.state === 'approved' && t.outcome) return t.outcome.get.map(id => by('animals', id)).filter(Boolean);
+  if (wasApproved(t) && t.outcome) return t.outcome.get.map(id => by('animals', id)).filter(Boolean);
   return planOf(t).get;
 }
 

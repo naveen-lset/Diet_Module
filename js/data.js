@@ -15,9 +15,10 @@ const USERS = [
 ];
 const VIEWERS = ['u-hydar', 'u-suresh', 'u-manoj'];
 const APPROVER = 'u-suresh';
-/* Help Desk departments: who approves by default; Diet requests need the Dietician permission */
+/* Help Desk departments: who approves by default; Diet requests need the Dietician permission.
+   team: the department's members, who do the work once a request is approved (In progress → Completed), as the Help Desk app's department members; the head alone when not given */
 const DEPTS = [
-  { id: 'diet', name: 'Diet', icon: 'restaurant', head: 'u-suresh', what: 'Diet change requests: items, diets, no-diet days' },
+  { id: 'diet', name: 'Diet', icon: 'restaurant', head: 'u-suresh', team: ['u-suresh', 'u-manoj'], what: 'Diet change requests: items, diets, no-diet days' },
   { id: 'maintenance', name: 'Maintenance', icon: 'build', head: 'u-raghav', what: 'Repairs in kitchens, stores and enclosures' },
   { id: 'procurement', name: 'Procurement', icon: 'shopping_cart', head: 'u-priya', what: 'Buying items and equipment' },
   { id: 'horticulture', name: 'Horticulture', icon: 'park', head: 'u-kavya', what: 'Browse, plants and grounds' },
@@ -183,8 +184,10 @@ function SEED_REQUESTS(t) {
   return [
     { id: 'REQ38-00513', kind: 'skip', sp: 150254, level: 'enclosure', ref: 19996, by: 'u-hydar', prio: 'normal', reason: 'Fasting day',
       title: 'Fasting day for Q Pen 1', text: 'Both birds in quarantine are on their weekly fast. Hold every feed for the day.', note: '', files: [],
-      date: d(-6), feeds: 'all', state: 'approved',
-      events: [{ kind: 'raised', by: 'u-hydar', at: at(-9, '10:20') }, { kind: 'approved', by: 'u-suresh', at: at(-8, '09:05'), note: '' }] },
+      date: d(-6), feeds: 'all', state: 'completed', assignee: 'u-manoj',
+      events: [{ kind: 'raised', by: 'u-hydar', at: at(-9, '10:20') }, { kind: 'approved', by: 'u-suresh', at: at(-8, '09:05'), note: '' },
+        { kind: 'started', by: 'u-manoj', at: at(-7, '16:00') },
+        { kind: 'completed', by: 'u-manoj', at: at(-6, '18:10'), note: 'No feed given in Q Pen 1 all day. Water as usual. Both birds back on feed the next morning.', team: 1, people: '', files: [] }] },
     { id: 'REQ38-00514', kind: 'diet', sp: 195022, level: 'species', ref: null, by: 'u-hydar', prio: 'normal', reason: 'Behavioral',
       title: 'Meerkats onto the insectivore diet', text: 'More foraging time: move the mob to the insectivore diet with mealworm scatter feeds.', note: 'Scatter the mealworm across the sand, not in a bowl.', files: [],
       base: 'D-331', diet: 'D-330', start: d(-6), end: null, state: 'rejected',
@@ -192,8 +195,9 @@ function SEED_REQUESTS(t) {
         { kind: 'rejected', by: 'u-suresh', at: at(-7, '14:10'), reason: 'Mealworm is out of stock and the supplier has no date yet. Raise it again with another protein.' }] },
     { id: 'REQ38-00515', kind: 'diet', sp: 135332, level: 'animal', ref: 215920, by: 'u-hydar', prio: 'high', reason: 'Post-op recovery',
       title: 'Soft recovery diet for #215920', text: 'Jaw surgery on Friday. Soft, mashed food for two weeks while the stitches heal.', note: 'Mash fully. No whole pieces.', files: [{ name: 'Surgery notes #215920.pdf', kind: 'pdf', size: '640 KB' }],
-      base: 'D-273', diet: 'D-502', start: d(-3), end: d(11), state: 'approved', applied: true,
-      events: [{ kind: 'raised', by: 'u-hydar', at: at(-5, '16:30') }, { kind: 'approved', by: 'u-suresh', at: at(-4, '08:50'), note: 'Morning shift will do the mashing.' }] },
+      base: 'D-273', diet: 'D-502', start: d(-3), end: d(11), state: 'in_progress', assignee: 'u-manoj', applied: true,
+      events: [{ kind: 'raised', by: 'u-hydar', at: at(-5, '16:30') }, { kind: 'approved', by: 'u-suresh', at: at(-4, '08:50'), note: 'Morning shift will do the mashing.' },
+        { kind: 'started', by: 'u-suresh', at: at(-4, '09:30') }, { kind: 'assigned', by: 'u-suresh', at: at(-4, '09:31'), to: 'u-manoj' }] },
     { id: 'REQ38-00516', kind: 'skip', sp: 161818, level: 'section', ref: 904, by: 'u-amruth', prio: 'normal', reason: 'Transfer',
       title: 'Skip morning feed in Primate House', text: 'The group moves to the new night enclosures. Skip the morning feed so they travel on an empty stomach.', note: '', files: [],
       date: d(-2), feeds: [2], state: 'cancelled',
@@ -253,8 +257,9 @@ const GENERIC_REQUESTS = t => {
       events: [{ kind: 'raised', by: 'u-hydar', at: at(-1, '08:30') }, { kind: 'comment', by: 'u-raghav', at: at(-1, '11:05'), note: 'Technician comes tomorrow at 9. Move the greens to the cold room till then.' }] },
     { id: 'REQ38-00509', dept: 'maintenance', by: 'u-manoj', approver: 'u-raghav', site: 29, prio: 'normal', f: { issue: 'Plumbing', where: 'Vegetable wash station, second tap', risk: false }, title: 'Leaking tap at the wash station', text: 'The second tap at the vegetable wash station drips all day.', files: [], state: 'pending',
       events: [{ kind: 'raised', by: 'u-manoj', at: at(0, '07:50') }] },
-    { id: 'REQ38-00511', dept: 'procurement', by: 'u-suresh', approver: 'u-priya', site: 29, prio: 'normal', f: { items: [{ name: 'Weighing scale, 30 kg', qty: 1 }, { name: 'Scale cover', qty: 2 }], needBy: d(3), cost: 18500 }, title: 'Second weighing scale for Central Kitchen', text: 'One scale for 140 diets slows packing. A second 30 kg scale for the fruit line.', files: [{ name: 'Scale quote.pdf', kind: 'pdf', size: '220 KB' }], state: 'approved',
-      events: [{ kind: 'raised', by: 'u-suresh', at: at(-6, '10:10') }, { kind: 'comment', by: 'u-priya', at: at(-5, '12:40'), note: 'Ordered from the usual vendor. Delivery in a week.' }, { kind: 'approved', by: 'u-priya', at: at(-5, '12:42'), note: '' }] },
+    { id: 'REQ38-00511', dept: 'procurement', by: 'u-suresh', approver: 'u-priya', site: 29, prio: 'normal', f: { items: [{ name: 'Weighing scale, 30 kg', qty: 1 }, { name: 'Scale cover', qty: 2 }], needBy: d(3), cost: 18500 }, title: 'Second weighing scale for Central Kitchen', text: 'One scale for 140 diets slows packing. A second 30 kg scale for the fruit line.', files: [{ name: 'Scale quote.pdf', kind: 'pdf', size: '220 KB' }], state: 'in_progress', assignee: 'u-priya',
+      events: [{ kind: 'raised', by: 'u-suresh', at: at(-6, '10:10') }, { kind: 'comment', by: 'u-priya', at: at(-5, '12:40'), note: 'Ordered from the usual vendor. Delivery in a week.' }, { kind: 'approved', by: 'u-priya', at: at(-5, '12:42'), note: '' },
+        { kind: 'started', by: 'u-priya', at: at(-5, '12:45') }] },
   ];
 };
 

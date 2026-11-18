@@ -2,7 +2,7 @@
 // Home › Modules › Diet opens #/diets (and #/history); Home › Modules › Help Desk opens #/requests (and #/new). No bottom navigation:
 // each module goes back to Home from its first screen. URL options: ?f=phone|portrait|landscape, ?as=hydar|suresh|manoj, ?fill.
 
-const STORE = 'antz-diet-module-v10';   // bump whenever the demo data changes (v10: requests say how long and can be for many places; v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
+const STORE = 'antz-diet-module-v11';   // bump whenever the demo data changes (v11: Help Desk In progress and Completed, the team's Job in charge; v10: requests say how long and can be for many places; v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
 const AS = { hydar: 'u-hydar', suresh: 'u-suresh', manoj: 'u-manoj' };
 const FRAMES = { phone: 'phone', portrait: 'tab-p', landscape: 'tab-l' };
 function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: TODAY, D, S: { user: S.user, frame: S.frame, site: S.site } })); } catch (e) {} }
@@ -14,7 +14,7 @@ function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: T
   if (AS[q.get('as')]) S.user = AS[q.get('as')];
   if (FRAMES[q.get('f')]) S.frame = FRAMES[q.get('f')];
 })();
-function resetData() { try { localStorage.removeItem(STORE); } catch (e) {} Object.assign(S, { site: 'all', draft: null, rTab: 'pending', rDept: 'all', rPrio: 'all', rQ: '', rSearch: false, hWeek: 0, hDay: null, hType: 'all', lvl: {} }); useData(SEED(TODAY)); seedApprovals(); storeSave(); closeAll(); go('#/home'); toast('Demo data reset'); }
+function resetData() { try { localStorage.removeItem(STORE); } catch (e) {} Object.assign(S, { site: 'all', draft: null, rTab: 'pending', rSub: 'all', rDept: 'all', rPrio: 'all', rQ: '', rSearch: false, hWeek: 0, hDay: null, hType: 'all', lvl: {} }); useData(SEED(TODAY)); seedApprovals(); storeSave(); closeAll(); go('#/home'); toast('Demo data reset'); }
 
 /* ---------- router and render ---------- */
 const route = () => (location.hash || '#/home').slice(2).split('?')[0].split('/');
@@ -41,7 +41,7 @@ function showHome(on) {
   if (on && !fr.src) fr.src = 'home/index.html?v=3';
   fr.hidden = !on; $('#app').hidden = on;
 }
-addEventListener('message', e => { const r = e.data && e.data.antzOpen; if (r === 'diets' || r === 'requests') { if (r === 'requests') { S.rDept = 'all'; S.rTab = 'pending'; } go('#/' + r); } });
+addEventListener('message', e => { const r = e.data && e.data.antzOpen; if (r === 'diets' || r === 'requests') { if (r === 'requests') { S.rDept = 'all'; S.rTab = 'pending'; S.rSub = 'all'; } go('#/' + r); } });
 /* the app's own back trail: Back returns to the screen you came from, even after a reload, a shared link or inside the hub viewer */
 const TRAIL = [];
 /* a sheet is never a place Back returns to (design system: a sheet works "without leaving the page"). Leaving the phone's species

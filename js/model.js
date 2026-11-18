@@ -266,14 +266,19 @@ function stateOf(r) {
     case 'pending': return { label: 'Awaiting approval', tone: 'awaiting', icon: 'pace' };
     case 'delayed': return { label: `Delayed till ${fmtDay(r.delay.until)}`, tone: 'awaiting', icon: 'timer' };
     case 'approved': return { label: 'Approved', tone: 'positive', icon: 'check_circle' };
+    /* the work after approval, as the Help Desk app: the department moves it to In progress, then to Completed. Positive like Approved (the design system's Positive is "active, approved, done"); the label and icon tell them apart */
+    case 'in_progress': return { label: 'In progress', tone: 'positive', icon: 'progress_activity' };
+    case 'completed': return { label: 'Completed', tone: 'positive', icon: 'task_alt' };
     case 'rejected': return { label: 'Rejected', tone: 'negative', icon: 'cancel' };
     case 'cancelled': return { label: 'Canceled', tone: 'neutral', icon: 'do_not_disturb_on' };
     case 'deleted': return { label: 'Deleted', tone: 'neutral', icon: 'delete' };
   }
 }
-/* Help Desk tabs: Pending Approval holds the delayed ones too */
+/* Help Desk tabs: Pending Approval holds the delayed ones too; Approved holds In progress and Completed, with the app's chips under it (All · Approved · In progress · Completed) */
 const HDTABS = [['pending', 'Pending Approval'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['cancelled', 'Canceled'], ['deleted', 'Deleted'], ['all', 'All']];
-const tabOf = r => r.state === 'delayed' ? 'pending' : r.state;
+const HDSUB = [['all', 'All'], ['approved', 'Approved'], ['in_progress', 'In progress'], ['completed', 'Completed']];
+const wasApproved = r => ['approved', 'in_progress', 'completed'].includes(r.state);
+const tabOf = r => r.state === 'delayed' ? 'pending' : wasApproved(r) ? 'approved' : r.state;
 /* the Antz priority flags */
 const PRIO = { normal: ['!', 'Normal'], high: ['!!!', 'High'], emergency: ['local_fire_department', 'Emergency'] };
 const PRIO_RANK = { emergency: 0, high: 1, normal: 2 };
@@ -285,12 +290,20 @@ const lastAt = r => r.events[r.events.length - 1].at;
 /* ---------- who sees what, who can do what (Kitchen & Diet roles; Help Desk: you see what you raised and what waits on you) ---------- */
 const isApprover = u => u.role === 'head';
 const canRaise = u => u.role === 'dietician';
-const visibleTo = (r, u) => r.by === u.id || r.approver === u.id;
+/* the department's team does the approved work: for Diet, the Kitchen Head and the Kitchen Operator */
+const onTeam = (r, u) => { const x = dept(r.dept); return (x.team || [x.head]).includes(u.id); };
+const visibleTo = (r, u) => r.by === u.id || r.approver === u.id || (wasApproved(r) && onTeam(r, u));
 const isOpen = r => ['pending', 'delayed'].includes(r.state);
 function actionsFor(r, u) {
   const a = [];
   if (r.by === u.id && isOpen(r)) a.push('cancel', 'edit');
   if (r.approver === u.id && isOpen(r)) a.push('reject', 'delay', 'approve');
+  /* after approval, as the Help Desk app: Move to In progress → Move to Completed; a completed request can be moved back to In progress, with a reason */
+  if (onTeam(r, u)) {
+    if (r.state === 'approved') a.push('start');
+    if (r.state === 'in_progress') a.push('assign', 'complete');
+    if (r.state === 'completed') a.push('reopen');
+  }
   return a;
 }
 const openFor = t => D.requests.filter(r => isDiet(r) && isOpen(r) && targetsOf(r).some(x => samePlace(x, t)));
@@ -335,12 +348,13 @@ REASONS.new = REASONS.diet = REASONS.end = REASONS.items;
 
 function addHistory(h) { D.history.push({ id: 'CH-' + String(++D.hseq).padStart(3, '0'), ...h }); }
 /* the seed requests that were approved before today changed the diets then */
-function seedApprovals() { D.requests.filter(r => isDiet(r) && r.state === 'approved').forEach(r => applyApproval(r, r.events.find(e => e.kind === 'approved').at)); }
+function seedApprovals() { D.requests.filter(r => isDiet(r) && wasApproved(r)).forEach(r => applyApproval(r, r.events.find(e => e.kind === 'approved').at)); }
 
 function act(r, kind, uid, x = {}) {
   const u = user(uid);
   if (!actionsFor(r, u).includes(kind)) throw new Error(`${u.title} can't ${kind} ${r.id} now`);
-  if (['reject', 'cancel'].includes(kind) && (x.reason || '').trim().length < 3) throw new Error('Add a reason');
+  if (['reject', 'cancel', 'reopen'].includes(kind) && (x.reason || '').trim().length < 3) throw new Error('Add a reason');
+  if (kind === 'assign' && !(dept(r.dept).team || [dept(r.dept).head]).includes(x.to)) throw new Error('Choose someone from the team');
   if (kind === 'delay' && !(x.until > TODAY && x.reason)) throw new Error('Choose a date after today and a reason');
   if (kind === 'approve' && isDiet(r) && planOf(r).block) throw new Error(planOf(r).block);
   const at = nowStamp(), ev = (k, extra = {}) => r.events.push({ kind: k, by: uid, at, ...extra });
@@ -349,6 +363,10 @@ function act(r, kind, uid, x = {}) {
     case 'delay': ev('delayed', { until: x.until, reason: x.reason, note: (x.note || '').trim() }); r.state = 'delayed'; r.delay = { until: x.until, reason: x.reason, note: (x.note || '').trim() }; break;
     case 'reject': ev('rejected', { reason: x.reason.trim() }); r.state = 'rejected'; break;
     case 'cancel': ev('cancelled', { reason: x.reason.trim() }); r.state = 'cancelled'; break;
+    case 'start': ev('started'); r.state = 'in_progress'; break;
+    case 'assign': ev('assigned', { to: x.to }); r.assignee = x.to; break;
+    case 'complete': ev('completed', { note: (x.note || '').trim(), team: Math.max(1, +x.team || 1), people: (x.people || '').trim(), files: [...(x.files || [])] }); r.state = 'completed'; break;
+    case 'reopen': ev('reopened', { reason: x.reason.trim() }); r.state = 'in_progress'; break;
     default: throw new Error('Unknown action ' + kind);
   }
   return r;

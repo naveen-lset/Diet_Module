@@ -6,6 +6,7 @@ Phone and iPad prototype of the Antz **Diet** module and the **Help Desk** diet 
 
 - **Diet:** browse diets by diet or by species. A species shows its diets at every level (species, site, section, enclosure, animal). A diet shows its details, certifications, notes, nutrition and its own change history. The app only views diets; editing stays on the web.
 - **Help Desk:** list, raise and approve requests. Diet is one department; Dieticians raise diet requests and the Kitchen Head approves them. Approving a diet request changes the diets and writes the diet history.
+- **After approval** (as the Antz app's Help Desk): the department's team moves a request to **In progress**, can set a **Job in charge**, then moves it to **Completed** with completion notes, team size, people involved and attachments. A completed request can be moved back to In progress, with a reason. The Approved tab has the chips All · Approved · In progress · Completed.
 - **Layouts:** the phone drills in one screen at a time with bottom sheets. The iPad (portrait and landscape) uses a split view.
 - **Sheets** follow the Antz design system: a sheet is for a short choice or a few facts, never opens another sheet, and is never a place Back returns to. Leaving a sheet for a page closes it for good. A record's extra actions sit in a menu under ⋮.
 
@@ -38,8 +39,8 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
 | Person | Role | Diet | Help Desk |
 |---|---|---|---|
 | Hydar Ali (`hydar`) | Dietician | View, raise diet requests | Own requests; can request to Diet |
-| Suresh Gowda (`suresh`) | Kitchen Head | View | Approves, delays or rejects Diet requests |
-| Manoj Kumar (`manoj`) | Kitchen Operator | View only | Own requests; cannot request to Diet |
+| Suresh Gowda (`suresh`) | Kitchen Head | View | Approves, delays or rejects Diet requests; moves approved ones on (kitchen team) |
+| Manoj Kumar (`manoj`) | Kitchen Operator | View only | Own requests; cannot request to Diet; moves approved Diet requests to In progress and Completed (kitchen team) |
 
 ## Project structure
 
