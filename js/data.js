@@ -25,7 +25,16 @@ const DEPTS = [
   { id: 'procurement', name: 'Procurement', icon: 'shopping_cart', head: 'u-priya', what: 'Buying items and equipment' },
   { id: 'horticulture', name: 'Horticulture', icon: 'park', head: 'u-kavya', what: 'Browse, plants and grounds' },
   { id: 'it', name: 'IT', icon: 'computer', head: 'u-arjun', what: 'Devices, network and app access' },
+  /* the rest of the Help Desk app's 25 departments (owner's screenshot, 18 Nov 2026): works go to the Maintenance Head, stores to Procurement */
+  ...[['carpentry', 'Carpentry Work', 'carpenter'], ['shutter', 'Rolling Shutter', 'garage'], ['splitac', 'Split AC', 'ac_unit'], ['painting', 'Painting Work', 'format_paint'], ['hvac', 'HVAC', 'mode_fan'],
+    ['welding', 'Welding Work', 'construction'], ['plumbing', 'Plumbing', 'plumbing'], ['electrical', 'Electrical', 'electrical_services'], ['civil', 'Civil Work', 'foundation'], ['housekeeping', 'Housekeeping', 'cleaning_services'],
+    ['cctv', 'CCTV', 'videocam'], ['water', 'Water Supply', 'water_drop'], ['waste', 'Waste Management', 'delete'], ['transport', 'Transport', 'local_shipping'], ['fencing', 'Fencing', 'fence'], ['pest', 'Pest Control', 'pest_control']]
+    .map(([id, name, icon]) => ({ id, name, icon, head: 'u-raghav', what: name })),
+  ...[['stores', 'Stores', 'inventory_2'], ['stationery', 'Stationery', 'edit_note'], ['uniforms', 'Uniforms', 'checkroom'], ['events', 'Events', 'celebration']]
+    .map(([id, name, icon]) => ({ id, name, icon, head: 'u-priya', what: name })),
 ];
+/* who may approve a diet request (owner, 18 Nov 2026: "Approver has to be Dietician, or Kitchen Operator") */
+const DIET_APPROVERS = ['u-hydar', 'u-amruth', 'u-manoj'];
 /* each department asks its own questions in the New Request form (Diet has the diet sections) */
 const DEPT_FORMS = {
   maintenance: { title: 'Maintenance details', fields: [
