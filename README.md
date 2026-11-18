@@ -27,7 +27,7 @@ Open http://127.0.0.1:8766/
 | Option | Values | Effect |
 |---|---|---|
 | `?f=` | `phone` · `portrait` · `landscape` | Device frame |
-| `?as=` | `hydar` · `suresh` · `manoj` | Person you view as |
+| `?as=` | `kiran` · `hydar` · `suresh` · `manoj` | Person you view as |
 | `?fill` | | Fill the window with no frame (a real phone or iPad fills on its own) |
 
 Example: http://127.0.0.1:8766/?f=landscape&as=suresh
@@ -38,9 +38,10 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
 
 | Person | Role | Diet | Help Desk |
 |---|---|---|---|
-| Hydar Ali (`hydar`) | Dietician | View, raise diet requests | Own requests; can request to Diet |
-| Suresh Gowda (`suresh`) | Kitchen Head | View | Approves, delays or rejects Diet requests; moves approved ones on (kitchen team) |
-| Manoj Kumar (`manoj`) | Kitchen Operator | View only | Own requests; cannot request to Diet; moves approved Diet requests to In progress and Completed (kitchen team) |
+| Kiran Rao (`kiran`) | Biologist | View; **Suggest a diet change** | Raises Diet requests; follows them on a tracker |
+| Hydar Ali (`hydar`) | Dietician | View | Approves, delays or rejects Diet requests; chooses **Save it as** (only those animals, or everyone on that diet) |
+| Suresh Gowda (`suresh`) | Kitchen Head | View; Diet updates row | Kitchen team: marks an approved Diet request **Diet updated**, which changes the diet |
+| Manoj Kumar (`manoj`) | Kitchen Operator | View; Diet updates row | Kitchen team, as Suresh; own Maintenance request |
 
 ## Project structure
 
@@ -57,7 +58,8 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
 │   ├── diets.js          Diet module screens
 │   ├── history.js        A diet's change history
 │   ├── helpdesk.js       Help Desk list and request details
-│   ├── form.js           New Request (and Edit)
+│   ├── form.js           New Request (and Edit) for the other departments
+│   ├── suggest.js        Diet change: Suggest a change (Biologist), the request's tracker, Save it as, Diet updated
 │   └── app.js            Router, Home frame, prototype controls, saving, frame fitting
 ├── assets/               Antz Design phone and tablet system (copied unchanged, do not edit)
 │   ├── tokens.css

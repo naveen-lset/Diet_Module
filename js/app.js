@@ -2,8 +2,8 @@
 // Home › Modules › Diet opens #/diets (and #/history); Home › Modules › Help Desk opens #/requests (and #/new). No bottom navigation:
 // each module goes back to Home from its first screen. URL options: ?f=phone|portrait|landscape, ?as=hydar|suresh|manoj, ?fill.
 
-const STORE = 'antz-diet-module-v11';   // bump whenever the demo data changes (v11: Help Desk In progress and Completed, the team's Job in charge; v10: requests say how long and can be for many places; v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
-const AS = { hydar: 'u-hydar', suresh: 'u-suresh', manoj: 'u-manoj' };
+const STORE = 'antz-diet-module-v12';   // bump whenever the demo data changes (v12: diet requests — the Biologist raises, the Dietician approves, the Kitchen updates; v11: Help Desk In progress and Completed, the team's Job in charge; v10: requests say how long and can be for many places; v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
+const AS = { kiran: 'u-kiran', hydar: 'u-hydar', suresh: 'u-suresh', manoj: 'u-manoj' };
 const FRAMES = { phone: 'phone', portrait: 'tab-p', landscape: 'tab-l' };
 function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: TODAY, D, S: { user: S.user, frame: S.frame, site: S.site } })); } catch (e) {} }
 (function load() {
@@ -20,12 +20,14 @@ function resetData() { try { localStorage.removeItem(STORE); } catch (e) {} Obje
 const route = () => (location.hash || '#/home').slice(2).split('?')[0].split('/');
 function view() {
   const parts = route(), q = new URLSearchParams(location.hash.split('?')[1] || '');
-  if (parts[0] !== 'new') S.back = underSheet(location.hash) || location.hash || '#/home';
+  if (!['new', 'suggest'].includes(parts[0])) S.back = underSheet(location.hash) || location.hash || '#/home';
   switch (parts[0]) {
     case 'diets': { const v = vDiets(parts); return typeof v === 'string' ? { html: v } : v; }
     case 'history': { const v = vHistory(parts); return typeof v === 'string' ? { html: v } : v; }
     case 'requests': return { html: vHelpDesk(parts) };
-    case 'new': return { html: paneForm(q) };
+    /* a diet change is suggested on the diet itself (js/suggest.js); other departments keep the New Request form */
+    case 'suggest': return { html: paneSuggest(q) };
+    case 'new': { const e = q.get('edit') && by('requests', q.get('edit')); return { html: q.get('dept') === 'diet' || (e && isDiet(e)) ? paneSuggest(q) : paneForm(q) }; }
     default: return { home: true };
   }
 }
@@ -115,7 +117,7 @@ function copyToFigma() {
     .finally(() => { figmaOpen = false; fit(); });
 }
 function setFrame(f) { S.frame = f; closeAll(); storeSave(); fit(); }
-function setUser(id) { S.user = id; S.draft = null; S.rDept = 'all'; closeAll(); storeSave(); if (route()[0] === 'new') go('#/requests'); else render(); toast(`Viewing as ${user(id).name}, ${user(id).title}`); }
+function setUser(id) { S.user = id; S.draft = null; S.rDept = 'all'; closeAll(); storeSave(); if (['new', 'suggest'].includes(route()[0])) { SG = null; go('#/requests'); } else render(); toast(`Viewing as ${user(id).name}, ${user(id).title}`); }
 /* the frame: scaled to fit the window on a desktop; on a real phone or iPad (or ?fill) it is the screen */
 function fit() {
   const dev = $('.device'), slot = $('.device-slot'), q = new URLSearchParams(location.search);

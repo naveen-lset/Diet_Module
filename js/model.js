@@ -268,7 +268,7 @@ function stateOf(r) {
     case 'approved': return { label: 'Approved', tone: 'positive', icon: 'check_circle' };
     /* the work after approval, as the Help Desk app: the department moves it to In progress, then to Completed. Positive like Approved (the design system's Positive is "active, approved, done"); the label and icon tell them apart */
     case 'in_progress': return { label: 'In progress', tone: 'positive', icon: 'progress_activity' };
-    case 'completed': return { label: 'Completed', tone: 'positive', icon: 'task_alt' };
+    case 'completed': return { label: isDiet(r) ? 'Diet updated' : 'Completed', tone: 'positive', icon: 'task_alt' };
     case 'rejected': return { label: 'Rejected', tone: 'negative', icon: 'cancel' };
     case 'cancelled': return { label: 'Canceled', tone: 'neutral', icon: 'do_not_disturb_on' };
     case 'deleted': return { label: 'Deleted', tone: 'neutral', icon: 'delete' };
@@ -288,8 +288,9 @@ const isDiet = r => r.dept === 'diet';
 const lastAt = r => r.events[r.events.length - 1].at;
 
 /* ---------- who sees what, who can do what (Kitchen & Diet roles; Help Desk: you see what you raised and what waits on you) ---------- */
-const isApprover = u => u.role === 'head';
-const canRaise = u => u.role === 'dietician';
+/* diet requests (owner, 18 Nov): the Biologist raises, the Dietician approves, the Kitchen updates the diet */
+const isApprover = u => u.role === 'dietician';
+const canRaise = u => u.role === 'biologist';
 /* the department's team does the approved work: for Diet, the Kitchen Head and the Kitchen Operator */
 const onTeam = (r, u) => { const x = dept(r.dept); return (x.team || [x.head]).includes(u.id); };
 const visibleTo = (r, u) => r.by === u.id || r.approver === u.id || (wasApproved(r) && onTeam(r, u));
@@ -300,9 +301,10 @@ function actionsFor(r, u) {
   if (r.approver === u.id && isOpen(r)) a.push('reject', 'delay', 'approve');
   /* after approval, as the Help Desk app: Move to In progress → Move to Completed; a completed request can be moved back to In progress, with a reason */
   if (onTeam(r, u)) {
-    if (r.state === 'approved') a.push('start');
+    /* a diet request is one job for the kitchen: update the diet (Completed); its change can't be taken back by reopening */
+    if (r.state === 'approved') a.push(...(isDiet(r) ? ['complete'] : ['start']));
     if (r.state === 'in_progress') a.push('assign', 'complete');
-    if (r.state === 'completed') a.push('reopen');
+    if (r.state === 'completed' && !isDiet(r)) a.push('reopen');
   }
   return a;
 }
@@ -348,7 +350,8 @@ REASONS.new = REASONS.diet = REASONS.end = REASONS.items;
 
 function addHistory(h) { D.history.push({ id: 'CH-' + String(++D.hseq).padStart(3, '0'), ...h }); }
 /* the seed requests that were approved before today changed the diets then */
-function seedApprovals() { D.requests.filter(r => isDiet(r) && wasApproved(r)).forEach(r => applyApproval(r, r.events.find(e => e.kind === 'approved').at)); }
+/* a diet changes when the kitchen updates it (Completed); the seed's diet for an updated request is already in the data (applied) */
+function seedApprovals() { D.requests.filter(r => isDiet(r) && (r.state === 'completed' || r.applied)).forEach(r => applyApproval(r, (r.events.find(e => e.kind === 'completed') || r.events.find(e => e.kind === 'approved')).at)); }
 
 function act(r, kind, uid, x = {}) {
   const u = user(uid);
@@ -359,13 +362,13 @@ function act(r, kind, uid, x = {}) {
   if (kind === 'approve' && isDiet(r) && planOf(r).block) throw new Error(planOf(r).block);
   const at = nowStamp(), ev = (k, extra = {}) => r.events.push({ kind: k, by: uid, at, ...extra });
   switch (kind) {
-    case 'approve': ev('approved', { note: (x.note || '').trim() }); r.state = 'approved'; r.delay = null; if (isDiet(r)) applyApproval(r, at); break;
+    case 'approve': ev('approved', { note: (x.note || '').trim() }); r.state = 'approved'; r.delay = null; break;
     case 'delay': ev('delayed', { until: x.until, reason: x.reason, note: (x.note || '').trim() }); r.state = 'delayed'; r.delay = { until: x.until, reason: x.reason, note: (x.note || '').trim() }; break;
     case 'reject': ev('rejected', { reason: x.reason.trim() }); r.state = 'rejected'; break;
     case 'cancel': ev('cancelled', { reason: x.reason.trim() }); r.state = 'cancelled'; break;
     case 'start': ev('started'); r.state = 'in_progress'; break;
     case 'assign': ev('assigned', { to: x.to }); r.assignee = x.to; break;
-    case 'complete': ev('completed', { note: (x.note || '').trim(), team: Math.max(1, +x.team || 1), people: (x.people || '').trim(), files: [...(x.files || [])] }); r.state = 'completed'; break;
+    case 'complete': if (isDiet(r) && !r.outcome) { if (planOf(r).block) throw new Error(planOf(r).block); applyApproval(r, at); } ev('completed', { note: (x.note || '').trim(), team: Math.max(1, +x.team || 1), people: (x.people || '').trim(), files: [...(x.files || [])] }); r.state = 'completed'; break;
     case 'reopen': ev('reopened', { reason: x.reason.trim() }); r.state = 'in_progress'; break;
     default: throw new Error('Unknown action ' + kind);
   }

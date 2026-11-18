@@ -70,7 +70,7 @@ function paneRequest(id, { cls = '' } = {}) {
     <span class="meta">${wday(r.events[0].at.slice(0, 10))} ${fmtAt(r.events[0].at)}</span>
     <span class="rhead__who">${avatar(req.name)}<span class="grow"><span class="az-who__name">${youName(r.by)}</span><span class="az-who__sub">${esc(req.title)}</span></span>${r.by === S.user ? '' : iconBtn('call', `Call ${req.name}`, `toast('Calling ${esc(req.name)}')`) + iconBtn('chat', `Chat with ${req.name}`, `toast('Chat with ${esc(req.name)}')`)}</span></div>`;
   const row = (icon, k, v) => `<div class="rsec__r">${I(icon)}<span class="t"><span>${k}</span>${v}</span></div>`;
-  let body = '';
+  let body = isDiet(r) ? dietTrack(r) : '';
   const sec1 = [row('subject', 'Request', `<b>${esc(r.title)}</b>${r.text ? `<p>${esc(r.text)}</p>` : ''}`)];
   /* the department's own answers */
   const form = DEPT_FORMS[r.dept];
@@ -96,7 +96,7 @@ function paneRequest(id, { cls = '' } = {}) {
     if (who || can) rows.push(row('badge', 'Job in charge', `${who ? `<span class="person">${avatar(who.name, '24')}<span><b>${youName(r.assignee)}</b><span>${esc(who.title)}</span></span></span>` : ''}${can ? `<button class="lnk" onclick="assignSheet('${r.id}')">${who ? 'Change' : `${I('add', 18)}Add`}</button>` : ''}`));
     if (done) {
       if (done.note) rows.push(row('task_alt', 'Completion notes', `<p>${esc(done.note)}</p>`));
-      rows.push(row('groups', 'Team', `<b>${esc(teamText(done))}</b>`));
+      if (!isDiet(r)) rows.push(row('groups', 'Team', `<b>${esc(teamText(done))}</b>`));
       if ((done.files || []).length) rows.push(row('attach_file', 'Completion files', fileBtns(done.files)));
     }
     if (rows.length) body += `<div class="rsec">${rows.join('')}</div>`;
@@ -107,9 +107,10 @@ function paneRequest(id, { cls = '' } = {}) {
     const lines = many ? `<div class="rsec">${(r.rules || []).map(u => `<div class="rsec__r">${I(RULE_IC[u.op])}<span class="t"><b>${esc(ruleText(u))}</b></span></div>`).join('')}</div>`
       : r.kind === 'items' ? linesView(changeGroups(diet(r.base), r.changes)) : r.kind === 'new' ? linesView(dietDiffGroups(r.base && diet(r.base), fresh)) : r.kind === 'diet' ? linesView(dietDiffGroups(r.base && diet(r.base), diet(r.diet))) : r.kind === 'skip' ? skipView(r) : '';
     if (lines) body += `<p class="secttl">${r.kind === 'items' ? 'What changes' : r.kind === 'new' ? `The new diet${r.base && diet(r.base) ? ' · what differs' : ''}` : r.kind === 'diet' ? `New diet · ${esc(diet(r.diet).name)}` : 'Feeds'}</p>${lines}`;
-    /* When approved: what Kitchen & Diet does (worked out while it is open; as it was done once approved) */
-    const p = wasApproved(r) && r.outcome ? r.outcome : ['pending', 'delayed'].includes(r.state) ? planOf(r) : null;
-    if (p && p.lines.length) body += `<p class="secttl">${wasApproved(r) ? 'What approval did' : 'When approved'}</p><div class="forcard effect">${p.lines.map(l => { const v = l.view && !wasApproved(r);
+    body += saveAsSec(r);
+    /* When approved: what Kitchen & Diet does (worked out until the kitchen updates the diet; as it was done after) */
+    const p = r.outcome ? r.outcome : ['pending', 'delayed', 'approved', 'in_progress'].includes(r.state) ? planOf(r) : null;
+    if (p && p.lines.length) body += `<p class="secttl">${r.outcome ? 'What changed' : isOpen(r) ? 'When approved' : 'When the kitchen updates it'}</p><div class="forcard effect">${p.lines.map(l => { const v = l.view && !wasApproved(r);
       return `<${v ? 'button' : 'div'} class="forrow${v ? '' : ' forrow--static'}"${v ? ` onclick="reachSheet('${l.view}','${r.id}')"` : ''}><span class="eav">${I(l.icon, 20)}</span><span class="grow"><b>${esc(l.b)}</b>${l.small ? `<small>${esc(l.small)}</small>` : ''}${l.x ? `<small>${esc(l.x)}</small>` : ''}</span>${l.tag ? ktag(l.tag) : v ? I('chevron_right', 20) : ''}</${v ? 'button' : 'div'}>`; }).join('')}</div>${p.block ? `<div class="az-warnline az-warnline--bad">${I('error', 18)}<span>${esc(p.block)}</span></div>` : ''}`;
   }
   const appr = user(r.approver);
@@ -120,7 +121,7 @@ function paneRequest(id, { cls = '' } = {}) {
   body += `<p class="secttl">Activity</p><div class="act-list"><div class="az-composer">${avatar(me().name)}<input id="cmt" placeholder="Add a comment" onkeydown="if(event.key==='Enter')addComment('${r.id}')" aria-label="Add a comment"><button class="send" onclick="addComment('${r.id}')" aria-label="Send">${I('send', 20)}</button></div>
     <div class="az-timeline">${[...r.events].reverse().map(e => {
       if (e.kind === 'comment') return `<div class="az-tl"><span class="az-tl__dot">${avatar(user(e.by).name, '24')}</span><span class="az-tl__text"><span class="az-tl__title">${youName(e.by)}</span><span class="az-tl__meta">${fmtAt(e.at)}</span><p>${esc(e.note)}</p></span></div>`;
-      const [t, ic, tone] = EVT[e.kind];
+      const [t, ic, tone] = isDiet(r) && e.kind === 'completed' ? ['Diet updated', 'task_alt', 'ok'] : EVT[e.kind];
       const extra = e.kind === 'completed' ? `<p class="plain">${esc(teamText(e))}</p>${(e.files || []).length ? fileBtns(e.files) : ''}` : '';
       return `<div class="az-tl"><span class="az-tl__dot ${tone}">${I(ic, 20)}</span><span class="az-tl__text"><span class="az-tl__title">${t}${e.kind === 'delayed' ? ` till ${fmtDay(e.until)}` : e.kind === 'assigned' ? `: ${youName(e.to)}` : ''}</span><span class="az-tl__meta">${youName(e.by)} • ${fmtAt(e.at)}</span>${e.reason || e.note ? `<p class="plain">${esc([e.reason, e.note].filter(Boolean).join('. '))}</p>` : ''}${extra}</span></div>`; }).join('')}</div></div>`;
   /* the record header scrolls away with the request; only the top bar and the status bar stay */
@@ -141,7 +142,7 @@ function nextLine(r) {
     return back && back.kind === 'reopened' ? `${youName(back.by)}: ${esc(back.reason)}` : r.assignee ? `Job in charge: ${youName(r.assignee)}` : back ? `By ${youName(back.by)}` : ''; }
   if (r.state === 'completed') return `By ${youName(lastEv(r, 'completed').by)}`;
   const e = lastEv(r, r.state === 'cancelled' ? 'cancelled' : r.state);
-  if (r.state === 'approved') return isDiet(r) ? `By ${youName(e.by)} · ${approvedWhen(r)}` : `By ${youName(e.by)}`;
+  if (r.state === 'approved') return isDiet(r) ? `By ${youName(e.by)} · ${onTeam(r, me()) ? 'update the diet' : 'with the kitchen'}` : `By ${youName(e.by)}`;
   return `${youName(e.by)}: ${e.reason}`;
 }
 function statusBar(r) {
@@ -152,7 +153,7 @@ function statusBar(r) {
   else if (a.includes('edit')) btns = `<button class="az-btn az-btn--outline az-btn--approve" onclick="reasonSheet('${r.id}','cancel')">Cancel request</button><button class="az-btn az-btn--approve" onclick="go('#/new?edit=${r.id}')">${I('edit')}Edit request</button>`;
   /* the team's one next step, as the Help Desk app (the design system: one main green button; going back is outline) */
   else if (a.includes('start')) btns = `<button class="az-btn az-btn--approve" onclick="doAct('${r.id}','start')">${I('progress_activity')}Move to In progress</button>`;
-  else if (a.includes('complete')) btns = `<button class="az-btn az-btn--approve" onclick="completeSheet('${r.id}')">${I('task_alt')}Move to Completed</button>`;
+  else if (a.includes('complete')) btns = `<button class="az-btn az-btn--approve" onclick="completeSheet('${r.id}')">${I('task_alt')}${isDiet(r) ? 'Diet updated' : 'Move to Completed'}</button>`;
   else if (a.includes('reopen')) btns = `<button class="az-btn az-btn--outline az-btn--approve" onclick="reasonSheet('${r.id}','reopen')">${I('undo')}Move back to In progress</button>`;
   return `<div class="az-statusbar"><span>Current status • ${ago(at)} ago</span><b class="tone-${s.tone}">${esc(s.label)}</b><span>${nextLine(r)}</span>${btns ? `<div class="az-statusbar__actions">${btns}</div>` : ''}</div>`;
 }
@@ -195,7 +196,7 @@ function assignSheet(id) { ASG = id; const r = by('requests', id), x = dept(r.de
 function pickAssignee(v) { doAct(ASG, 'assign', { to: v }); }
 /* Complete request, as the Help Desk app: completion notes, team size, people involved, attachments */
 let CP = {};
-function completeSheet(id) { const r = by('requests', id); CP = { id, note: '', team: 1, people: '', files: [] }; openSheet(() => ({
+function completeSheet(id) { if (isDiet(by('requests', id))) return dietDoneSheet(id); const r = by('requests', id); CP = { id, note: '', team: 1, people: '', files: [] }; openSheet(() => ({
   title: `Complete ${r.id}?`, sub: esc(r.title), form: true,
   body: `<label class="az-field"><span class="az-label">Completion notes</span><span class="az-input az-input--text az-textarea"><textarea id="cp-note" rows="3" oninput="CP.note=this.value">${esc(CP.note)}</textarea></span></label>
     <div class="az-field"><span class="az-label">Team size</span><div class="qtyf"><button class="qtyf__b" aria-label="Fewer" onclick="CP.team=Math.max(1,CP.team-1);redrawSheet()">${I('remove')}</button><input id="cp-team" type="number" inputmode="numeric" min="1" value="${CP.team}" oninput="CP.team=Math.max(1,+this.value||1)" aria-label="Team size"><span class="qtyf__u">${CP.team === 1 ? 'person' : 'people'}</span><button class="qtyf__b" aria-label="More" onclick="CP.team++;redrawSheet()">${I('add')}</button></div></div>

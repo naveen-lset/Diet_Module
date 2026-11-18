@@ -74,7 +74,7 @@ function listHead(tab, n) {
 const listToggle = (key, opts) => `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Certification">${thumb()}${opts.map(([k, l]) => `<button role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l}</button>`).join('')}</div></div>`;
 /* the page scrolls as one: the requests row, search and chips go up with the list; Diet wise | Species wise stays pinned under the top bar */
 function paneDietHome({ cls = '', cur = null } = {}) {
-  const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true }), head = myRequestsRow() + approvalsRow() + dietTabs(tab);
+  const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true }), head = sgStartRow() + myRequestsRow() + approvalsRow() + kitchenRow() + dietTabs(tab);
   const chips = (key, opts, count) => `<div class="az-chips" role="tablist">${opts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l} - ${count(k)}</button>`).join('')}</div>`;
   if (tab === 'diets') {
     const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species, place or ID" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label></div>`;
@@ -145,7 +145,7 @@ function paneSpecies(spId, { cls = '', cur = null } = {}) {
   return pane(cls + (spFab(spId) ? ' has-fab' : ''), spHero(sp) + `<div class="sphead">${spFacts(sp)}</div>` + p.chips, `<div class="body">${p.body}</div>`, '', `sp-${spId}`).replace(/<\/section>$/, `${spFab(spId)}</section>`);
 }
 /* Raise request from a species: the request starts with it, whole species (a species without a diet has its own button) */
-const spFab = spId => canRaise(me()) && slotsOf(spId).length ? `<button class="az-fab az-fab--pill dfab" onclick="go('#/new?dept=diet&sp=${spId}')">${I('add_circle')}<span class="dfab__t">Raise request</span></button>` : '';
+const spFab = spId => canRaise(me()) && slotsOf(spId).length ? `<button class="az-fab az-fab--pill dfab" onclick="SG=null;go('#/suggest?sp=${spId}')">${I('edit_note')}<span class="dfab__t">Suggest a change</span></button>` : '';
 /* the phone's species: a bottom sheet over Diet, with its photo */
 function speciesSheet(spId) {
   const sp = species(spId), p = speciesParts(spId, null);
@@ -249,7 +249,7 @@ function paneDiet(asgId, { cls = '', back = '', wide = isTab() } = {}) {
   const days = true ? `<div class="dayseg"><div class="az-seg" role="tablist" aria-label="Day">${thumb()}${[[null, 'Full Week'], ...DAYS.map((x, i) => [i, x[0]])].map(([i, l]) => `<span role="tab" tabindex="0" class="${i == null ? 'wide' : ''}" aria-selected="${S.day === i}" aria-label="${i == null ? 'Full week' : DAYS[i]}" onclick="S.day=${i};render();swapFx('.dtable')" onkeydown="if(event.key==='Enter'){S.day=${i};render();swapFx('.dtable')}">${l}</span>`).join('')}</div></div>` : '';
   const groups = dietGroups(d, S.day, 'itemSheet');
   const body = S.dTab === 'nu' ? nutriTab(d) : S.dTab === 'ap' ? appliedTo(a) : S.dTab === 'hi' ? historyTab(a, d) : days + `<div class="dtable">${mealTable(groups, wide, S.day == null)}</div>` + notesBlock(d);
-  const fab = S.dTab === 'ov' && canRaise(me()) && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="raisePick('${a.id}')">${I('add_circle')}<span class="dfab__t">Raise request</span></button>` : '';
+  const fab = S.dTab === 'ov' && canRaise(me()) && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="raisePick('${a.id}')">${I('edit_note')}<span class="dfab__t">Suggest a change</span></button>` : '';
   return pane(cls + (fab ? ' has-fab' : ''), head + tabs, `<div class="body">${body}</div>`, '', `diet-${asgId}`).replace(/<\/section>$/, `${fab}</section>`);
 }
 /* where one diet is applied: every species, level and place it is set on, broad to narrow, each with the animals that eat it there */
@@ -269,9 +269,9 @@ function appliedTo(a) {
 /* Raise request from a diet set at several places asks which place first (audit, 2 Nov) */
 function raisePick(id) {
   const a = by('assigns', id), uses = dietUses(a.diet);
-  if (uses.length < 2) return go(`#/new?dept=diet&asg=${id}`);
+  SG = null; if (uses.length < 2) return go(`#/suggest?asg=${id}`);
   openSheet(() => ({ title: 'Which place?', sub: esc(diet(a.diet).name), pick: true,
-    body: uses.map(x => `<button class="az-option" onclick="closeAll();go('#/new?dept=diet&asg=${x.id}')"><span>${esc(useText(x))}<small>${esc([pathNamed(x), plural(followersOf(x).length, 'animal')].filter(Boolean).join(' · '))}</small></span>${I('chevron_right')}</button>`).join('') }));
+    body: uses.map(x => `<button class="az-option" onclick="closeAll();go('#/suggest?asg=${x.id}')"><span>${esc(useText(x))}<small>${esc([pathNamed(x), plural(followersOf(x).length, 'animal')].filter(Boolean).join(' · '))}</small></span>${I('chevron_right')}</button>`).join('') }));
 }
 /* Nutrition: energy as one big number, then each group as Diet info had it, with the calcium to phosphorus ratio under the minerals */
 function nutriTab(d) {
