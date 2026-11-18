@@ -41,11 +41,14 @@ function pickKind(k) { const d = S.draft; d.want = k; if (d.kind !== k) { d.reac
 
 /* ---------- the draft ---------- */
 function initDraft(q) {
-  const editId = q.get('edit'), asg = q.get('asg'), dq = q.get('dept'), spq = +q.get('sp') || null, kq = q.get('kind'), key = [S.user, editId || 'new', asg || '', dq || '', spq || '', kq || ''].join(':');
+  const editId = q.get('edit'), asg = q.get('asg'), dq = q.get('dept'), spq = +q.get('sp') || null, kq = q.get('kind'), key = [S.user, editId || (q.get('clone') ? 'clone-' + q.get('clone') : 'new'), asg || '', dq || '', spq || '', kq || ''].join(':');
   if (S.draft && S.draft.key === key) return S.draft;
   const blank = { key, edit: null, dept: null, f: {}, title: '', titleEdited: false, text: '', site: null, approver: null, prio: 'normal', files: [],
     kind: 'items', targets: [], group: null, base: null, startFrom: 'now', changes: [], rules: [], diet: null, ends: [], how: 'once', start: addDays(TODAY, 1), end: addDays(TODAY, 14), stop: addDays(TODAY, 1),
     date: TODAY, feeds: 'all', reason: null, note: '', name: '', nameEdited: false, forAll: null };
+  /* Clone, as the Help Desk app: a new request with the same answers (not the diet; that is suggest.js) */
+  const cl = q.get('clone') && by('requests', q.get('clone'));
+  if (cl && !isDiet(cl)) return (S.draft = { ...blank, dept: cl.dept, f: JSON.parse(JSON.stringify(cl.f || {})), title: cl.title, titleEdited: true, text: cl.text || '', site: cl.site, approver: cl.approver, prio: cl.prio, files: [...(cl.files || [])] });
   if (editId) {
     const r = by('requests', editId);
     if (!r || r.by !== S.user || !isOpen(r)) return (S.draft = { key, blocked: true });
@@ -112,11 +115,18 @@ const select = (label, value, js, { req = false, placeholder = 'Select', disable
 const personCard = (id, remove = '') => { const u = user(id); return `<div class="az-picked">${avatar(u.name)}<span class="grow"><span class="az-who__name">${youName(id)}</span><span class="az-who__sub">${esc(u.title)}</span></span>${remove ? `<button class="az-iconbtn" onclick="${remove}" aria-label="Remove ${esc(u.name)}" style="color:var(--Tertiary)">${I('cancel')}</button>` : ''}</div>`; };
 function setDept(id, draw = true) { if (id === 'diet' && draw) { S.draft = null; closeAll(); SG = null; go('#/suggest'); return; } const d = S.draft; if (d.dept !== id) d.f = id === 'procurement' ? { items: [{ name: '', qty: 1 }] } : {}; d.dept = id; d.approver = dept(id).head; if (draw) { closeAll(); render(); } }
 const pickDept = v => setDept(v);
-/* Requesting to: each department with what it handles and who approves; Diet is locked for people without the Dietician permission */
+/* Select Department, as the Help Desk app's sheet (owner's screenshot, 18 Nov 2026): search, the count, then one outlined row per
+   department with a radio; a tap picks it and closes. Diet is for Biologists (they suggest diet changes) */
+let DQ = '';
 function deptSheet() {
-  const u = me(), cur = S.draft.dept;
-  openSheet(() => ({ title: 'Requesting to', pick: true, body: DEPTS.map(x => { const locked = x.id === 'diet' && !canRaise(u), on = cur === x.id;
-    return `<button class="az-option dopt${locked ? ' dopt--locked' : ''}" role="radio" aria-checked="${on}" ${locked ? 'aria-disabled="true" disabled' : `onclick="pickDept('${x.id}')"`}><span class="dopt__ic">${I(x.icon, 24)}</span><span><b>${x.name}</b><small>${locked ? 'Dieticians raise diet requests' : `${esc(x.what)} · ${esc(user(x.head).name)}`}</small></span>${locked ? I('lock', 22) : I(on ? 'radio_button_checked' : 'radio_button_unchecked', 24, on)}</button>`; }).join('') }));
+  DQ = '';
+  openSheet(() => {
+    const u = me(), cur = S.draft && S.draft.dept, q = DQ.trim().toLowerCase(), list = DEPTS.filter(x => !q || x.name.toLowerCase().includes(q));
+    return { title: 'Select Department', bottom: true, body: `<label class="az-input az-input--text deptsel__q">${I('search')}<input id="dq" type="search" placeholder="Search" value="${esc(DQ)}" oninput="DQ=this.value;redrawSheet()" autocomplete="off" aria-label="Search departments"></label>
+      <p class="deptsel__n">Departments - ${list.length}</p>
+      <div class="deptsel" role="radiogroup" aria-label="Departments">${list.map(x => { const locked = x.id === 'diet' && !canRaise(u), on = cur === x.id;
+        return `<button class="deptsel__r${locked ? ' deptsel__r--locked' : ''}" role="radio" aria-checked="${on}" ${locked ? 'aria-disabled="true" disabled' : `onclick="pickDept('${x.id}')"`}><span class="grow"><b>${esc(x.name)}</b>${locked ? '<small>Biologists suggest diet changes</small>' : ''}</span>${locked ? I('lock', 22) : `<span class="deptsel__radio${on ? ' on' : ''}" aria-hidden="true"></span>`}</button>`; }).join('') || '<p class="deptsel__none">No department by that name</p>'}</div>` };
+  });
 }
 function pickReqSite(v) { S.draft.site = +v; closeAll(); render(); }
 function pickApprover(v) { S.draft.approver = v; closeAll(); render(); }
@@ -581,7 +591,7 @@ function formFoot(d) {
     return `<div class="az-actionbar az-actionbar--row wiz-foot">${isTab() ? `<span class="wiz-foot__n">Step ${i + 1} of ${ss.length}</span>` : ''}${back}<button class="az-btn${e ? ' az-btn--disabled' : ''}" aria-disabled="${!!e}" onclick="${last ? 'submitDraft()' : 'nextStep()'}">${last ? (d.edit ? 'Save and send' : n ? `Send ${plural(n, 'change')}` : 'Send request') : `Next${I('arrow_forward', 20)}`}</button></div>`;
   }
   const e = err(d);
-  return `<div class="az-actionbar"><button class="az-btn${e ? ' az-btn--disabled' : ''}" aria-disabled="${!!e}" onclick="submitDraft()">${d.edit ? 'Save and send' : 'Send request'}</button></div>`;
+  return `<div class="az-actionbar"><button class="az-btn${e ? ' az-btn--disabled' : ''}" aria-disabled="${!!e}" onclick="submitDraft()">${d.edit ? 'Update request' : 'Submit request'}</button></div>`;
 }
 /* phone: a bar of steps and the answers so far as chips; iPad: the steps down the left, each with its answer */
 function wizTop(d) {
@@ -604,7 +614,7 @@ function paneForm(q) {
   if (d.blocked) return pane('pane--fill', topbar({ back: close, title: 'Edit request' }), empty1('This request can no longer be edited'));
   if (d.ent) return paneEntity(d);
   const prio = `<button class="prio-pick" onclick="prioSheet()" aria-label="Priority: ${PRIO[d.prio][1]}"><span class="prio prio--${d.prio}">${d.prio === 'emergency' ? I('local_fire_department', 16, true) : PRIO[d.prio][0]}</span>${PRIO[d.prio][1]}${I('keyboard_arrow_down', 20)}</button>`;
-  const top = topbar({ close: `go('${close}')`, title: d.edit ? `Edit ${d.edit}` : d.dept === 'diet' ? 'New diet request' : 'New request', actions: prio }), foot = `<div id="form-foot">${formFoot(d)}</div>`;
+  const top = topbar({ close: `go('${close}')`, title: d.edit ? 'Edit Request' : d.dept === 'diet' ? 'New diet request' : 'New Request', actions: prio }), foot = `<div id="form-foot">${formFoot(d)}</div>`;
   if (d.dept === 'diet') {
     const s = stepAt(d), live = isLand() && d.targets.length ? `<aside class="wiz-live">${(p => p.lines.length || p.block ? effectSec(d, p) : section('task_alt', 'When approved', '<div class="nodiet">Shows here as you answer</div>'))(planOf(asReq(d)))}</aside>` : '';
     const body = isTab() ? `<div class="body wiz${live ? ' wiz--live' : ''}">${wizRail(d)}<div class="wiz-main">${stepBody(d, s)}</div>${live}</div>` : `<div class="body wiz-body">${stepBody(d, s)}</div>`;

@@ -1245,3 +1245,72 @@ button.step{cursor:pointer}
 .sg-radio[aria-pressed="true"] .r{border-color:var(--Primary)}
 .sg-radio[aria-pressed="true"] .r::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--Primary)}
 .sg-seg button{white-space:nowrap;padding:0 6px}
+
+/* ---------- Help Desk rework (18 Nov): Select Department as the app's sheet ---------- */
+.deptsel__q{display:flex;align-items:center;gap:8px;background:var(--neutral05);border-color:transparent;height:48px}
+.deptsel__q input{flex:1;min-width:0;border:0;outline:0;background:none;font:inherit;height:100%}
+.deptsel__n{margin:4px -20px 0;padding:10px 20px;background:var(--displaybgPrimary);font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.deptsel{display:flex;flex-direction:column;gap:12px;padding-top:4px}
+.deptsel__r{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:12px 16px 12px 20px;border:1px solid var(--OutlineVariant);border-radius:var(--r-8);background:var(--white);text-align:left}
+.deptsel__r b{display:block;font:var(--t-minor-medium);color:var(--neutralPrimary)}
+.deptsel__r small{display:block;margin-top:6px;font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.deptsel__r[aria-checked="true"]{border-color:var(--Primary)}
+.deptsel__r--locked{opacity:.6}
+.deptsel__radio{width:24px;height:24px;border-radius:50%;border:2px solid var(--OnSurfaceVariant);display:grid;place-items:center;flex:none}
+.deptsel__radio.on{border-color:var(--Primary)}
+.deptsel__radio.on::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--Primary)}
+.deptsel__none{font:var(--t-body-regular);color:var(--neutralSecondary);padding:12px 0}
+.sg-appr{display:flex;flex-direction:column;gap:8px}
+.sg-appr__r{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 14px;border:1px solid var(--OutlineVariant);border-radius:var(--r-8);background:var(--white);text-align:left}
+.sg-appr__r[aria-checked="true"]{border-color:var(--Primary)}
+.sg-appr__r .grow{display:flex;flex-direction:column;gap:4px}
+.sg-appr__r b{font:var(--t-minor-medium)}
+.sg-appr__r .grow span{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.az-avatar--32{width:32px;height:32px;font:var(--t-subtext-title)}
+.effbar{display:block;height:8px;border-radius:4px;background:var(--OutlineVariant);overflow:hidden;margin:4px 0 2px;max-width:240px}
+.effbar i{display:block;height:100%;background:var(--Primary);border-radius:4px}
+.efflinks{display:flex;flex-wrap:wrap;gap:4px 16px}
+.effect2 .ktag{margin-left:6px;vertical-align:2px}
+/* the request, as the Help Desk app's RequestDetails (18 Nov): a dark summary, the status bar's tints, Activity with old → new, the Approvers List */
+.rhead--dark{background:var(--OnPrimaryContainer);border-bottom:0}
+.rhead--dark .rhead__catn,.rhead--dark .az-who__name{color:var(--white)}
+.rhead--dark .meta,.rhead--dark .az-who__sub{color:rgba(255,255,255,.78)}
+.rhead--dark .az-dept{background:rgba(255,255,255,.16);color:var(--white)}
+.rhead--dark .az-iconbtn{background:rgba(255,255,255,.14);color:var(--white)}
+.rhead__edited{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:var(--r-full);background:rgba(255,255,255,.18);color:var(--white);font:var(--t-subtext-title);vertical-align:1px}
+.az-statusbar--bad{background:#FDE6EA}
+.az-statusbar--ok{background:#E3F6EA}
+.az-statusbar--cancel{background:#FEF0EC}
+.az-statusbar__big{font:var(--t-major-title)!important;color:var(--neutralPrimary)!important}
+.az-statusbar--bad .az-statusbar__big{color:var(--Error)!important}
+.az-statusbar--ok .az-statusbar__big{color:#1E7A43!important}
+.az-statusbar--cancel .az-statusbar__big{color:#C2410C!important}
+.act-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.act-f{display:flex;gap:6px;flex-wrap:wrap}
+.act-f .az-chip{background:var(--white)}
+.act-f .az-chip[aria-selected="true"]{background:var(--OnPrimaryContainer)}
+.acts{display:flex;flex-direction:column}
+.act{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:1px solid var(--neutral05)}
+.act p{font:var(--t-body-regular);line-height:1.45;color:var(--neutralPrimary)}
+.act__who{display:flex;align-items:center;gap:8px}
+.act__who b{font:var(--t-body-medium)}
+.act__who > span:last-child{margin-left:auto;font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.act__st{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.act__t{font:var(--t-body-medium);margin-right:4px}
+.act__none{font:var(--t-body-regular);color:var(--neutralSecondary);padding:12px 0}
+.stp{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:var(--r-full);font:var(--t-subtext-title)}
+.stp--wait{background:#E4B8191A;color:#7A5600}
+.stp--ok{background:#37BD6922;color:#1E7A43}
+.stp--prog{background:#00D6C91A;color:#00857C}
+.stp--done{background:var(--neutralPrimary);color:var(--white)}
+.stp--bad{background:#E933531A;color:var(--Error)}
+.stp--cancel{background:#FA61400D;color:#C2410C}
+.apr__h{font:var(--t-body-medium);color:var(--neutralSecondary);margin:4px 0 -4px}
+.apr{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--OutlineVariant);border-radius:var(--r-8);background:var(--white)}
+.apr .grow{display:flex;flex-direction:column;gap:4px}
+.apr b{font:var(--t-minor-medium)}
+.apr .grow span{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.apr--faded{opacity:.5}
+.apr--bad{background:#FDE6EA;border-color:#F5B5C0}
+.az-menu__none{padding:12px 16px;font:var(--t-body-regular);color:var(--neutralSecondary)}
+.act-f{background:none;padding:0;box-shadow:none}
