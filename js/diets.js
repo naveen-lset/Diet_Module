@@ -293,12 +293,14 @@ const dietUses = id => D.assigns.filter(x => x.diet === id && !ended(x))
   .sort((x, y) => (y.sp === diet(id).sp) - (x.sp === diet(id).sp) || species(x.sp).name.localeCompare(species(y.sp).name) || LVL_RANK(x) - LVL_RANK(y));
 /* the places above a place, named by level: "Site: Lset · Section: Cassowary Paddock" */
 const pathNamed = x => { const p = pathOf(x); return ['site', 'section', 'enclosure'].filter(k => p[k] && LEVELS.indexOf(k) < LEVELS.indexOf(x.level)).map(k => `${LEVEL[k]}: ${placeOf(k, p[k]).name}`).join(' · '); };
+/* where one diet is applied, as a species list (owner, 18 Nov): each species with its photo, name and scientific name,
+   then the levels and places it is set on, each with the animals that eat it there (the count opens them) */
 function appliedTo(a) {
-  const d = diet(a.diet), uses = dietUses(d.id);
-  const many = new Set(uses.map(x => x.sp)).size > 1, n = x => followersOf(x).length, total = uses.reduce((t, x) => t + n(x), 0);
-  const row = x => { const more = [x.level !== 'species' && many ? species(x.sp).name : '', pathNamed(x), slotKind(x) !== slotKind(a) ? slotText(x) : ''].filter(Boolean).join(' · ');
-    return `<button class="apply__r" onclick="dietAnimalsSheet('${x.id}')"${x.id === a.id ? ' aria-current="true"' : ''}>${I(LVL_IC[x.level])}<span class="t"><b>${x.level === 'species' ? 'Species-wide' : LEVEL[x.level]}</b><span>${esc(x.level === 'species' ? species(x.sp).name : targetName(x))}</span>${more ? `<small>${esc(more)}</small>` : ''}</span><span class="apply__n">${plural(n(x), 'animal')}${I('chevron_right', 20)}</span></button>`; };
-  return `<div class="apply"><div class="apply__h"><b>Applied to</b><span>${plural(total, 'animal')}</span></div>${uses.map(row).join('')}</div>`;
+  const d = diet(a.diet), uses = dietUses(d.id), n = x => followersOf(x).length, total = uses.reduce((t, x) => t + n(x), 0), sps = [...new Set(uses.map(x => x.sp))];
+  const row = x => { const more = [pathNamed(x), slotKind(x) !== slotKind(a) ? slotText(x) : ''].filter(Boolean).join(' · ');
+    return `<button class="apply__r" onclick="dietAnimalsSheet('${x.id}')"${x.id === a.id ? ' aria-current="true"' : ''}>${I(LVL_IC[x.level])}<span class="t"><b>${x.level === 'species' ? 'Species-wide' : `${LEVEL[x.level]} · ${esc(targetName(x))}`}</b>${more ? `<small>${esc(more)}</small>` : ''}</span><span class="apply__n">${plural(n(x), 'animal')}${I('chevron_right', 20)}</span></button>`; };
+  return `<div class="apply__h apply__h--top"><b>Applied to</b><span>${plural(sps.length, 'species', 'species')} · ${plural(total, 'animal')}</span></div>`
+    + sps.map(sp => { const x = species(sp); return `<div class="apply apsp"><div class="apsp__h">${spThumb(x)}<span class="t"><b>${esc(x.name)}</b><i>${esc(x.sci)}</i></span></div>${uses.filter(u => u.sp === sp).map(row).join('')}</div>`; }).join('');
 }
 /* Raise request from a diet set at several places asks which place first (audit, 2 Nov) */
 function raisePick(id) {
@@ -325,11 +327,19 @@ function historyTab(a, d) {
   if (d.made && !hist.some(h => h.created && h.diet === d.id)) steps.push({ at: `${d.made.at}T09:00`, o: 0, t: 'Diet created', p: esc(useText(dietUses(d.id)[0] || a)), w: who(d.made.by), day: true });
   if (d.cert) steps.push({ at: `${d.cert.at}T00:00`, o: 2, t: 'Certified by the dietitian', w: who(d.cert.by), day: true });
   if (d.kcert) steps.push({ at: `${d.kcert.at}T00:00`, o: 3, t: 'Certified by Kitchen', w: who(d.kcert.by), day: true });
-  hist.forEach(h => steps.push({ at: h.at, o: h.created ? 0 : 1, t: h.created ? 'Diet created' : HTYPE[h.type], p: `${esc(changeSummary(h))}${h.reason ? ` · ${esc(h.reason)}` : ''}`, w: `${who(h.by)}${h.req ? ` · ${h.req}` : ''}${h.doneBy ? ` · Updated in the kitchen by ${youName(h.doneBy)}` : ''}`, open: h.id }));
-  steps.sort((x, y) => x.at.slice(0, 10).localeCompare(y.at.slice(0, 10)) || x.o - y.o || x.at.localeCompare(y.at));
+  hist.forEach(h => steps.push({ at: h.at, o: h.created ? 0 : 1, t: h.created ? 'Diet created' : HTYPE[h.type], p: `${esc(changeSummary(h))}${h.reason ? ` · ${esc(h.reason)}` : ''}`, w: `${who(h.by)}${h.req ? ` · <span class="nw">${h.req}</span>` : ''}${h.doneBy ? ` · Updated in the kitchen by ${youName(h.doneBy)}` : ''}`, open: h.id }));
   if (!d.cert) todo.push({ t: 'Certified by the dietitian', p: 'Waiting' });
   if (!d.kcert) todo.push({ t: 'Certified by Kitchen', p: 'Waiting' });
   if (a.end && !a.recur && !ended(a)) todo.push({ at: `${a.end}T23:59`, t: 'Diet ends', p: esc(useText(a)), day: true });
+  /* the requests on this diet (owner, 18 Nov: "someone requested changes, that also has to come under History"): a finished one stands where it was
+     raised; one still open is a step to come, first. A step opens its request for whoever may see it */
+  const asgs = D.assigns.filter(x => x.diet === d.id), ask = [];
+  D.requests.filter(r => isDiet(r) && r.state !== 'deleted' && asgs.some(x => touches(r, x) || x.req === r.id)).forEach(r => {
+    const s = { at: r.events[0].at, o: 0, t: 'Change requested', p: `${esc(r.title)} · ${reqNow(r)}`, w: `${who(r.by)} · <span class="nw">${r.id}</span>`, req: visibleTo(r, me()) ? r.id : null };
+    (['pending', 'delayed', 'approved', 'in_progress'].includes(r.state) ? ask : steps).push(s);
+  });
+  steps.sort((x, y) => x.at.slice(0, 10).localeCompare(y.at.slice(0, 10)) || x.o - y.o || x.at.localeCompare(y.at));
+  todo.unshift(...ask.sort((x, y) => x.at.localeCompare(y.at)));
   if (ended(a)) steps.push({ at: `${a.end}T23:59`, o: 4, t: 'Diet ended', p: esc(useText(a)), day: true });
   if (!steps.length && !todo.length) return '<div class="nodiet">No history yet</div>';
   const all = steps.map((x, i) => ({ ...x, st: i === steps.length - 1 ? 'now' : 'done' })).concat(todo.map(x => ({ ...x, st: 'todo' })));
@@ -338,9 +348,22 @@ function historyTab(a, d) {
     const when = x.at ? `<span class="step__w"><b>${fmtDayY(x.at.slice(0, 10))}</b>${x.day ? '' : `<span>${fmtTime(x.at)}</span>`}</span>` : '';
     const inner = `<span class="step__m step__m--${x.st}">${mark}</span><span class="step__t"><b>${x.t}</b>${x.p ? `<span>${x.p}</span>` : ''}${x.w ? `<small>${x.w}</small>` : ''}</span>${when}`;
     const line = i < all.length - 1 ? ` step--${all[i + 1].st === 'todo' ? 'grey' : 'on'}` : ' step--last';
-    return x.open ? `<button class="step pick${line}" onclick="changeSheet('${x.open}')">${inner}</button>` : `<div class="step${line}">${inner}</div>`;
+    return x.req ? `<a class="step pick${line}" href="#/requests/${x.req}">${inner}</a>` : x.open ? `<button class="step pick${line}" onclick="changeSheet('${x.open}')">${inner}</button>` : `<div class="step${line}">${inner}</div>`;
   };
   return `<div class="steps">${all.map(row).join('')}</div>`;
+}
+/* where a request on a diet stands, in a few words */
+function reqNow(r) {
+  const by1 = k => { const e = [...r.events].reverse().find(x => x.kind === k); return e ? youName(e.by) : ''; };
+  switch (r.state) {
+    case 'pending': return `Waiting for ${youName(r.approver)}`;
+    case 'delayed': return `Delayed till ${fmtDay(r.delay.until)}`;
+    case 'approved': case 'in_progress': return `Approved by ${by1('approved')} · the kitchen updates it next`;
+    case 'completed': return `Diet updated by ${by1('completed')}`;
+    case 'rejected': return `Not approved by ${by1('rejected')}`;
+    case 'cancelled': return 'Cancelled';
+    default: return esc(stateOf(r).label);
+  }
 }
 /* Figma "Diet Info": the diet with its species' photo, then when, sharing, open requests and its ID (nutrition, places and history have their tabs) */
 function dietInfoSheet(id) {

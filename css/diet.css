@@ -61,3 +61,15 @@
 .pdfp__notes p{margin:0}
 .pdfp__foot{margin-top:auto;padding-top:10px;border-top:1px solid #ccc;display:flex;justify-content:space-between;gap:16px;font-size:10px;color:#666}
 .pdfp__foot span:last-child{white-space:nowrap}
+
+/* ---------- Applied to as a species list (owner, 18 Nov): a card per species, its places under it ---------- */
+.apply__h--top{padding:0 4px 8px}
+.apsp + .apsp{margin-top:12px}
+.apsp__h{display:flex;align-items:center;gap:12px;padding:12px}
+.apsp__h .t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.apsp__h b{font:var(--t-minor-medium);color:var(--OnSurfaceVariant)}
+.apsp__h i{font:italic 400 14px/20px var(--font);color:var(--neutralSecondary)}
+.apsp .apsp__h + .apply__r{border-top:1px solid var(--neutral05)}
+/* History: a request step is a link */
+a.step{color:inherit;text-decoration:none}
+.step__t .nw{white-space:nowrap}
