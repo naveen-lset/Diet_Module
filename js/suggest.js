@@ -285,10 +285,12 @@ function paneSuggest(q) {
   if (!d.t) { if (!d.askedWho) { d.askedWho = true; setTimeout(() => { if (SG && !SG.t && !SH.length) sgWho(); }, 120); }
     return pane('pane--fill sg-page', top, `<div class="body sg-body"><button class="sg-hd sg-hd--pick" onclick="sgWho()"><span class="sg-hd__ph">${I('pets', 26)}</span><span class="grow"><b>Who is it for?</b><span>A species, an enclosure or one animal</span></span>${I('expand_more')}</button>
       <div class="sg-steps">${[['pets', 'Choose who it is for'], ['restaurant', 'Change their food: more, less, swap or stop'], ['send', 'Review and send it for approval']].map(([ic, t], i) => `<p><span>${i + 1}</span>${I(ic, 20)}${t}</p>`).join('')}</div></div>`, '', 'sg-who'); }
-  /* the cart bar (Swiggy): how many changes and what they add up to, then Review; before any change, a hint in place of a grey button */
+  /* the bottom bar (owner, 19 Nov: "use a proper button"), as the Hub's Item requests: what you have changed on the left, the design system's
+     green button on the right (Review, or Done from the New Request form); before any change the same button, disabled, and a hint */
   const n = sgCount(), foods = new Set(d.changes.map(c => c.op === 'add' ? 'a' + c.to : c.item)).size;
   const sub = d.skip ? sgSkipText() : `${plural(foods, 'food')} · ${sgDiet() ? sgDiet().name : ''}`;
-  const foot = d.t && sgDiet() ? (n ? `<button class="sg-cart" onclick="${d.form ? 'sgFormBack(true)' : 'sgReview()'}"><span class="sg-cart__n">${n}</span><span class="grow"><b>${n === 1 ? 'change' : 'changes'}</b><small>${esc(sub)}</small></span><span class="sg-cart__go">${d.form ? 'Done' : 'Review'}${I(d.form ? 'check' : 'arrow_forward', 20)}</span></button>` : `<div class="sg-hint">${I('touch_app', 20)}<span>Tap <b>−</b> or <b>+</b> on a food, or pick a quick change</span></div>`) : '';
+  const foot = d.t && sgDiet() ? `<div class="sg-bar">${n ? `<span class="sg-bar__t"><b>${plural(n, 'change')}</b><small>${esc(sub)}</small></span>` : '<span class="sg-bar__t sg-bar__t--hint"><b>No changes yet</b><small>Tap − or + on a food</small></span>'}
+    <button class="az-btn az-btn--approve sg-bar__go"${n ? ` onclick="${d.form ? 'sgFormBack(true)' : 'sgReview()'}"` : ' disabled'}>${d.form ? `${I('check', 20)}Done` : `Review${I('arrow_forward', 20)}`}</button></div>` : '';
   return pane('pane--fill sg-page', top, `<div class="body sg-body">${sgEditor()}</div>`, foot, d.t ? 'sg-edit' : 'sg-who');
 }
 

@@ -1785,3 +1785,12 @@ button.sg-hd__diet:active{background:var(--neutral05)}
 .sg-steps p > span{width:24px;height:24px;border-radius:50%;background:var(--white);display:grid;place-items:center;font:600 12px/1 var(--font);color:var(--OnPrimaryContainer);flex:none}
 .sg-steps p > .az-i{color:var(--Outline)}
 .pk-row--t{min-height:52px}
+/* the Suggest bottom bar: the summary, then the design system's green button (19 Nov: "use a proper button") */
+.sg-bar{flex:1;display:flex;align-items:center;gap:16px;min-width:0}
+.sg-bar__t{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.sg-bar__t b{font:600 18px/1.1 var(--font);color:var(--OnSecondaryContainer)}
+.sg-bar__t small{font:var(--t-subtext-regular);color:var(--neutralSecondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sg-bar__t--hint b{font:500 15px/1.1 var(--font);color:var(--OnSurfaceVariant)}
+.sg-bar__go{width:auto;flex:none;min-width:140px;padding:0 20px;animation:none}
+.sg-bar__go .az-i{margin-right:-4px}
+.sg-bar__go[disabled]{cursor:default}
