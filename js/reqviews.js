@@ -21,7 +21,7 @@ function reqLines(r) {
 }
 /* what a food change does, line by line, as the review sheet showed it before sending (Item requests: what you review is what you see after) */
 function reqReceipt(r) {
-  if (r.kind === 'items' && r.base && r.base !== 'many' && diet(r.base) && (r.changes || []).length) return `<div class="rv-lines">${r.changes.map(c => diffLine(c, diet(r.base))).join('')}</div>`;
+  if (r.kind === 'items' && r.base && r.base !== 'many' && diet(r.base) && (r.changes || []).length) return diffTable(r.changes, diet(r.base));
   return '';
 }
 /* When approved (Kitchen & Diet's plan) until the kitchen updates the diet; What changed after */
