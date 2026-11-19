@@ -1442,141 +1442,6 @@ button.step{cursor:pointer}
 .who-radio.on::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--Primary)}
 .who-body > .who-q{flex:none;height:48px}
 
-/* ---------- Suggest a change, premium pass (19 Nov 2026; after the Hub's Help Desk and Item requests builds) ---------- */
-/* one soft, teal-tinted lift for the editor's cards (the iPad panels' shadow), no outlines */
-.sg-hd,.sg-feed,.sg-qt__b,.sg-skip{box-shadow:0 1px 2px rgba(31,81,91,.06),0 4px 14px rgba(31,81,91,.07)}
-.sg-hd{background:var(--white);border-radius:var(--r-16);overflow:hidden}
-.sg-hd__who{display:flex;align-items:center;gap:12px;padding:14px 16px}
-.sg-hd__who .thumb{width:52px;height:52px;border-radius:50%}
-.sg-hd__who .grow{display:flex;flex-direction:column;gap:5px;min-width:0}
-.sg-hd__who b{font:600 17px/1.2 var(--font);color:var(--OnSecondaryContainer)}
-.sg-hd__who .grow span{font:var(--t-body-regular);color:var(--neutralSecondary)}
-.sg-hd__diet{display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border-top:1px solid var(--neutral05);text-align:left;color:var(--OnSurfaceVariant)}
-button.sg-hd__diet{cursor:pointer}
-button.sg-hd__diet:active{background:var(--neutral05)}
-.sg-hd__diet .grow{display:flex;flex-direction:column;gap:4px;min-width:0}
-.sg-hd__diet small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
-.sg-hd__diet b{font:600 15px/1.25 var(--font);color:var(--OnPrimaryContainer)}
-.sg-hd__n{flex:none;font:500 12px/1 var(--font);color:var(--OnSurfaceVariant);background:var(--neutral05);border-radius:var(--r-full);padding:6px 10px}
-/* quick changes: four tiles, each with its colour (more green, less orange, soft blue, skip red) */
-.sg-qt{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.sg-qt__b{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:84px;padding:12px 4px 10px;border-radius:var(--r-12);background:var(--white);font:500 13px/1.2 var(--font);color:var(--OnSecondaryContainer);text-align:center;transition:transform .12s}
-.sg-qt__b:active{transform:scale(.96)}
-.tab .sg-qt__b{flex-direction:row;justify-content:flex-start;min-height:64px;padding:12px 14px;gap:12px;font:500 15px/1.2 var(--font);text-align:left}
-.sg-qt__i{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none}
-.sg-qt__i--up{background:color-mix(in srgb,var(--Primary) 15%,var(--white));color:color-mix(in srgb,var(--Primary) 70%,#000)}
-.sg-qt__i--down{background:color-mix(in srgb,var(--Tertiary) 15%,var(--white));color:color-mix(in srgb,var(--Tertiary) 80%,#000)}
-.sg-qt__i--soft{background:color-mix(in srgb,var(--addPrimary) 15%,var(--white));color:color-mix(in srgb,var(--addPrimary) 75%,#000)}
-.sg-qt__i--bad{background:color-mix(in srgb,var(--Error) 12%,var(--white));color:var(--Error)}
-/* Skip a feed: one white card with a red edge, not a red block */
-.sg-skip{background:var(--white);color:var(--neutralPrimary);box-shadow:inset 4px 0 0 var(--Error),0 1px 2px rgba(31,81,91,.06),0 4px 14px rgba(31,81,91,.07);border-radius:var(--r-16);padding:14px 16px 14px 18px}
-.sg-skip__i{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--Error) 12%,var(--white));color:var(--Error)}
-.sg-skip b{font:600 15px/1.3 var(--font);color:var(--OnErrorContainer)}
-.sg-skip .grow span{font:var(--t-body-regular);color:var(--neutralSecondary);line-height:1.35}
-.sg-feed{border-radius:var(--r-16)}
-.sg-band{padding:12px 16px}
-.sg-band__n{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
-.sg-tag{font:600 12px/1 var(--font);font-style:normal;padding:5px 8px;border-radius:var(--r-full);background:rgba(255,232,110,.55);color:#6B4C00}
-.sg-tag--bad{background:var(--ErrorContainer);color:var(--Error)}
-.sg-band em.sg-tag--bad{color:var(--Error)}
-/* a changed line: a coloured edge on the left (yellow changed, blue new, red stopped) and what it was */
-.sg-row--chg{background:rgba(255,232,110,.2);box-shadow:inset 3px 0 0 var(--moderateSecondary)}
-.sg-row--add{box-shadow:inset 3px 0 0 var(--addPrimary)}
-.sg-row--stop{box-shadow:inset 3px 0 0 var(--Error)}
-.sg-row--held .sg-row__m b{text-decoration:line-through;text-decoration-color:var(--Error)}
-.sg-marks{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:3px}
-.sg-m{display:inline-flex;align-items:center;gap:2px;height:20px;padding:0 7px;border-radius:var(--r-full);font:600 11.5px/1 var(--font);font-style:normal;white-space:nowrap;background:var(--neutral05);color:var(--OnSurfaceVariant);font-variant-numeric:tabular-nums}
-.sg-m .az-i{font-size:14px}
-.sg-m--was{background:none;padding:0;color:#7A5600;font-weight:500}
-.sg-m--up{background:color-mix(in srgb,var(--Primary) 16%,var(--white));color:#16743D}
-.sg-m--down{background:color-mix(in srgb,var(--Tertiary) 16%,var(--white));color:#A8391D}
-.sg-m--bad{background:var(--ErrorContainer);color:#B4102F}
-.sg-m--new{background:color-mix(in srgb,var(--addPrimary) 16%,var(--white));color:#006E87}
-.sg-step{border-radius:10px}
-.sg-row--chg .sg-step{border-color:color-mix(in srgb,var(--moderateSecondary) 60%,var(--white))}
-/* the cart bar: count, what it adds up to, Review; it rises in when the first change is made */
-.sg-page .pane__foot{box-shadow:0 -2px 12px rgba(31,81,91,.06)}
-.sg-cart{min-height:60px;padding:0 8px 0 10px;border-radius:14px;background:linear-gradient(135deg,#1F515B,#1F415B);box-shadow:0 8px 20px rgba(31,81,91,.28);animation:sgUp .32s var(--ease-out)}
-.sg-cart__n{min-width:36px;height:36px;border-radius:10px;font:600 16px/1 var(--font)}
-.sg-cart .grow{display:flex;flex-direction:column;gap:4px;min-width:0}
-.sg-cart .grow b{font:600 15px/1 var(--font)}
-.sg-cart .grow small{font:400 12px/1.2 var(--font);opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sg-cart__go{display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 14px;border-radius:10px;background:rgba(255,255,255,.14);font:600 15px/1 var(--font)}
-@keyframes sgUp{from{transform:translateY(14px);opacity:0}}
-.sg-hint{min-height:60px;border-radius:14px;background:none;border:1.5px dashed var(--OutlineVariant);display:flex;align-items:center;justify-content:center;gap:8px;padding:0 12px;font:var(--t-body-regular);color:var(--neutralSecondary);text-align:center}
-.sg-hint b{font:600 16px/1 var(--font);color:var(--OnPrimaryContainer)}
-.sg-hint .az-i{color:var(--Outline)}
-
-/* ---------- Review request (the sheet): a receipt of the changes, how long, why, proof, Goes to, Send request ---------- */
-.rv-h{font:600 15px/1 var(--font);color:var(--OnSecondaryContainer);margin-bottom:-8px;display:flex;align-items:baseline;gap:8px}
-.rv-h small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
-.rv-card{border:1px solid #DFE8E5;border-radius:var(--r-16);overflow:hidden;background:var(--white)}
-.rv-card__h{display:flex;align-items:center;gap:12px;padding:12px 14px;background:linear-gradient(180deg,#F4F8F7,#FFFFFF);border-bottom:1px solid #E7EEEC}
-.rv-card__h .thumb{width:44px;height:44px;border-radius:50%}
-.rv-card__h .grow{display:flex;flex-direction:column;gap:4px;min-width:0}
-.rv-card__h b{font:600 15px/1.25 var(--font);color:var(--OnSecondaryContainer)}
-.rv-card__h .grow span{font:var(--t-subtext-regular);color:var(--neutralSecondary);line-height:1.3}
-.rv-edit{display:inline-flex;align-items:center;gap:4px;height:34px;padding:0 12px;border-radius:var(--r-full);border:1px solid var(--OutlineVariant);font:500 13px/1 var(--font);color:var(--OnPrimaryContainer);flex:none;background:var(--white)}
-.rv-lines{padding:2px 14px}
-.rv-ln{display:grid;grid-template-columns:minmax(0,1fr) auto 68px;align-items:center;gap:10px;padding:11px 0;border-top:1px dashed #D9E3E0}
-.rv-ln:first-child{border-top:0}
-.rv-ln__t{display:flex;flex-direction:column;gap:4px;min-width:0}
-.rv-ln__t b{font:600 14px/1.3 var(--font);color:var(--neutralPrimary);display:flex;align-items:center;flex-wrap:wrap;gap:2px}
-.rv-ln__t b .az-i{color:var(--Outline)}
-.rv-ln__t span{font:var(--t-subtext-regular);color:var(--neutralSecondary);line-height:1.3}
-.rv-ln__v{display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-variant-numeric:tabular-nums}
-.rv-ln__v s{font:400 12px/1 var(--font);color:var(--neutralSecondary)}
-.rv-ln__v b{font:600 15px/1 var(--font);color:var(--neutralPrimary)}
-.rv-ln > .sg-m{justify-self:end}
-.rv-ln--bad .rv-ln__t b{color:#B4102F}
-.rv-ln--bad .rv-ln__v s{font:500 14px/1 var(--font)}
-.rv-how{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.rv-how__b{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px;border-radius:14px;border:1.5px solid #DFE8E5;background:var(--white);text-align:left;transition:border-color .2s,background .2s}
-.rv-how__b b{font:600 14px/1.2 var(--font);color:var(--OnSecondaryContainer)}
-.rv-how__b > span:last-child{font:400 12px/1.3 var(--font);color:var(--neutralSecondary)}
-.rv-how__i{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;margin-bottom:2px}
-.rv-how__b--always .rv-how__i{background:#DCFCE7;color:#15803D}
-.rv-how__b--once .rv-how__i{background:#DBEAFE;color:#1D4ED8}
-.rv-how__b--yearly .rv-how__i{background:#FFEDD5;color:#C2410C}
-.rv-how__b--always[aria-checked="true"]{border-color:#22A559;background:#F3FCF6}
-.rv-how__b--once[aria-checked="true"]{border-color:#3B6FE0;background:#F4F8FF}
-.rv-how__b--yearly[aria-checked="true"]{border-color:#E5752F;background:#FFF8F1}
-.rv-when{display:flex;align-items:center;gap:8px;font:var(--t-body-regular);color:var(--OnSurfaceVariant);line-height:1.35;margin-top:-6px}
-.rv-when > .az-i{color:var(--Outline)}
-.rv-proof{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.rv-pf{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:72px;border-radius:14px;border:1.5px dashed var(--OutlineVariant);background:var(--white);color:var(--OnPrimaryContainer)}
-.rv-pf b{font:500 13px/1.2 var(--font)}
-.rv-pf[aria-pressed="true"]{border-style:solid;border-color:var(--Primary);background:var(--OnBackground);color:var(--OnSurface)}
-.rv-to{border:1px solid #DFE8E5;border-radius:14px;overflow:hidden}
-.rv-to__r{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;text-align:left;border-top:1px solid #E7EEEC}
-.rv-to__r:first-child{border-top:0}
-.rv-to__r .grow{display:flex;flex-direction:column;gap:4px;min-width:0}
-.rv-to__r b{font:600 15px/1.2 var(--font);color:var(--OnSecondaryContainer)}
-.rv-to__r .grow span{font:var(--t-subtext-regular);color:var(--neutralSecondary);line-height:1.3}
-.rv-urg{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:1px solid #DFE8E5;border-radius:14px;text-align:left;transition:border-color .2s,background .2s}
-.rv-urg .grow{display:flex;flex-direction:column;gap:4px}
-.rv-urg b{font:600 15px/1.2 var(--font);color:var(--OnSecondaryContainer)}
-.rv-urg .grow span{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
-.rv-urg__i{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--Tertiary) 14%,var(--white));color:var(--Tertiary);flex:none}
-.rv-urg[aria-checked="true"]{border-color:color-mix(in srgb,var(--Tertiary) 55%,var(--white));background:color-mix(in srgb,var(--Tertiary) 5%,var(--white))}
-.rv-foot{display:flex;flex-direction:column;gap:8px;width:100%}
-.rv-need{display:flex;align-items:center;justify-content:center;gap:6px;font:var(--t-body-regular);color:var(--neutralSecondary)}
-.rv-need .az-i{color:var(--moderateSecondary)}
-.rv-send{height:52px;border-radius:12px;font:600 16px/1 var(--font);gap:8px}
-/* sent: the tick draws itself */
-.rv-ok{display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 16px 36px;text-align:center}
-.rv-ok__tick{width:88px;height:88px;margin-bottom:8px;animation:rvPop .45s var(--ease-out)}
-.rv-ok__tick svg{width:100%;height:100%;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.rv-ok__tick circle{stroke:var(--Primary);stroke-width:3;fill:color-mix(in srgb,var(--Primary) 12%,var(--white));stroke-dasharray:151;stroke-dashoffset:151;animation:rvDraw .55s ease-out forwards}
-.rv-ok__tick path{stroke:var(--Primary);stroke-width:4;stroke-dasharray:36;stroke-dashoffset:36;animation:rvDraw .35s .45s ease-out forwards}
-.rv-ok b{font:600 22px/1.2 var(--font);color:var(--OnSecondaryContainer)}
-.rv-ok span{font:var(--t-minor-regular);color:var(--OnSurfaceVariant)}
-.rv-ok small{font:var(--t-subtext-regular);color:var(--neutralSecondary);margin-top:8px}
-@keyframes rvDraw{to{stroke-dashoffset:0}}
-@keyframes rvPop{from{transform:scale(.7);opacity:0}}
-@media (prefers-reduced-motion:reduce){.sg-cart,.rv-ok__tick{animation:none}.rv-ok__tick circle,.rv-ok__tick path{animation:none;stroke-dashoffset:0}}
-.sg-row__m .sg-m .az-i{font-family:var(--icon-font);font-weight:400;font-size:14px;color:inherit}
-.sg-band em.sg-tag{color:#6B4C00}
 .rv-foot .az-btn{flex:none;width:100%}
 
 /* ---------- Request page, the shared parts (19 Nov 2026): who it waits on in the status bar, Activity boxes, file tiles, people stacked ---------- */
@@ -1743,48 +1608,6 @@ button.sg-hd__diet:active{background:var(--neutral05)}
 .phone .rcc .step__w{grid-column:2;flex-direction:row;align-items:baseline;gap:6px;margin-top:-4px}
 .phone .rcc .step__w b,.phone .rcc .step__w span{font:var(--t-subtext-regular);line-height:16px;color:var(--neutralSecondary)}
 
-/* ---------- pickers as bottom sheets with search (owner, 19 Nov 2026): species (Whole species · Enclosure · Animal in the same sheet) and diets ---------- */
-.pk-q{margin-bottom:4px}
-.pk-h{font:600 13px/1 var(--font);color:var(--OnSurfaceVariant);padding:6px 4px 0;margin-bottom:-4px}
-.pk-row{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:10px 14px;text-align:left;border-top:1px solid var(--neutral05);background:var(--white)}
-.pk-row:first-child{border-top:0}
-.pk-row:active{background:var(--neutral05)}
-.pk-row.on{background:var(--OnBackground)}
-.pk-row .thumb{width:44px;height:44px;border-radius:50%}
-.pk-row .grow{display:flex;flex-direction:column;gap:4px;min-width:0}
-.pk-row .grow b{font:600 15px/1.25 var(--font);color:var(--OnSecondaryContainer)}
-.pk-row .grow > span{font:var(--t-subtext-regular);color:var(--neutralSecondary);line-height:1.35}
-.pk-row .grow i{font-style:italic}
-.pk-row > .az-i{color:var(--Outline)}
-.pk-row--in{padding-left:30px;min-height:56px}
-.pk-on{color:var(--Primary);display:grid;flex:none}
-.pk-ic{width:44px;height:44px;border-radius:50%;background:var(--displaybgPrimary);color:var(--OnPrimaryContainer);display:grid;place-items:center;flex:none}
-.pk-ic--sm{width:36px;height:36px}
-.pk-tabs{display:flex;gap:8px;flex-wrap:wrap}
-.pk-tabs .az-chip{background:var(--white);height:36px;padding:0 14px}
-.pk-tabs .az-chip[aria-selected="true"]{background:var(--OnPrimaryContainer)}
-.pk-t{display:flex;align-items:center;gap:10px;min-width:0}
-.pk-t .thumb{width:40px;height:40px;border-radius:50%}
-.pk-t > span:last-child{display:flex;flex-direction:column;gap:4px;min-width:0}
-.pk-t b{font:var(--t-medium);line-height:1.2}
-.pk-t small{margin-top:0!important;font-style:italic}
-.pk-back{margin-left:-8px;flex:none}
-.pk-row .who-an__img{flex:none}
-/* the diet as one field in the head card; with more than one, it opens the diet sheet */
-.sg-hd__sw{display:inline-flex;align-items:center;gap:2px;flex:none;font:500 13px/1 var(--font);color:var(--OnPrimaryContainer);padding-left:4px}
-.sg-hd__diet .ktag{flex:none}
-/* nobody chosen yet: one field, and what happens next */
-.sg-hd--pick{display:flex;align-items:center;gap:14px;width:100%;padding:16px;text-align:left;border:1.5px dashed var(--OutlineVariant);box-shadow:none}
-.sg-hd--pick .grow{display:flex;flex-direction:column;gap:5px}
-.sg-hd--pick b{font:600 17px/1.2 var(--font);color:var(--OnSecondaryContainer)}
-.sg-hd--pick .grow span{font:var(--t-body-regular);color:var(--neutralSecondary)}
-.sg-hd--pick > .az-i{color:var(--OnPrimaryContainer)}
-.sg-hd__ph{width:52px;height:52px;border-radius:50%;background:var(--displaybgPrimary);color:var(--OnPrimaryContainer);display:grid;place-items:center;flex:none}
-.sg-steps{display:flex;flex-direction:column;gap:14px;padding:12px 8px}
-.sg-steps p{display:flex;align-items:center;gap:10px;font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
-.sg-steps p > span{width:24px;height:24px;border-radius:50%;background:var(--white);display:grid;place-items:center;font:600 12px/1 var(--font);color:var(--OnPrimaryContainer);flex:none}
-.sg-steps p > .az-i{color:var(--Outline)}
-.pk-row--t{min-height:52px}
 /* the Suggest bottom bar: the summary, then the design system's green button (19 Nov: "use a proper button") */
 .sg-bar{flex:1;display:flex;align-items:center;gap:16px;min-width:0}
 .sg-bar__t{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
@@ -1807,3 +1630,81 @@ button.sg-hd__diet:active{background:var(--neutral05)}
 .az-chips--lvl{flex-wrap:nowrap;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-padding:0 16px}
 .az-chips--lvl::-webkit-scrollbar{display:none}
 .az-chips--lvl .az-chip{flex:none}
+
+/* ---------- the request flow in the design system's own parts (19 Nov 2026, owner: "refer the Hub; it all looks AI-designed") ---------- */
+/* the editor: a section with For and Diet as picked cards; outline buttons for the quick changes; a white section per feed time */
+.sg-body{gap:12px}
+.sg-pk .thumb{width:44px;height:44px;border-radius:var(--r-8)}
+.sg-pk .grow{display:flex;flex-direction:column;gap:4px;min-width:0}
+.sg-pk .grow b{font:var(--t-minor-medium);color:var(--OnSurfaceVariant)}
+.sg-pk .grow span{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.sg-quick2{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+.sg-quick2::-webkit-scrollbar{display:none}
+.tab .sg-quick2{margin:0;padding:0}
+.sg-quick2 .az-btn{flex:none;gap:6px;padding:0 14px;background:var(--white)}
+.sg-quick2 .az-btn .az-i{color:var(--OnPrimaryContainer)}
+.sg-feed2 .az-section__title small{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.sg-feed2 .az-section__title small.sg-bad{color:var(--Error)}
+.sg-feed2 .az-section__title > .az-i{color:var(--OnSurfaceVariant)}
+.sg-rows{display:flex;flex-direction:column;margin-top:-8px}
+.sg-rows .sg-row{padding:10px 0;min-height:64px;border-top:1px solid var(--neutral05);background:none;box-shadow:none}
+.sg-rows .sg-row:first-child{border-top:0}
+.sg-row__m b{font:var(--t-minor-medium);color:var(--neutralPrimary)}
+.sg-row__m > span{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.sg-was2{font:var(--t-subtext-regular)!important;color:var(--OnSurfaceVariant)!important}
+.sg-was2 s{color:var(--neutralSecondary)}
+.sg-was2--bad{color:var(--Error)!important;font-weight:500!important}
+.sg-was2--new{color:var(--OnSurface)!important;font-weight:500!important}
+.sg-row--stop{background:none}
+.sg-row--stop .sg-row__m b{text-decoration:line-through;color:var(--neutralSecondary)}
+.sg-row--held .sg-row__m b{text-decoration:line-through}
+.sg-feed2--off .sg-rows{opacity:.5}
+.sg-step{border-radius:var(--r-8);border-color:var(--OutlineVariant)}
+.sg-step b{min-width:64px;font:var(--t-minor-medium)}
+.sg-add2{align-self:flex-start;margin-top:-4px}
+/* the bottom bar: the count, what it covers, and the green button */
+.sg-bar__t b{font:var(--t-medium);color:var(--neutralPrimary)}
+.sg-bar__t--hint b{font:var(--t-minor-medium);color:var(--OnSurfaceVariant)}
+/* pickers: the design system's search field and option rows (az-pickrow), square photos, the segment */
+.pk-q{background:var(--white)}
+.pk-q .who-qr{margin-left:auto}
+.pk-h{padding:4px 2px 0;margin-bottom:-4px}
+.pk-list{display:flex;flex-direction:column;gap:8px}
+.pk-r{width:100%;text-align:left;cursor:pointer}
+.pk-r .thumb{width:44px;height:44px;border-radius:var(--r-8);flex:none}
+.pk-r .az-pickrow__t i{font-style:italic}
+.pk-r > .az-i{color:var(--OnSurfaceVariant)}
+.pk-r[aria-checked="true"] > .az-i{color:var(--Primary)}
+.pk-ic{width:44px;height:44px;border-radius:var(--r-8);background:var(--Background);color:var(--OnPrimaryContainer);display:grid;place-items:center;flex:none}
+.az-picked .pk-ic{background:var(--white)}
+.pk-seg,.rv-seg{display:flex;width:100%}
+.pk-seg button,.rv-seg button{flex:1;text-align:center}
+.pk-t{display:flex;align-items:center;gap:6px;min-width:0}
+.pk-back{margin-left:-8px;flex:none}
+/* the review: labels over fields, the changes as a table (Food | Was | Now), the upload boxes */
+.rv-lab{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rv-for{font:var(--t-body-regular);color:var(--neutralSecondary);margin:-2px 0 2px}
+.dtab{display:flex;flex-direction:column;border:1px solid var(--OutlineVariant);border-radius:var(--r-8);overflow:hidden;background:var(--white)}
+.dtab__h,.dtab__r{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:12px;padding:10px 12px;align-items:center}
+.dtab__h{background:var(--Background);font:var(--t-subtext-title);color:var(--OnSurfaceVariant)}
+.dtab__r{border-top:1px solid var(--neutral05)}
+.dtab__f{display:flex;flex-direction:column;gap:3px;min-width:0}
+.dtab__f b{font:var(--t-body-medium);color:var(--neutralPrimary)}
+.dtab__f small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.dtab__w{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.dtab__n{display:flex;flex-direction:column;gap:3px;font:var(--t-body-regular)}
+.dtab__n b{font:var(--t-body-medium);color:var(--neutralPrimary)}
+.dtab__n small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.dtab__stop{font-style:normal;font:var(--t-body-medium);color:var(--Error)}
+.dtab__r--stop .dtab__f b{text-decoration:line-through;color:var(--neutralSecondary)}
+.rv-when2{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.rv-up{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.rv-up .az-upload{padding:14px;cursor:pointer}
+.rv-note{align-self:flex-start}
+.rv-need{font:var(--t-body-regular);color:var(--neutralSecondary);text-align:center}
+.rv-foot{display:flex;flex-direction:column;gap:8px;width:100%}
+.rv-foot .az-btn{flex:none;width:100%}
+.pk-seg button,.rv-seg button{padding:10px 6px;white-space:nowrap}
+/* these segments have no sliding highlight: the picked one carries the design system's green fill itself */
+.az-segment.pk-seg > button[aria-selected="true"],.az-segment.rv-seg > button[aria-selected="true"]{background:var(--Primary)!important;color:var(--OnPrimary)}
+.az-sheet__body .pk-seg{background:var(--white)}
