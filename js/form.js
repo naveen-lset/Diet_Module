@@ -650,7 +650,7 @@ function submitDraft() {
     D.requests.push(r);
   }
   S.draft = null; S.rTab = 'pending'; S.rDept = 'all'; storeSave();
-  toast(`${d.edit ? 'Saved and sent' : 'Sent to ' + first(user(r.approver).name)} · ${r.id}`); go(`#/requests/${r.id}`);
+  toast(`${d.edit ? 'Saved and sent' : 'Request sent'} · ${r.id}`); go(`#/requests/${r.id}`);
 }
 /* a form whose draft is gone (sent, closed or reset while it leaves the screen) takes no more taps or typing */
 ['click', 'input', 'change'].forEach(t => document.addEventListener(t, e => { if (!S.draft && e.target.closest && e.target.closest('.form-page')) { e.stopPropagation(); e.preventDefault(); } }, true));
@@ -747,8 +747,9 @@ function dfErr(d) {
 }
 /* the type's own questions */
 function dtypeFields(d) {
-  const k = d.dtype, out = [], why = list => dfield('Why', dchips(list.map(t => [t, t]), v => d.reason === v, v => `S.draft.reason=${JSON.stringify(v).replace(/"/g, '&quot;')};render()`), true);
-  const how = () => dfield('How long', `<div class="az-segment sg-seg" role="tablist" aria-label="How long">${thumb()}${[['always', 'From now on'], ['once', 'Some days'], ['yearly', 'Every year']].map(([v, l]) => `<button role="tab" aria-selected="${d.how === v}" onclick="S.draft.how='${v}';render()">${l}</button>`).join('')}</div>
+  /* Why (owner, 19 Nov: no endless forms): one field; the reasons open in a sheet with search, the usual ones first */
+  const k = d.dtype, out = [], why = list => { DF_WHY = [...new Set([...list.filter(t => SG_REASONS.includes(t)), ...list])]; return select('Why', d.reason || '', 'dfWhySheet()', { req: true, placeholder: 'Choose a reason', id: 'f-reason' }); };
+  const how = () => dfield('How long', `${howTiles(d.how, v => `S.draft.how='${v}';render()`)}
     ${d.how === 'once' ? dchips([[3, '3 days'], [7, '7 days'], [14, '14 days'], [30, '30 days']], v => d.days === v, v => `S.draft.days=${v};render()`) : ''}
     ${d.how === 'yearly' ? dchips(SG_SEASONS.map(([s, a, b]) => [s, `${s} · ${mdText(a)} – ${mdText(b)}`]), v => d.season === v, v => `S.draft.season='${v}';render()`) : ''}
     ${d.how && d.how !== 'yearly' ? dchips([[0, 'From today'], [1, 'From tomorrow']], v => d.from === v, v => `S.draft.from=${v};render()`) : ''}`, true);
@@ -757,15 +758,15 @@ function dtypeFields(d) {
     out.push(dfield('Changes', !d.base ? '<p class="sg-none">No diet here yet. Choose New diet instead.</p>'
       : d.changes.length ? `<div class="sg-sum"><div class="sg-sum__h"><span class="sg-cap">${esc(diet(d.base).name)} · ${plural(d.changes.length, 'change')}</span><button class="lnk" onclick="dfEditFood()">Edit</button></div>${d.changes.map(c => `<div class="sg-sum__r">${I('edit', 18)}<span>${esc(changeText(c, diet(d.base)))}</span></div>`).join('')}</div>`
       : `<button class="az-btn az-btn--outline df-edit" id="f-name" onclick="dfEditFood()">${I('edit_note')}Change the food in ${esc(diet(d.base).name)}</button>`, true));
-    if (d.changes.length) out.push(how(), why(SG_REASONS));
+    if (d.changes.length) out.push(how(), why(REASONS.items));
   }
   if (k === 'newdiet') out.push(dfield('Needed from', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(7, 'Next week')], v => (d.f.from ?? 1) === v, v => `S.draft.f.from=${v};render()`)),
-    dfield('Start from', dchips([['', 'Nothing'], ...dfEat(d).map(e => [e.diet.id, e.diet.name])], v => (d.f.start || '') === v, v => `S.draft.f.start='${v}';render()`)), why(SG_REASONS));
+    select('Start from', d.f.start ? diet(d.f.start).name : 'Nothing · an empty diet', 'dfStartSheet()', { id: 'f-from', icon: 'search' }), why(REASONS.items));
   if (k === 'move') { const now = dfEat(d)[0], opts = [...new Set(D.assigns.filter(a => a.sp === d.targets[0].sp && !ended(a)).map(a => a.diet))].filter(id => !now || id !== now.diet.id);
-    out.push(dfield('Move to', opts.length ? dchips(opts.map(id => [id, diet(id).name]), v => d.diet === v, v => `S.draft.diet='${v}';render()`) : '<p class="sg-none">No other diet for this species</p>', true), how(), why(SG_REASONS)); }
+    out.push(opts.length ? select('Move to', d.diet ? diet(d.diet).name : '', 'dfMoveSheet()', { req: true, placeholder: 'Search and choose a diet', id: 'f-move', icon: 'search' }) : dfield('Move to', '<p class="sg-none">No other diet for this species</p>', true), how(), why(REASONS.items)); }
   if (k === 'end') { const es = endable(d);
-    out.push(dfield('Diet to end', es.length ? dchips(es.map(a => [a.id, diet(a.diet).name]), v => d.ends.includes(v), v => `S.draft.ends=['${v}'];render()`) : '<p class="sg-none">No diet here ends early: only Seasonal, Time-bound or place diets do</p>', true),
-      dfield('Last day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(2, 'In 2 days')], v => d.stop === addDays(TODAY, v), v => `S.draft.stop='${addDays(TODAY, v)}';render()`), true), why(SG_REASONS)); }
+    out.push(es.length ? select('Diet to end', d.ends[0] ? diet(by('assigns', d.ends[0]).diet).name : '', 'dfEndSheet()', { req: true, placeholder: 'Search and choose a diet', id: 'f-end', icon: 'search' }) : dfield('Diet to end', '<p class="sg-none">No diet here ends early: only Seasonal, Time-bound or place diets do</p>', true),
+      dfield('Last day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(2, 'In 2 days')], v => d.stop === addDays(TODAY, v), v => `S.draft.stop='${addDays(TODAY, v)}';render()`), true), why(REASONS.items)); }
   if (k === 'skip') out.push(dfield('Day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow')], v => d.date === addDays(TODAY, v), v => `S.draft.date='${addDays(TODAY, v)}';render()`), true),
     dfield('Feeds', feedChips(d.feeds, v => v === 'all' ? `S.draft.feeds='all';render()` : `dfToggleFeed(${v})`), true), why(REASONS.skip));
   if (k === 'extra') out.push(select('Food', d.f.item ? item(d.f.item).name : '', 'dfItemSheet()', { req: true, placeholder: 'Choose food', id: 'f-item' }),
@@ -788,7 +789,7 @@ function dietForm(d) {
     select('Requesting to', 'Diet', 'deptSheet()', { disabled: !!d.edit }),
     !dt ? `<div class="az-field" id="f-dtype"><span class="az-label">What do you need? <span class="az-req">*</span></span>${dtGrid(null, k => `dfType('${k}')`)}</div>`
       : `<div class="az-field"><span class="az-label">Request type</span><button class="dtsel" style="--dt:${DT_TONE[d.dtype]}" onclick="dtypeSheet()"${d.edit ? ' disabled' : ''}><span class="dtt__ic">${I(dt[4])}</span><span class="grow"><b>${dt[2]}</b><small>${dt[3]}</small></span>${d.edit ? '' : '<span class="lnk">Change</span>'}</button></div>`,
-    dt ? select('For', t ? `${sgName(t)} · ${sgWhere(t)} · ${plural(tAnimals(t).length, 'animal')}` : '', 'dfWho()', { req: true, placeholder: 'Choose the species, a place or an animal', id: 'f-sp' }) : '',
+    dt ? select('For', t ? (t.level === 'species' ? `${sgName(t)} · ${sgWhere(t)}` : `${species(t.sp).name} · ${sgName(t)}`) : '', 'dfWho()', { req: true, placeholder: 'Choose the species, an enclosure or an animal', id: 'f-sp' }) : '',
     dt && t ? dtypeFields(d) : '',
     dt ? `<span class="az-label">What are you requesting?</span>
       <label class="az-input az-input--text"><input id="f-title" placeholder="Title" value="${esc(dfTitle(d))}" oninput="S.draft.title=this.value;S.draft.titleEdited=true;redrawFoot()" aria-label="Title"></label>
@@ -802,10 +803,23 @@ function dietForm(d) {
 function dtypeSheet() {
   openSheet(() => ({ title: 'Request type', bottom: true, body: `<div class="dtg-sheet">${dtGrid(S.draft && S.draft.dtype, k => `dfType('${k}')`)}</div>` }));
 }
-function dfType(k) { const d = S.draft; if (d.dtype !== k) Object.assign(d, { dtype: k, changes: [], diet: null, ends: [], f: {}, reason: null, titleEdited: false, title: '', how: k === 'move' ? 'once' : null, feeds: 'all', date: addDays(TODAY, 1), stop: addDays(TODAY, 1) }); closeAll(); if (!d.targets[0]) d.pick = whoNew(null); render(); }
-function dfWho() { S.draft.pick = whoNew(S.draft.targets[0]); render(); }
+function dfType(k) { const d = S.draft; if (d.dtype !== k) Object.assign(d, { dtype: k, changes: [], diet: null, ends: [], f: {}, reason: null, titleEdited: false, title: '', how: k === 'move' ? 'once' : null, feeds: 'all', date: addDays(TODAY, 1), stop: addDays(TODAY, 1) }); closeAll(); render(); if (!d.targets[0]) setTimeout(dfWho, 120); }
+/* For (owner, 19 Nov 2026): the species sheet with search, not a page */
+function dfWho() { spPickSheet('dfPickT', S.draft.targets[0] || null); }
+function dfPickT(sp, level, ref) { dfPick({ sp, level, ref }); }
 function dfWhoDone() { const t = S.draft.pick.sel; S.draft.pick = null; dfPick(t); }
 function dfPick(t) { const d = S.draft; d.targets = [{ sp: t.sp, level: t.level, ref: t.ref ?? null }]; d.site = sgSite(d.targets[0]); const e = dfEat(d)[0]; d.base = e ? e.diet.id : null; d.changes = []; d.diet = null; d.ends = []; closeAll(); render(); }
+/* the diet fields' sheets (owner, 19 Nov 2026: "Move diet also like a bottom sheet, I can search and select"); no animal counts */
+const dfMoveOpts = d => { const now = dfEat(d)[0]; return [...new Set(D.assigns.filter(a => a.sp === d.targets[0].sp && !ended(a)).map(a => a.diet))].filter(id => !now || id !== now.diet.id); };
+function dfStartSheet() { const d = S.draft, sp = d.targets[0].sp; dietPickSheet({ title: 'Start from', sub: esc(species(sp).name), none: ['Nothing', 'Start from an empty diet'], list: [...new Set(D.assigns.filter(a => a.sp === sp && !ended(a)).map(a => a.diet))].map(id => ({ id, d: diet(id), sub: dietWhere(id, sp) })), cur: d.f.start || '', cb: 'dfSetStart' }); }
+function dfSetStart(id) { S.draft.f.start = id; render(); }
+function dfMoveSheet() { const d = S.draft, sp = d.targets[0].sp; dietPickSheet({ title: 'Move to', sub: esc(species(sp).name), list: dfMoveOpts(d).map(id => ({ id, d: diet(id), sub: dietWhere(id, sp) })), cur: d.diet, cb: 'dfSetMove' }); }
+function dfSetMove(id) { S.draft.diet = id; render(); }
+function dfEndSheet() { const d = S.draft; dietPickSheet({ title: 'Diet to end', sub: esc(dfPlace(d)), list: endable(d).map(a => ({ id: a.id, d: diet(a.diet), sub: `Set for ${whereSet(a)}${a.end ? ` · till ${fmtDay(a.end)}` : ''}` })), cur: d.ends[0], cb: 'dfSetEnd' }); }
+function dfSetEnd(id) { S.draft.ends = [id]; render(); }
+let DF_WHY = [];
+function dfWhySheet() { textPickSheet({ title: 'Why', items: DF_WHY, cur: S.draft.reason, cb: 'dfSetWhy' }); }
+function dfSetWhy(v) { S.draft.reason = v; render(); }
 let DFQ = '';
 function dfItemSheet() {
   DFQ = '';
@@ -844,5 +858,5 @@ function dfSubmit(d) {
     Object.assign(r, x, { state: 'pending', delay: null }); r.events.push({ kind: 'edited', by: S.user, at: nowStamp(), note: '' });
   } else { r = { id: newRequestId(), ...x, by: S.user, state: 'pending', events: [{ kind: 'raised', by: S.user, at: nowStamp() }] }; D.requests.push(r); }
   S.draft = null; S.rTab = 'pending'; S.rDept = 'all'; storeSave();
-  toast(`${d.edit ? 'Updated' : 'Sent to ' + first(user(r.approver).name)} · ${r.id}`); go(`#/requests/${r.id}`);
+  toast(`${d.edit ? 'Request updated' : 'Request sent'} · ${r.id}`); go(`#/requests/${r.id}`);
 }
