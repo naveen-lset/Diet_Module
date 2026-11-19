@@ -785,10 +785,12 @@ function dfIssue(v) { const f = S.draft.f; f.issues = (f.issues || []).includes(
 /* the form: the app's Request Details card, with Request type and For under Requesting to */
 function dietForm(d) {
   const t = d.targets[0], dt = d.dtype && dtOf(d.dtype), ap = d.approver && user(d.approver);
+  if (!dt && !d.edit && !d.askedType) { d.askedType = true; setTimeout(() => { if (S.draft && !S.draft.dtype && !SH.length) dtypeSheet(); }, 150); }
   return section('category', 'Request Details', [
     select('Requesting to', 'Diet', 'deptSheet()', { disabled: !!d.edit }),
-    !dt ? `<div class="az-field" id="f-dtype"><span class="az-label">What do you need? <span class="az-req">*</span></span>${dtGrid(null, k => `dfType('${k}')`)}</div>`
-      : `<div class="az-field"><span class="az-label">Request type</span><button class="dtsel" style="--dt:${DT_TONE[d.dtype]}" onclick="dtypeSheet()"${d.edit ? ' disabled' : ''}><span class="dtt__ic">${I(dt[4])}</span><span class="grow"><b>${dt[2]}</b><small>${dt[3]}</small></span>${d.edit ? '' : '<span class="lnk">Change</span>'}</button></div>`,
+    /* Request type (19 Nov 2026: "it all looks AI-designed"): a field that opens the list, then a picked card, as the Hub's Help Desk form */
+    !dt ? select('Request type', '', 'dtypeSheet()', { req: true, placeholder: 'Choose the request type', id: 'f-dtype' })
+      : `<div class="az-field"><span class="az-label">Request type</span><div class="az-picked">${pkIc(dt[4])}<span class="grow"><span class="az-who__name">${dt[2]}</span><span class="az-who__sub">${dt[3]}</span></span>${d.edit ? '' : '<button class="lnk" onclick="dtypeSheet()">Change</button>'}</div></div>`,
     dt ? select('For', t ? (t.level === 'species' ? `${sgName(t)} · ${sgWhere(t)}` : `${species(t.sp).name} · ${sgName(t)}`) : '', 'dfWho()', { req: true, placeholder: 'Choose the species, an enclosure or an animal', id: 'f-sp' }) : '',
     dt && t ? dtypeFields(d) : '',
     dt ? `<span class="az-label">What are you requesting?</span>
@@ -801,7 +803,8 @@ function dietForm(d) {
 }
 /* the sheets: Request type · For */
 function dtypeSheet() {
-  openSheet(() => ({ title: 'Request type', bottom: true, body: `<div class="dtg-sheet">${dtGrid(S.draft && S.draft.dtype, k => `dfType('${k}')`)}</div>` }));
+  openSheet(() => { const cur = S.draft && S.draft.dtype;
+    return { title: 'Request type', bottom: true, body: [...new Set(DTYPES.map(x => x[5]))].map(g => `<p class="az-label pk-h">${g}</p>${pkList(DTYPES.filter(x => x[5] === g).map(([k, , l, h, ic]) => pkRow(`dfType('${k}')`, pkIc(ic), l, h, undefined, cur === k)).join(''))}`).join('') }; });
 }
 function dfType(k) { const d = S.draft; if (d.dtype !== k) Object.assign(d, { dtype: k, changes: [], diet: null, ends: [], f: {}, reason: null, titleEdited: false, title: '', how: k === 'move' ? 'once' : null, feeds: 'all', date: addDays(TODAY, 1), stop: addDays(TODAY, 1) }); closeAll(); render(); if (!d.targets[0]) setTimeout(dfWho, 120); }
 /* For (owner, 19 Nov 2026): the species sheet with search, not a page */
