@@ -1,5 +1,5 @@
-// js/suggest.js — a diet change, as the owner set it on 18 Nov 2026: the Biologist raises it, the Dietician approves it, then the Kitchen
-// updates the diet. The Biologist suggests the change on the diet itself (Google Docs "Suggesting", Maps "Suggest an edit"): who it is for →
+// js/suggest.js — a diet change: anybody raises it, the Dietician approves it, and approving applies it (owner, 19 Nov 2026; on 18 Nov the
+// Kitchen updated it after approval). The requester suggests the change on the diet itself (Google Docs "Suggesting", Maps "Suggest an edit"): who it is for →
 // what they eat today, with − and + on every food → a bar that counts the changes (a cart) → one short sheet (how long, why, proof) → Send.
 // The request then shows a tracker that fills in (Sent · Dietician · Kitchen · Live). The kitchen rules (a new diet or an edit, who gets it)
 // are the Dietician's: "Save it as" on the request. Routes: #/suggest (?asg= a diet's place, ?sp= a species, ?edit= an open request).
@@ -16,7 +16,7 @@ function sgInit(q) {
   if (q.get('form') && SG && SG.form) return SG;
   const key = [S.user, q.get('edit') || '', q.get('clone') || '', q.get('asg') || '', q.get('sp') || ''].join(':');
   if (SG && SG.key === key) return SG;
-  SG = { key, edit: null, t: null, base: null, changes: [], skip: null, skipDay: 1, how: null, days: 14, from: 1, season: 'Winter', reason: null, more: false, text: '', note: false, files: [], prio: 'normal', q: '', aq: '', approver: dept('diet').head, kind: 'items', name: '' };
+  SG = { key, edit: null, t: null, base: null, changes: [], skip: null, skipDay: 1, how: null, days: 14, from: 1, season: 'Winter', reason: null, more: false, text: '', note: false, files: [], prio: 'normal', q: '', aq: '', approver: dietApprover(), kind: 'items', name: '' };
   const cl = q.get('clone') && by('requests', q.get('clone')), r = cl || (q.get('edit') && by('requests', q.get('edit'))), a = q.get('asg') && by('assigns', q.get('asg')), sp = +q.get('sp');
   /* Edit (the requester, while it waits) or Clone (anyone who may raise one: a new request with the same answers), as the Help Desk app */
   if (r && isDiet(r) && SG_KINDS.includes(r.kind) && (cl ? canRaise(me()) : r.by === S.user && isOpen(r))) {
@@ -190,7 +190,7 @@ function sgDates() {
 }
 function sgReq() {
   const t = SG.t, x = sgEat().find(e => e.diet.id === SG.base);
-  const r = { dept: 'diet', targets: [{ ...t }], sp: t.sp, level: t.level, ref: t.ref ?? null, reason: SG.reason, text: SG.note ? SG.text.trim() : '', note: '', files: [...SG.files], prio: SG.prio, approver: SG.approver || dept('diet').head, by: S.user };
+  const r = { dept: 'diet', targets: [{ ...t }], sp: t.sp, level: t.level, ref: t.ref ?? null, reason: SG.reason, text: SG.note ? SG.text.trim() : '', note: '', files: [...SG.files], prio: SG.prio, approver: SG.approver || dietApprover(), by: S.user };
   if (SG.skip) Object.assign(r, { kind: 'skip', date: SG.skip.date, feeds: SG.skip.feeds === 'all' ? 'all' : [...SG.skip.feeds] });
   else if (SG.kind === 'new') Object.assign(r, { kind: 'new', base: SG.base, changes: SG.changes.map(c => ({ ...c })), how: SG.how || 'always', name: SG.name, ...sgDates() });
   else Object.assign(r, { kind: 'items', base: SG.base, slot: x ? topSlot(x).id : null, changes: SG.changes.map(c => ({ ...c })), how: SG.how || 'always', ...sgDates() });
@@ -240,7 +240,7 @@ function sgReviewHtml() {
     <div class="rv-up">${has('image') ? '' : `<button class="az-upload" onclick="sgFile('image')"><i class="az-i" aria-hidden="true">add_photo_alternate</i><b>Add a photo</b><span>JPEG or PNG</span></button>`}${has('audio') ? '' : `<button class="az-upload" onclick="sgFile('audio')"><i class="az-i" aria-hidden="true">mic</i><b>Voice note</b><span>Up to 1 minute</span></button>`}</div>
     ${SG.note ? `<label class="az-input az-input--text az-textarea"><textarea id="sg-text" rows="2" placeholder="What the dietician should know" oninput="SG.text=this.value" aria-label="Note">${esc(SG.text)}</textarea></label>` : `<button class="lnk rv-note" onclick="SG.note=true;redrawSheet()">${I('add', 18)}Add a note</button>`}`);
   /* who approves (owner, 18 Nov 2026): a Dietician or the Kitchen Operator; the Diet department's head unless changed */
-  const goes = F('Goes to', SG.apOpen ? DIET_APPROVERS.map(id => { const x = user(id), on = r.approver === id;
+  const goes = F('Goes to', SG.apOpen ? DIET_APPROVERS.filter(id => id !== S.user).map(id => { const x = user(id), on = r.approver === id;
       return `<button class="az-pickrow" role="radio" aria-checked="${on}" onclick="SG.approver='${id}';SG.apOpen=false;redrawSheet()">${avatar(x.name)}<span class="az-pickrow__t"><b>${esc(x.name)}</b><span>${esc(x.title)}</span></span>${I(on ? 'radio_button_checked' : 'radio_button_unchecked', 24, on)}</button>`; }).join('')
     : `<div class="az-picked">${avatar(ap.name)}<span class="grow"><span class="az-who__name">${esc(ap.name)}</span><span class="az-who__sub">${esc(ap.title)}</span></span><button class="lnk" onclick="SG.apOpen=true;redrawSheet()">Change</button></div>`);
   const urgent = `<button class="az-checkrow swrow" role="switch" aria-checked="${SG.prio !== 'normal'}" onclick="SG.prio=SG.prio==='normal'?'high':'normal';redrawSheet()"><span class="grow">Urgent<small class="sg-small">The dietician sees it first</small></span><span class="az-switch" aria-checked="${SG.prio !== 'normal'}"></span></button>`;
@@ -268,8 +268,8 @@ function sgSite(r) { const a = r.level === 'animal' ? by('animals', r.ref) : tAn
 /* ---------- the page ---------- */
 function paneSuggest(q) {
   /* New Request with Diet, and Edit Request, are the Help Desk form (form.js); this screen keeps Suggest a change, Change food from that form, and the new-diet requests' editor */
-  { const e = q.get('edit') && by('requests', q.get('edit')); if ((q.get('dept') === 'diet' && !q.get('form')) || (e && isDiet(e) && e.kind !== 'new')) return paneForm(q); }
-  const d = sgInit(q), top = topbar({ close: d.form ? 'sgFormBack(false)' : 'sgClose()', title: d.form ? 'Change food' : d.edit ? 'Edit Request' : 'Suggest a change', actions: d.t && sgCount() ? iconBtn('restart_alt', 'Start again', 'sgClear()') : '' });
+  { const e = q.get('edit') && by('requests', q.get('edit')); if ((q.get('dept') === 'diet' && !q.get('form')) || (e && isDiet(e))) return paneForm(q); }
+  const d = sgInit(q), top = topbar({ close: d.form ? 'sgFormBack(false)' : 'sgClose()', title: d.form ? (d.kind === 'new' ? 'New diet' : 'Change item values') : d.edit ? 'Edit Request' : 'Suggest a change', actions: d.t && sgCount() ? iconBtn('restart_alt', 'Start again', 'sgClear()') : '' });
   if (!canRaise(me()) && !d.edit) return pane('pane--fill', top, `${empty1(`Biologists suggest diet changes. ${esc(me().title)}s see them in Help Desk.`)}<div class="who-cta"><button class="az-btn az-btn--outline" onclick="asBiologist('#/suggest')">${avatar(user('u-kiran').name, '24')}View as ${esc(user('u-kiran').name)}, Biologist</button></div>`, '', 'sg-no');
   /* nobody chosen yet: one field to choose who, and the species sheet opens by itself the first time (owner, 19 Nov: a bottom sheet, not a page) */
   if (!d.t) { if (!d.askedWho) { d.askedWho = true; setTimeout(() => { if (SG && !SG.t && !SH.length) sgWho(); }, 120); }
@@ -417,10 +417,17 @@ const pkList = rows => `<div class="pk-list">${rows}</div>`;
 const pkFocus = id => setTimeout(() => { const i = document.getElementById(id); if (i && !isPhone()) i.focus({ preventScroll: true }); }, 60);
 const pkIc = ic => `<span class="pk-ic">${I(ic, 22)}</span>`;
 
-/* Select species: search (a species, or an enclosure or animal by name or number) with the QR scan, Recent, every species; a species opens in the
-   same sheet: Whole species · Enclosure · Animal. A tap picks and closes. cb(sp, level, ref) */
-let PK = { q: '', sp: null, tab: 'all', aq: '', cb: '', cur: null };
-function spPickSheet(cb, cur = null) { PK = { q: '', sp: null, tab: 'all', aq: '', cb, cur }; openSheet(spPickHtml); pkFocus('pk-q'); }
+/* Select species: search (a species, or an enclosure or animal by name or number) with the QR scan, Recent, every species (photo, name, scientific
+   name: Kitchen & Diet's SpeciesSearchSelect). A species opens in the same sheet as Kitchen & Diet's scope picker (ScopePickerPanel, owner 19 Nov 2026:
+   "check Species Selection from the codebase"): Species-wide · Site-wide · Section-wide · Enclosure-wide · Animal-wide, each with how many diets are set
+   there; the open one lists its places with their path and diets (LocationScopePicker), animals with search. A tap picks and closes. cb(sp, level, ref) */
+let PK = { q: '', sp: null, scope: null, aq: '', cb: '', cur: null };
+function spPickSheet(cb, cur = null) { PK = { q: '', sp: null, scope: null, aq: '', cb, cur }; openSheet(spPickHtml); pkFocus('pk-q'); }
+const PK_SCOPES = [['species', 'Species-wide', 'public'], ['site', 'Site-wide', 'location_on'], ['section', 'Section-wide', 'grid_view'], ['enclosure', 'Enclosure-wide', 'fence'], ['animal', 'Animal-wide', 'pets']];
+/* how many diets are set at a place of the species (not inherited), as the Kitchen's scope cards say */
+const dietsSetAt = (sp, level, ref = null) => new Set(D.assigns.filter(a => a.sp === sp && a.level === level && (level === 'species' || a.ref === ref) && !ended(a)).map(a => a.diet)).size;
+const dietsWord = n => n ? plural(n, 'diet') : 'No diet of its own';
+function pkSpOpen(id) { PK.sp = id; PK.aq = ''; PK.scope = PK.cur && PK.cur.sp === id && PK.cur.level !== 'species' ? PK.cur.level : null; redrawSheet(); }
 function spPickHtml() {
   const go1 = t => `closeAll();${PK.cb}(${t.sp},'${t.level}',${t.ref ?? 'null'})`, isOn = t => !!PK.cur && samePlace(PK.cur, t) && (PK.cur.level !== 'species' || t.level === 'species');
   if (!PK.sp) {
@@ -430,17 +437,24 @@ function spPickHtml() {
     const body = pkSearch('pk-q', PK.q, 'Species, enclosure or animal', 'PK.q=this.value;redrawSheet()', qr)
       + (q ? '' : `<p class="az-label pk-h">Recent</p>${pkList(sgRecent().slice(0, 3).map(t => pkRow(go1(t), spThumb(species(t.sp)), esc(sgName(t)), esc(`${species(t.sp).name} · ${sgWhere(t)}`), undefined, isOn(t))).join(''))}`)
       + (places.length ? `<p class="az-label pk-h">Enclosures and animals</p>${pkList(places.map(t => pkRow(go1(t), pkIc(t.level === 'animal' ? 'pets' : t.level === 'section' ? 'grid_view' : 'fence'), esc(sgName(t)), esc(`${species(t.sp).name} · ${sgWhere(t)}`), undefined, isOn(t))).join(''))}` : '')
-      + `<p class="az-label pk-h">Species</p>${sps.length ? pkList(sps.map(s => pkRow(`PK.sp=${s.id};PK.tab='all';PK.aq='';redrawSheet()`, spThumb(s), esc(s.name), `<i>${esc(s.sci)}</i>`, I('chevron_right', 24), PK.cur && PK.cur.sp === s.id)).join('')) : '<p class="sg-none">No species by that name</p>'}`;
+      + `<p class="az-label pk-h">Species</p>${sps.length ? pkList(sps.map(s => pkRow(`pkSpOpen(${s.id})`, spThumb(s), esc(s.name), `<i>${esc(s.sci)}</i>`, I('chevron_right', 24), PK.cur && PK.cur.sp === s.id)).join('')) : '<p class="sg-none">No species by that name</p>'}`;
     return { title: 'Select species', bottom: true, body };
   }
-  const s = species(PK.sp), all = spAnimals(s.id), tabs = [['all', 'Whole species'], ['enc', 'Enclosure'], ['ani', 'Animal']];
-  let body = `<div class="az-segment pk-seg" role="tablist" aria-label="Who">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${PK.tab === k}" onclick="PK.tab='${k}';redrawSheet()">${l}</button>`).join('')}</div>`;
-  if (PK.tab === 'all') { const t = { sp: s.id, level: 'species', ref: null }; body += pkList(pkRow(go1(t), spThumb(s), `All ${esc(s.name)}`, 'Every animal of the species', undefined, isOn(t))); }
-  if (PK.tab === 'enc') body += [...new Set(all.map(a => pathOfAnimal(a).section))].map(sid => { const ts = { sp: s.id, level: 'section', ref: sid }, encs = [...new Set(all.filter(a => pathOfAnimal(a).section === sid).map(a => a.enc))];
-    return `<p class="az-label pk-h">${esc(by('sections', sid).name)}</p>${pkList(pkRow(go1(ts), pkIc('grid_view'), `All of ${esc(by('sections', sid).name)}`, 'The whole section', undefined, isOn(ts)) + encs.map(eid => { const te = { sp: s.id, level: 'enclosure', ref: eid }; return pkRow(go1(te), pkIc('fence'), esc(by('enclosures', eid).name), 'Enclosure', undefined, isOn(te)); }).join(''))}`; }).join('');
-  if (PK.tab === 'ani') { const q = PK.aq.trim().toLowerCase(), list = all.filter(a => !q || animalName(a).toLowerCase().includes(q) || String(a.id).includes(q) || by('enclosures', a.enc).name.toLowerCase().includes(q));
-    body += pkSearch('pk-aq', PK.aq, 'Search name, number or enclosure', 'PK.aq=this.value;redrawSheet()') + (list.length ? pkList(list.slice(0, 40).map(a => { const t = { sp: s.id, level: 'animal', ref: a.id };
-      return pkRow(go1(t), spThumb(s), `${a.name ? esc(a.name) + ' · ' : ''}AAID ${a.id}`, esc([a.sex === 'M' ? 'Male' : a.sex === 'F' ? 'Female' : 'Undetermined', by('enclosures', a.enc).name, ageText(a.ageM)].filter(Boolean).join(' · ')), undefined, isOn(t)); }).join('')) : '<p class="sg-none">No animal by that name or number</p>'); }
+  const s = species(PK.sp), all = spAnimals(s.id), ids = k => [...new Set(all.map(a => pathOfAnimal(a)[k]))];
+  const siteN = id => by('sites', id).name, secN = id => by('sections', id).name;
+  const rowsOf = lvl => {
+    if (lvl === 'animal') { const q = PK.aq.trim().toLowerCase(), list = all.filter(a => !q || animalName(a).toLowerCase().includes(q) || String(a.id).includes(q) || by('enclosures', a.enc).name.toLowerCase().includes(q));
+      return pkSearch('pk-aq', PK.aq, 'Search name, number or enclosure', 'PK.aq=this.value;redrawSheet()') + (list.length ? pkList(list.slice(0, 40).map(a => { const t = { sp: s.id, level: 'animal', ref: a.id }, n = dietsSetAt(s.id, 'animal', a.id);
+        return pkRow(go1(t), spThumb(s), `${a.name ? esc(a.name) + ' · ' : ''}AAID ${a.id}`, esc([a.sex === 'M' ? 'Male' : a.sex === 'F' ? 'Female' : 'Undetermined', by('enclosures', a.enc).name, ageText(a.ageM), n ? plural(n, 'diet') : ''].filter(Boolean).join(' · ')), undefined, isOn(t)); }).join('')) : '<p class="sg-none">No animal by that name or number</p>'); }
+    return pkList(ids(lvl).map(id => { const t = { sp: s.id, level: lvl, ref: id }, p = pathOf(t), path = lvl === 'section' ? siteN(p.site) : lvl === 'enclosure' ? `${siteN(p.site)} › ${secN(p.section)}` : '';
+      return pkRow(go1(t), pkIc(PK_SCOPES.find(x => x[0] === lvl)[2]), esc(placeOf(lvl, id).name), esc([path, dietsSetAt(s.id, lvl, id) ? plural(dietsSetAt(s.id, lvl, id), 'diet') : ''].filter(Boolean).join(' · ') || LEVEL[lvl]), undefined, isOn(t)); }).join(''));
+  };
+  const body = PK_SCOPES.map(([lvl, l, ic]) => {
+    if (lvl === 'species') { const t = { sp: s.id, level: 'species', ref: null }; return pkList(pkRow(go1(t), pkIc(ic), l, `Every ${esc(s.name)} · ${dietsWord(dietsSetAt(s.id, 'species'))}`, undefined, isOn(t))); }
+    const refs = lvl === 'animal' ? all.map(a => a.id) : ids(lvl), n = refs.reduce((x, id) => x + dietsSetAt(s.id, lvl, id), 0), open = PK.scope === lvl;
+    const head = `<button class="az-pickrow pk-r pk-scope${open ? ' pk-scope--open' : ''}" aria-expanded="${open}" onclick="PK.scope=${open ? 'null' : `'${lvl}'`};PK.aq='';redrawSheet()">${pkIc(ic)}<span class="az-pickrow__t"><b>${l}</b><span>${plural(n, 'diet')} · ${plural(refs.length, LEVEL[lvl].toLowerCase())}</span></span>${I(open ? 'expand_less' : 'expand_more', 24)}</button>`;
+    return `<div class="pk-scopes">${head}${open ? `<div class="pk-in">${rowsOf(lvl)}</div>` : ''}</div>`;
+  }).join('');
   return { title: `<span class="pk-t"><button class="az-iconbtn pk-back" onclick="PK.sp=null;redrawSheet()" aria-label="Back to species">${I('arrow_back')}</button>${esc(s.name)}</span>`, sub: `<i>${esc(s.sci)}</i>`, bottom: true, body };
 }
 

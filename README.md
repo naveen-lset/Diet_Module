@@ -6,9 +6,14 @@ Phone and iPad prototype of the Antz **Diet** module and the **Help Desk** diet 
 
 - **Diet:** browse diets by species (first) or by diet. Nothing sits above the Species wise | Diet wise tabs; requests live in Help Desk. A species opens with a dark header as the Antz app's species page (name, scientific name, Population · Sites · Sections · Enclosures). Cards show no animal count. Diet Details has a **PDF** icon that opens the diet as Kitchen & Diet's diet PDF, full screen (tap the page to zoom). Diet Details › Applied to lists the species (photo, name, scientific name) with the places under each; History also shows every request raised on the diet (open ones as steps to come).
 - **Diet (more):** A species shows its diets at every level (species, site, section, enclosure, animal). A diet shows its details, certifications, notes, nutrition and its own change history. The app only views diets; editing stays on the web.
-- **Help Desk:** list, raise and approve requests. Diet is one department; Dieticians raise diet requests and the Kitchen Head approves them. Approving a diet request changes the diets and writes the diet history.
-- **After approval** (as the Antz app's Help Desk): the department's team moves a request to **In progress**, can set a **Job in charge**, then moves it to **Completed** with completion notes, team size, people involved and attachments. A completed request can be moved back to In progress, with a reason. The Approved tab has the chips All · Approved · In progress · Completed.
-- **The diet shows its requests:** Diet Details › Overview shows a request on the way (Requested, or Approved for the kitchen to update). After the kitchen marks it **Diet updated**, an **Updated** card says what changed and who updated it in the kitchen, and the changed lines stay marked for 7 days. The request links to the diet as it is now, and the diet's History says who updated it in the kitchen.
+- **Help Desk:** list, raise and approve requests. The list has four tabs that fit the width: **Pending · Approved · Closed · All** (Closed = Rejected, Canceled, Deleted, as chips under it).
+- **Diet requests, two kinds** (New Request › Requesting to Diet › Request):
+  - **Diet request**, in words for the kitchen: Skip a feed · Extra feed · Medicine with food · Food quality · Something else. Each asks only the day and feed, then the request's own words.
+  - **Diet change**, the diet's configuration: Change item values (Food | Was | Now) · Another diet · New diet (start from a diet and set its foods, or ask the dietician to build one) · End a diet early.
+  - **Anybody** can raise either. The **Dietician** approves. **Approving applies it**: a Diet change (and a skipped feed) goes into the diet at once and writes the diet history; the kitchen works from the diet as it now is. There is no separate kitchen step.
+- **For** (who it is for) follows Kitchen & Diet's species and scope pickers: search a species, then Species-wide · Site-wide · Section-wide · Enclosure-wide · Animal-wide, each with how many diets are set there.
+- **After approval, other departments** (as the Antz app's Help Desk): the department's team moves a request to **In progress**, can set a **Job in charge**, then moves it to **Completed** with completion notes, team size, people involved and attachments. A completed request can be moved back to In progress, with a reason. The Approved tab has the chips All · Approved · In progress · Completed.
+- **The diet shows its requests:** Diet Details › Overview shows a request on the way (Requested; an approved change that starts later; an approved request in words for the kitchen). Once approved, an **Updated** card says what changed and who approved it, and the changed lines stay marked for 7 days. The request links to the diet as it is now.
 - **Layouts:** the phone drills in one screen at a time with bottom sheets. The iPad (portrait and landscape) uses a split view.
 - **Sheets** follow the Antz design system: a sheet is for a short choice or a few facts, never opens another sheet, and is never a place Back returns to. Leaving a sheet for a page closes it for good. A record's extra actions sit in a menu under ⋮.
 
@@ -41,10 +46,10 @@ The controls above the device frame (Frame · Viewing as · Request page · Home
 
 | Person | Role | Diet | Help Desk |
 |---|---|---|---|
-| Kiran Rao (`kiran`) | Biologist | View; **Suggest a change** on a species or a diet | Raises Diet requests; follows them on a tracker |
-| Hydar Ali (`hydar`) | Dietician | View | Approves, delays or rejects Diet requests; chooses **Save it as** (only those animals, or everyone on that diet) |
-| Suresh Gowda (`suresh`) | Kitchen Head | View | Kitchen team: marks an approved Diet request **Diet updated**, which changes the diet |
-| Manoj Kumar (`manoj`) | Kitchen Operator | View | Kitchen team, as Suresh; own Maintenance request |
+| Kiran Rao (`kiran`) | Biologist | View; **Suggest a change** on a species or a diet | Raises Diet requests and Diet changes |
+| Hydar Ali (`hydar`) | Dietician | View | Approves (which applies it), delays or rejects Diet requests; chooses **Save it as** (only those animals, or everyone on that diet). His own requests go to Amruth Reddy |
+| Suresh Gowda (`suresh`) | Kitchen Head | View | Raises Diet requests too; sees approved ones as the kitchen |
+| Manoj Kumar (`manoj`) | Kitchen Operator | View | Raises Diet requests too (e.g. a food quality issue); sees approved ones as the kitchen; own Maintenance request |
 
 ## Project structure
 
@@ -63,7 +68,7 @@ The controls above the device frame (Frame · Viewing as · Request page · Home
 │   ├── history.js        A diet's change history
 │   ├── helpdesk.js       Help Desk list, request facts, request page A, status bar, Activity
 │   ├── form.js           New Request (and Edit): the departments' forms and the diet request types
-│   ├── suggest.js        Diet change: Suggest a change (Biologist), Review request, Save it as, Diet updated; the species, diet and reason search sheets
+│   ├── suggest.js        Diet change: Suggest a change (anybody), Review request, Save it as; the species (scope picker), diet and reason search sheets
 │   ├── reqviews.js       Request page versions B (Item requests) and C (Summary first), and the parts all three share
 │   ├── pdf.js            The diet PDF: one A4 page as Kitchen & Diet prints it, in a full-screen viewer
 │   └── app.js            Router, Home frame, prototype controls, saving, frame fitting

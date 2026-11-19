@@ -1708,3 +1708,19 @@ button.step{cursor:pointer}
 /* these segments have no sliding highlight: the picked one carries the design system's green fill itself */
 .az-segment.pk-seg > button[aria-selected="true"],.az-segment.rv-seg > button[aria-selected="true"]{background:var(--Primary)!important;color:var(--OnPrimary)}
 .az-sheet__body .pk-seg{background:var(--white)}
+/* ---------- 19 Nov 2026: two kinds of diet request; the list's tabs; the species picker as Kitchen & Diet's scope picker ---------- */
+/* Help Desk count tabs (owner: "Pending Approval … there is no space"): four, sharing the width, never cut off */
+.az-counttabs--fit{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible}
+.az-counttabs--fit .az-counttab{padding:8px 0 0;min-width:0}
+.az-counttabs--fit .az-counttab__in{padding:0 4px}
+/* the species picker: a scope row folds its places open under it (ScopePickerPanel + LocationScopePicker) */
+.pk-scopes{display:flex;flex-direction:column;gap:8px}
+.pk-in{display:flex;flex-direction:column;gap:8px;padding-left:16px}
+.pk-scope{width:100%;text-align:left;cursor:pointer}
+.pk-scope > .az-i{color:var(--OnSurfaceVariant)}
+.pk-scope--open{border-color:var(--OnSurfaceVariant)}
+/* the changed foods in the form: Food | Was | Now on white, as the review */
+.form-page .df-sum{padding:0;gap:0;background:var(--white);border:1px solid var(--OutlineVariant);overflow:hidden}
+.df-sum .sg-sum__h{padding:10px 12px}
+.df-sum .dtab__h{border-top:1px solid var(--OutlineVariant)}
+.df-sum .dtab{border:0;border-radius:0;box-shadow:none;margin:0}

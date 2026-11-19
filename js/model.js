@@ -274,11 +274,12 @@ function stateOf(r) {
     case 'deleted': return { label: 'Deleted', tone: 'neutral', icon: 'delete' };
   }
 }
-/* Help Desk tabs: Pending Approval holds the delayed ones too; Approved holds In progress and Completed, with the app's chips under it (All · Approved · In progress · Completed) */
-const HDTABS = [['pending', 'Pending Approval'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['cancelled', 'Canceled'], ['deleted', 'Deleted'], ['all', 'All']];
-const HDSUB = [['all', 'All'], ['approved', 'Approved'], ['in_progress', 'In progress'], ['completed', 'Completed']];
+/* Help Desk tabs (owner, 19 Nov 2026: "Pending Approval has no space"): four that fit the width. Pending holds the delayed ones too;
+   Approved holds In progress and Completed; Closed holds Rejected, Canceled and Deleted. Each of the last two has chips under it */
+const HDTABS = [['pending', 'Pending'], ['approved', 'Approved'], ['closed', 'Closed'], ['all', 'All']];
+const HDSUBS = { approved: [['all', 'All'], ['approved', 'Approved'], ['in_progress', 'In progress'], ['completed', 'Completed']], closed: [['all', 'All'], ['rejected', 'Rejected'], ['cancelled', 'Canceled'], ['deleted', 'Deleted']] };
 const wasApproved = r => ['approved', 'in_progress', 'completed'].includes(r.state);
-const tabOf = r => r.state === 'delayed' ? 'pending' : wasApproved(r) ? 'approved' : r.state;
+const tabOf = r => r.state === 'delayed' ? 'pending' : wasApproved(r) ? 'approved' : ['rejected', 'cancelled', 'deleted'].includes(r.state) ? 'closed' : r.state;
 /* the Antz priority flags */
 const PRIO = { normal: ['!', 'Normal'], high: ['!!!', 'High'], emergency: ['local_fire_department', 'Emergency'] };
 const PRIO_RANK = { emergency: 0, high: 1, normal: 2 };
@@ -288,9 +289,10 @@ const isDiet = r => r.dept === 'diet';
 const lastAt = r => r.events[r.events.length - 1].at;
 
 /* ---------- who sees what, who can do what (Kitchen & Diet roles; Help Desk: you see what you raised and what waits on you) ---------- */
-/* diet requests (owner, 18 Nov): the Biologist raises, the Dietician approves, the Kitchen updates the diet */
+/* diet requests (owner, 19 Nov 2026: "anybody can request the diet, then it goes to the Dietician; approved, it applies to the species diet
+   and the kitchen side follows, that's all"): anyone raises; the Dietician approves; approving applies it; the kitchen works from the diet as it now is */
 const isApprover = u => u.role === 'dietician';
-const canRaise = u => u.role === 'biologist';
+const canRaise = u => !!u;
 /* the department's team does the approved work: for Diet, the Kitchen Head and the Kitchen Operator */
 const onTeam = (r, u) => { const x = dept(r.dept); return (x.team || [x.head]).includes(u.id); };
 const visibleTo = (r, u) => r.by === u.id || r.approver === u.id || (wasApproved(r) && onTeam(r, u));
@@ -300,9 +302,9 @@ function actionsFor(r, u) {
   if (r.by === u.id && isOpen(r)) a.push('cancel', 'edit');
   if (r.approver === u.id && isOpen(r)) a.push('reject', 'delay', 'approve');
   /* after approval, as the Help Desk app: Move to In progress → Move to Completed; a completed request can be moved back to In progress, with a reason */
-  if (onTeam(r, u)) {
-    /* a diet request is one job for the kitchen: update the diet (Completed); its change can't be taken back by reopening */
-    if (r.state === 'approved') a.push(...(isDiet(r) ? ['complete'] : ['start']));
+  /* a diet request ends at approval: the change is in the diet, and the kitchen has it (no kitchen step) */
+  if (onTeam(r, u) && !isDiet(r)) {
+    if (r.state === 'approved') a.push('start');
     if (r.state === 'in_progress') a.push('assign', 'complete');
     if (r.state === 'completed' && !isDiet(r)) a.push('reopen');
   }
@@ -351,7 +353,13 @@ REASONS.new = REASONS.diet = REASONS.end = REASONS.items;
 function addHistory(h) { D.history.push({ id: 'CH-' + String(++D.hseq).padStart(3, '0'), ...h }); }
 /* the seed requests that were approved before today changed the diets then */
 /* a diet changes when the kitchen updates it (Completed); the seed's diet for an updated request is already in the data (applied) */
-function seedApprovals() { D.requests.filter(r => isDiet(r) && (r.state === 'completed' || r.applied)).forEach(r => { const e = r.events.find(x => x.kind === 'completed') || r.events.find(x => x.kind === 'approved'); applyApproval(r, e.at, e.kind === 'completed' ? e.by : null); }); }
+function seedApprovals() { D.requests.filter(r => isDiet(r) && (wasApproved(r) || r.applied)).forEach(r => dietApply(r, r.events.find(x => x.kind === 'approved').at)); }
+/* approving a diet request: a Diet change goes into the diet (plan.js), and so does a skipped feed (the diet's history marks the day);
+   a request in words keeps who it is for, for the kitchen */
+function dietApply(r, at) {
+  if (changesDiet(r) || r.kind === 'skip') applyApproval(r, at);
+  else if (!r.outcome) r.outcome = { lines: [], get: tAnimals(targetsOf(r)[0]).map(a => a.id) };
+}
 
 function act(r, kind, uid, x = {}) {
   const u = user(uid);
@@ -362,7 +370,7 @@ function act(r, kind, uid, x = {}) {
   if (kind === 'approve' && isDiet(r) && planOf(r).block) throw new Error(planOf(r).block);
   const at = nowStamp(), ev = (k, extra = {}) => r.events.push({ kind: k, by: uid, at, ...extra });
   switch (kind) {
-    case 'approve': ev('approved', { note: (x.note || '').trim() }); r.state = 'approved'; r.delay = null; break;
+    case 'approve': if (isDiet(r)) dietApply(r, at); ev('approved', { note: (x.note || '').trim() }); r.state = 'approved'; r.delay = null; break;
     case 'delay': ev('delayed', { until: x.until, reason: x.reason, note: (x.note || '').trim() }); r.state = 'delayed'; r.delay = { until: x.until, reason: x.reason, note: (x.note || '').trim() }; break;
     case 'reject': ev('rejected', { reason: x.reason.trim() }); r.state = 'rejected'; break;
     case 'cancel': ev('cancelled', { reason: x.reason.trim() }); r.state = 'cancelled'; break;

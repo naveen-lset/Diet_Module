@@ -1,6 +1,7 @@
 // js/form.js — Help Desk › New Request (and Edit, by the person who raised it while it is open), as the Help Desk app:
 // Request Details (title, description, requested by, requesting to, site, approver) · Attachments · Submit Request, priority at the top right.
-// When "Requesting to" is Diet (Dieticians only), the diet sections come in: what you need · which diet · for which animals · what should change · when · reason.
+// When "Requesting to" is Diet (anybody), Request is a Diet request (in words: skip a feed, extra feed, medicine with food …) or a Diet change
+// (the diet's configuration: change item values, another diet, a new diet); then For, the type's few questions, and the request's own words.
 // Full screen on the phone, a window on the iPad.
 
 const PREPS = ['Raw', 'Washed', 'Fresh', 'Peeled', 'Steamed', 'Boiled', 'Mashed', 'Soaked', 'Cooked'];
@@ -44,7 +45,7 @@ function initDraft(q) {
   const editId = q.get('edit'), asg = q.get('asg'), dq = q.get('dept'), spq = +q.get('sp') || null, kq = q.get('kind'), key = [S.user, editId || (q.get('clone') ? 'clone-' + q.get('clone') : 'new'), asg || '', dq || '', spq || '', kq || ''].join(':');
   if (S.draft && S.draft.key === key) return S.draft;
   const blank = { key, edit: null, dept: null, f: {}, title: '', titleEdited: false, text: '', site: null, approver: null, prio: 'normal', files: [],
-    dtype: null, days: 14, from: 1, season: 'Winter', kind: 'items', targets: [], group: null, base: null, startFrom: 'now', changes: [], rules: [], diet: null, ends: [], how: 'once', start: addDays(TODAY, 1), end: addDays(TODAY, 14), stop: addDays(TODAY, 1),
+    dgroup: null, dtype: null, days: 14, from: 1, season: 'Winter', kind: 'items', targets: [], group: null, base: null, startFrom: 'now', changes: [], rules: [], diet: null, ends: [], how: 'once', start: addDays(TODAY, 1), end: addDays(TODAY, 14), stop: addDays(TODAY, 1),
     date: TODAY, feeds: 'all', reason: null, note: '', name: '', nameEdited: false, forAll: null };
   /* Clone, as the Help Desk app: a new request with the same answers (not the diet; that is suggest.js) */
   const cl = q.get('clone') && by('requests', q.get('clone'));
@@ -70,6 +71,10 @@ function initDraft(q) {
   const a = asg && by('assigns', asg);
   if (a && d.dept === 'diet') { d.targets = [{ sp: a.sp, level: a.level, ref: a.ref ?? null }]; d.base = a.diet; sync(d); }
   else if (spq && d.dept === 'diet' && by('species', spq)) { d.targets = [{ sp: spq, level: 'species', ref: null }]; if (KTABS.some(([k]) => k === kq)) d.kind = kq; sync(d); }
+  /* a link that says what kind (a species with no diet: "Request a diet" = a new diet) */
+  const dk = d.dept === 'diet' && kq && dtOfKind(kq);
+  if (dk) { d.dgroup = dk[5]; d.dtype = dk[0]; }
+  if (d.dept === 'diet' && d.targets[0]) { const e = dfEat(d)[0]; d.base = a ? a.diet : e ? e.diet.id : null; d.site = sgSite(d.targets[0]); }
   d.fixed = d.dept === 'diet' && !!(a || spq);
   return d;
 }
@@ -114,7 +119,7 @@ function err(d) {
 const section = (icon, title, body, req = false) => `<section class="az-section"><h2 class="az-section__title">${I(icon, 20)}<span class="grow">${title}${req ? '<span class="az-req">*</span>' : ''}</span></h2>${body}</section>`;
 const select = (label, value, js, { req = false, placeholder = 'Select', disabled = false, icon = 'keyboard_arrow_down', id = '' } = {}) => `<div class="az-field">${label ? `<span class="az-label">${label}${req ? ' <span class="az-req">*</span>' : ''}</span>` : ''}<button${id ? ` id="${id}"` : ''} class="az-input az-input--select${value ? '' : ' az-input--placeholder'}" ${disabled ? 'aria-disabled="true" disabled' : `onclick="${js}"`}><span class="grow">${value ? esc(value) : placeholder}</span>${I(icon, 24)}</button></div>`;
 const personCard = (id, remove = '') => { const u = user(id); return `<div class="az-picked">${avatar(u.name)}<span class="grow"><span class="az-who__name">${youName(id)}</span><span class="az-who__sub">${esc(u.title)}</span></span>${remove ? `<button class="az-iconbtn" onclick="${remove}" aria-label="Remove ${esc(u.name)}" style="color:var(--Tertiary)">${I('cancel')}</button>` : ''}</div>`; };
-function setDept(id, draw = true) { const d = S.draft; if (id === 'diet' && d.dept !== 'diet') Object.assign(d, { dtype: null, targets: [], changes: [], f: {}, approver: dept('diet').head }); if (d.dept !== id) d.f = id === 'procurement' ? { items: [{ name: '', qty: 1 }] } : {}; d.dept = id; d.approver = dept(id).head; if (draw) { closeAll(); render(); } }
+function setDept(id, draw = true) { const d = S.draft; if (id === 'diet' && d.dept !== 'diet') Object.assign(d, { dgroup: null, dtype: null, targets: [], changes: [], f: {} }); if (d.dept !== id) d.f = id === 'procurement' ? { items: [{ name: '', qty: 1 }] } : {}; d.dept = id; d.approver = id === 'diet' ? dietApprover() : dept(id).head; if (draw) { closeAll(); render(); } }
 const pickDept = v => setDept(v);
 /* Select Department, as the Help Desk app's sheet (owner's screenshot, 18 Nov 2026): search, the count, then one outlined row per
    department with a radio; a tap picks it and closes. Diet is for Biologists (they suggest diet changes) */
@@ -658,42 +663,54 @@ function submitDraft() {
 /* ---------- a Diet request in New Request (owner, 18 Nov 2026: "variations for the Diet changes, and different requests also in Diet").
    The Help Desk app's form stays; Request type picks one of nine, and each asks only its own few questions. Five change a diet through
    Kitchen & Diet's rules (plan.js); four are jobs for the dietician or the kitchen (JOB_KINDS) ---------- */
+/* (owner, 19 Nov 2026: "two versions: one for a normal text diet request, one for Diet items changes") two kinds of diet request:
+   - Diet request: said in words for the kitchen (skip a feed, an extra feed, medicine with food …); the diet itself stays as it is;
+   - Diet change: the diet's configuration (change item values, another diet, a new diet); approving it changes the diet.
+   Anybody can raise either; the Dietician approves; approving applies it, and the kitchen works from the diet as it now is */
+const DGROUPS = [['request', 'Diet request', 'Skip a feed, extra feed, medicine with food', 'chat'], ['change', 'Diet change', 'Change item values, another diet or a new diet', 'tune']];
 const DTYPES = [
-  ['change', 'items', 'Change food', 'More, less, swap or stop a food', 'swap_horiz', 'Diet changes'],
-  ['newdiet', 'ask', 'New diet', 'For a new arrival, or animals with no diet', 'add_circle', 'Diet changes'],
-  ['move', 'diet', 'Move to another diet', 'Use a diet that already exists', 'restaurant', 'Diet changes'],
-  ['end', 'end', 'End a diet early', 'Back to their usual diet sooner', 'event_busy', 'Diet changes'],
-  ['skip', 'skip', 'Skip a feed', 'Fasting, a vet procedure or a transfer', 'no_meals', 'Diet changes'],
-  ['extra', 'extra', 'Extra or special feed', 'Treats, enrichment or an event', 'cookie', 'Other diet requests'],
-  ['medicine', 'medicine', 'Medicine with food', 'Mix a medicine into a feed', 'medication', 'Other diet requests'],
-  ['quality', 'quality', 'Food quality issue', 'Spoiled, wrong cut or wrong amount', 'report', 'Other diet requests'],
-  ['other', 'other', 'Something else', 'Anything else for the diet team', 'more_horiz', 'Other diet requests'],
+  ['skip', 'skip', 'Skip a feed', 'Fasting, a vet procedure or a transfer', 'no_meals', 'request'],
+  ['extra', 'extra', 'Extra feed', 'Treats, enrichment or an event', 'cookie', 'request'],
+  ['medicine', 'medicine', 'Medicine with food', 'Mix a medicine into a feed', 'medication', 'request'],
+  ['quality', 'quality', 'Food quality', 'Spoiled, wrong cut or wrong amount', 'report', 'request'],
+  ['other', 'other', 'Something else', 'Anything else for the diet team', 'more_horiz', 'request'],
+  ['change', 'items', 'Change item values', 'More, less, swap, add or stop a food', 'tune', 'change'],
+  ['move', 'diet', 'Another diet', 'Move them to a diet that already exists', 'restaurant', 'change'],
+  ['newdiet', 'new', 'New diet', 'Start from a diet and set its foods', 'add_circle', 'change'],
+  ['end', 'end', 'End a diet early', 'Back to their usual diet sooner', 'event_busy', 'change'],
 ];
 const dtOf = k => DTYPES.find(x => x[0] === k);
-/* each type has its own colour, so the choice reads at a glance (owner, 18 Nov: "more prominent, remove outline and all") */
-const DT_TONE = { change: '#00AFD6', newdiet: '#37BD69', move: '#1F515B', end: '#FA6140', skip: '#6B7775', extra: '#E4B819', medicine: '#00A99F', quality: '#E93353', other: '#7A8684' };
-const dtTile = (k, on, js) => { const [, , l, h, ic] = dtOf(k); return `<button class="dtt${on ? ' on' : ''}" onclick="${js}" aria-pressed="${on}"><span class="dtt__ic" style="--dt:${DT_TONE[k]}">${I(ic)}</span><b>${l}</b><small>${h}</small>${on ? `<span class="dtt__ok">${I('check_circle', 20, true)}</span>` : ''}</button>`; };
-const dtGrid = (cur, js) => [...new Set(DTYPES.map(x => x[5]))].map(g => `<p class="dtg__h">${g}</p><div class="dtg">${DTYPES.filter(x => x[5] === g).map(([k]) => dtTile(k, cur === k, js(k))).join('')}</div>`).join('');
+/* a request's type from its kind ('ask' is a new diet with nothing to start from: the dietician builds it) */
+const dtOfKind = k => DTYPES.find(x => x[1] === (k === 'ask' ? 'new' : k));
+const dgOf = k => DGROUPS.find(x => x[0] === k);
+/* the dietician who approves: the Diet head, or the next approver when the head raises it */
+const dietApprover = () => S.user === dept('diet').head ? DIET_APPROVERS.find(id => id !== S.user && user(id).role === 'dietician') || DIET_APPROVERS.find(id => id !== S.user) : dept('diet').head;
 const JOB_KINDS = ['ask', 'extra', 'medicine', 'quality', 'other'];
-Object.assign(KIND, { ask: ['New diet', 'add_circle'], extra: ['Extra feed', 'cookie'], medicine: ['Medicine with food', 'medication'], quality: ['Food quality', 'report'], other: ['Other', 'more_horiz'] });
-/* a request that changes a diet (the rules engine); the others are jobs, and their kitchen step is Done, not Diet updated */
+Object.assign(KIND, { ask: ['New diet', 'add_circle'], extra: ['Extra feed', 'cookie'], medicine: ['Medicine with food', 'medication'], quality: ['Food quality', 'report'], other: ['Something else', 'more_horiz'] });
+/* a request that changes a diet (the rules engine); the others are said in words for the kitchen */
 const changesDiet = r => isDiet(r) && !JOB_KINDS.includes(r.kind);
-/* what a job asks, said as rows on its request (kept when it is sent) */
+/* which of the two a diet request is: 'request' (in words: Skip a feed, Extra feed …) or 'change' (the diet's configuration) */
+const dgroupOf = r => (dtOfKind(r.kind) || DTYPES[5])[5];
+/* the request's kind as sent: a new diet with nothing to start from is 'ask' (the dietician builds it) */
+const dfKind = d => d.dtype === 'newdiet' && !d.base ? 'ask' : dtOf(d.dtype)[1];
+const DAY_WORD = n => n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n === -1 ? 'Yesterday' : wday(addDays(TODAY, n));
+/* what a request in words asks, said as rows on its request (kept when it is sent) */
 function dfRows(d) {
-  const f = d.f || {}, feeds = l => (l || []).length ? l.map(x => bandText(feed(x))).join(', ') : 'Any feed';
+  const f = d.f || {}, feeds = l => l === 'all' || !(l || []).length ? 'Whole day' : l.map(x => bandText(feed(x))).join(', '), day = n => `${DAY_WORD(n)} · ${fmtDay(addDays(TODAY, n))}`;
   switch (d.dtype) {
-    case 'newdiet': return [['Needed from', relDay(addDays(TODAY, f.from ?? 1))], ['Start from', f.start ? diet(f.start).name : 'Nothing']];
-    case 'extra': return [['Food', `${item(f.item).name} · ${qtyText(f.qty, f.unit)} per animal`], ['When', { 0: 'Today', 1: 'Tomorrow', 7: 'Every day this week' }[f.when ?? 1]], ['With', feeds(f.feed)]];
-    case 'medicine': return [['Medicine', f.med], ['Dose', f.dose || 'As the vet says'], ['Mix into', feeds(f.feed)], ['For', `${f.days ?? 5} days`]];
-    case 'quality': return [['Which feed', `${(f.day ?? 0) === 0 ? 'Today' : 'Yesterday'} · ${feeds(f.feed)}`], ['What was wrong', (f.issues || []).join(', ')]];
+    case 'newdiet': return [['Needed from', day(f.from ?? 1)]];
+    case 'extra': return [['When', (f.when ?? 1) === 7 ? 'Every day this week' : day(f.when ?? 1)], ['Feed', feeds(f.feed)]];
+    case 'medicine': return [['From', day(f.from ?? 0)], ['Feed', feeds(f.feed)], ['For', `${f.days ?? 5} days`]];
+    case 'quality': return [['Which day', day(f.day ?? 0)], ['Feed', feeds(f.feed)]];
     default: return [];
   }
 }
-const QUALITY = ['Spoiled', 'Wrong cut', 'Wrong amount', 'Wrong food', 'Late', 'Not clean'];
+/* what the details box asks for, by type */
+const DT_HINT = { skip: 'Why the feed is skipped, for example a vet procedure', extra: 'Which food, how much and why', medicine: 'Which medicine, the dose and how to mix it', quality: 'What was wrong, and with which food', other: 'What the diet team should do', newdiet: 'What the new diet is for' };
 /* choice chips: the picked one shows a tick; a day chip says its date, a feed chip its clock (owner, 18 Nov: "other things also some work") */
 const dchips = (opts, on, js, icon = '') => `<div class="sg-chips dchips">${opts.map(([v, l, sub]) => `<button class="az-chip" aria-selected="${on(v)}" onclick="${js(v)}">${on(v) ? I('check', 18) : icon ? I(icon, 18) : ''}<span>${esc(l)}${sub ? `<small>${esc(sub)}</small>` : ''}</span></button>`).join('')}</div>`;
 const dayOpt = (n, l) => [n, l, `${wday(addDays(TODAY, n))} ${+addDays(TODAY, n).slice(8)} ${MON[+addDays(TODAY, n).slice(5, 7) - 1]}`];
-const dfield = (label, body, req = false) => `<div class="az-field"><span class="az-label">${label}${req ? ' <span class="az-req">*</span>' : ''}</span>${body}</div>`;
+const dfield = (label, body, req = false, id = '') => `<div class="az-field"${id ? ` id="${id}"` : ''}><span class="az-label">${label}${req ? ' <span class="az-req">*</span>' : ''}</span>${body}</div>`;
 const dfEat = d => d.targets[0] ? eatNow([d.targets[0]]).list : [];
 const dfFeeds = d => { const e = dfEat(d)[0]; return e ? e.diet.meals.map(m => m.feed) : FEEDS.map(f => f.id); };
 const dfPlace = d => d.targets[0] ? sgName(d.targets[0]) : '';
@@ -703,48 +720,53 @@ function dfDates(d) {
 }
 /* the request as it would be sent */
 function dfReq(d) {
-  const t = d.targets[0], kind = dtOf(d.dtype)[1], x = dfEat(d).find(e => e.diet.id === d.base) || dfEat(d)[0];
+  const t = d.targets[0], kind = dfKind(d), x = dfEat(d).find(e => e.diet.id === d.base) || dfEat(d)[0];
   const r = { dept: 'diet', kind, targets: [{ ...t }], sp: t.sp, level: t.level, ref: t.ref ?? null, reason: d.reason || '', approver: d.approver, by: S.user };
   if (kind === 'items') Object.assign(r, { base: d.base, slot: x ? topSlot(x).id : null, changes: d.changes.map(c => ({ ...c })), how: d.how || 'always', ...dfDates(d) });
+  if (kind === 'new') Object.assign(r, { base: d.base, changes: d.changes.map(c => ({ ...c })), how: d.how || 'always', name: (d.name || '').trim(), ...dfDates(d) });
   if (kind === 'diet') Object.assign(r, { base: x ? x.diet.id : null, diet: d.diet, how: d.how || 'always', ...dfDates(d) });
   if (kind === 'end') Object.assign(r, { ends: [...d.ends], stop: d.stop });
   if (kind === 'skip') Object.assign(r, { date: d.date, feeds: d.feeds === 'all' ? 'all' : [...d.feeds] });
   if (JOB_KINDS.includes(kind)) r.f = JSON.parse(JSON.stringify(d.f || {}));
   return r;
 }
+/* the name a new diet gets when nobody types one (Kitchen & Diet's naming, plan.js) */
+const dfNewName = d => d.targets[0] && d.base ? ((planOf(dfReq(d)).ops.find(o => o.type === 'new') || {}).name || '') : '';
 function dfAuto(d) {
   if (!d.dtype || !d.targets[0]) return '';
   const p = dfPlace(d), r = dfReq(d);
   switch (d.dtype) {
     case 'change': return d.changes.length ? autoTitle(r) : '';
-    case 'newdiet': return `New diet for ${p}`;
+    case 'newdiet': return d.base && ((d.name || '').trim() || dfNewName(d)) ? `New diet: ${(d.name || '').trim() || dfNewName(d)}` : `New diet for ${p}`;
     case 'move': return d.diet ? `Move ${p} to ${diet(d.diet).name}` : '';
     case 'end': return d.ends.length ? `End ${diet(by('assigns', d.ends[0]).diet).name} early` : '';
     case 'skip': return d.feeds === 'all' ? `No feed ${dayText(d.date)} · ${p}` : d.feeds.length ? `Skip the ${d.feeds.map(f => feed(f).from).join(' and ')} feed ${dayText(d.date)} · ${p}` : '';
-    case 'extra': return d.f.item ? `Extra ${item(d.f.item).name} for ${p}` : '';
-    case 'medicine': return d.f.med ? `${d.f.med} with food for ${p}` : '';
-    case 'quality': return (d.f.issues || []).length ? `Food issue: ${d.f.issues.join(', ').toLowerCase()} · ${p}` : '';
+    case 'extra': return `Extra feed for ${p}`;
+    case 'medicine': return `Medicine with food for ${p}`;
+    case 'quality': return `Food quality issue · ${p}`;
     default: return '';
   }
 }
 const dfTitle = d => d.titleEdited ? d.title : dfAuto(d);
 function dfErr(d) {
-  if (!d.dtype) return 'Choose the request type';
+  if (!d.dgroup) return 'Choose a diet request or a diet change';
+  if (!d.dtype) return 'Choose the type';
   if (!d.targets[0]) return 'Choose who it is for';
-  const k = d.dtype, kind = dtOf(k)[1];
+  const k = d.dtype, kind = dfKind(d), words = dtOf(k)[5] === 'request';
   if (k === 'change') { if (!d.base) return 'They have no diet to change'; if (!d.changes.length) return 'Change a food'; if (!d.how) return 'Choose how long'; }
+  if (k === 'newdiet' && d.base && !d.how) return 'Choose how long';
   if (k === 'move') { if (!d.diet) return 'Choose the diet to move to'; if (!d.how) return 'Choose how long'; }
   if (k === 'end' && !d.ends.length) return 'Choose the diet to end';
   if (k === 'skip' && d.feeds !== 'all' && !d.feeds.length) return 'Choose the feeds to skip';
-  if (k === 'extra' && !d.f.item) return 'Choose the food';
-  if (k === 'medicine' && !(d.f.med || '').trim()) return 'Name the medicine';
-  if (k === 'quality' && !(d.f.issues || []).length) return 'Choose what was wrong';
-  if (['items', 'diet', 'end', 'skip', 'ask'].includes(kind) && !d.reason) return 'Choose why';
+  if (!words && !d.reason) return 'Choose why';
   if (!dfTitle(d).trim()) return 'Add a title';
-  if (['ask', 'other'].includes(kind) && !d.text.trim()) return 'Add a description';
-  if (['items', 'diet', 'end', 'skip'].includes(kind)) { const p = planOf(dfReq(d)); if (p.block) return p.block; }
+  if ((words || kind === 'ask') && !d.text.trim()) return 'Add the details';
+  if (['items', 'diet', 'end', 'skip', 'new'].includes(kind)) { const p = planOf(dfReq(d)); if (p.block) return p.block; }
   return '';
 }
+/* the changed foods, as Item requests' review: Food | Was | Now, the old value struck through */
+const dfFoods = (d, label) => d.changes.length ? `<div class="sg-sum df-sum"><div class="sg-sum__h"><span class="sg-cap">${esc(diet(d.base).name)} · ${plural(d.changes.length, 'change')}</span><button class="lnk" onclick="dfEditFood()">Edit</button></div>${diffTable(d.changes, diet(d.base))}</div>`
+  : `<button class="az-btn az-btn--outline df-edit" id="f-name" onclick="dfEditFood()">${I('edit_note')}${label}</button>`;
 /* the type's own questions */
 function dtypeFields(d) {
   /* Why (owner, 19 Nov: no endless forms): one field; the reasons open in a sheet with search, the usual ones first */
@@ -754,59 +776,61 @@ function dtypeFields(d) {
     ${d.how === 'yearly' ? dchips(SG_SEASONS.map(([s, a, b]) => [s, `${s} · ${mdText(a)} – ${mdText(b)}`]), v => d.season === v, v => `S.draft.season='${v}';render()`) : ''}
     ${d.how && d.how !== 'yearly' ? dchips([[0, 'From today'], [1, 'From tomorrow']], v => d.from === v, v => `S.draft.from=${v};render()`) : ''}`, true);
   const feedChips = (cur, js, all = true) => dchips([...(all ? [['all', 'Whole day', 'All feeds']] : []), ...dfFeeds(d).map(f => [f, bandText(feed(f))])], v => v === 'all' ? cur === 'all' : cur !== 'all' && (cur || []).includes(v), js, 'schedule');
+  const oneFeed = (label, key = 'feed') => dfield(label, feedChips(d.f[key], v => `S.draft.f.${key}=[${v}];render()`, false));
+  /* ---- a Diet request: when, which feed; what is asked goes in the request's own words below ---- */
+  if (k === 'skip') out.push(dfield('Day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow')], v => d.date === addDays(TODAY, v), v => `S.draft.date='${addDays(TODAY, v)}';render()`), true),
+    dfield('Feeds', feedChips(d.feeds, v => v === 'all' ? `S.draft.feeds='all';render()` : `dfToggleFeed(${v})`), true));
+  if (k === 'extra') out.push(dfield('When', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), [7, 'Every day this week']], v => (d.f.when ?? 1) === v, v => `S.draft.f.when=${v};render()`)), oneFeed('With which feed'));
+  if (k === 'medicine') out.push(dfield('From', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow')], v => (d.f.from ?? 0) === v, v => `S.draft.f.from=${v};render()`)), oneFeed('Mix into'),
+    dfield('For how many days', dchips([[3, '3 days'], [5, '5 days'], [7, '7 days'], [14, '14 days']], v => (d.f.days ?? 5) === v, v => `S.draft.f.days=${v};render()`)));
+  if (k === 'quality') out.push(dfield('Which day', dchips([dayOpt(0, 'Today'), dayOpt(-1, 'Yesterday')], v => (d.f.day ?? 0) === v, v => `S.draft.f.day=${v};render()`)), oneFeed('Which feed'));
+  /* ---- a Diet change: the diet's configuration ---- */
   if (k === 'change') {
-    out.push(dfield('Changes', !d.base ? '<p class="sg-none">No diet here yet. Choose New diet instead.</p>'
-      : d.changes.length ? `<div class="sg-sum"><div class="sg-sum__h"><span class="sg-cap">${esc(diet(d.base).name)} · ${plural(d.changes.length, 'change')}</span><button class="lnk" onclick="dfEditFood()">Edit</button></div>${d.changes.map(c => `<div class="sg-sum__r">${I('edit', 18)}<span>${esc(changeText(c, diet(d.base)))}</span></div>`).join('')}</div>`
-      : `<button class="az-btn az-btn--outline df-edit" id="f-name" onclick="dfEditFood()">${I('edit_note')}Change the food in ${esc(diet(d.base).name)}</button>`, true));
+    out.push(dfield('Foods', !d.base ? '<p class="sg-none">No diet here yet. Choose New diet instead.</p>' : dfFoods(d, `Change the foods in ${esc(diet(d.base).name)}`), true));
     if (d.changes.length) out.push(how(), why(REASONS.items));
   }
-  if (k === 'newdiet') out.push(dfield('Needed from', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(7, 'Next week')], v => (d.f.from ?? 1) === v, v => `S.draft.f.from=${v};render()`)),
-    select('Start from', d.f.start ? diet(d.f.start).name : 'Nothing · an empty diet', 'dfStartSheet()', { id: 'f-from', icon: 'search' }), why(REASONS.items));
-  if (k === 'move') { const now = dfEat(d)[0], opts = [...new Set(D.assigns.filter(a => a.sp === d.targets[0].sp && !ended(a)).map(a => a.diet))].filter(id => !now || id !== now.diet.id);
+  if (k === 'newdiet') {
+    out.push(select('Start from', d.base ? diet(d.base).name : 'Nothing · the dietician builds it', 'dfStartSheet()', { id: 'f-from', icon: 'search' }));
+    if (d.base) out.push(`<label class="az-field"><span class="az-label">Diet name</span><span class="az-input az-input--text"><input id="df-name" placeholder="${esc(dfNewName(d) || 'Name the diet')}" value="${esc(d.name || '')}" oninput="S.draft.name=this.value;redrawFoot()"></span></label>`,
+      dfield('Foods', dfFoods(d, `Set the foods, from ${esc(diet(d.base).name)}`)), how(), why(REASONS.items));
+    else out.push(dfield('Needed from', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(7, 'Next week')], v => (d.f.from ?? 1) === v, v => `S.draft.f.from=${v};render()`)), why(REASONS.items));
+  }
+  if (k === 'move') { const opts = dfMoveOpts(d);
     out.push(opts.length ? select('Move to', d.diet ? diet(d.diet).name : '', 'dfMoveSheet()', { req: true, placeholder: 'Search and choose a diet', id: 'f-move', icon: 'search' }) : dfield('Move to', '<p class="sg-none">No other diet for this species</p>', true), how(), why(REASONS.items)); }
   if (k === 'end') { const es = endable(d);
     out.push(es.length ? select('Diet to end', d.ends[0] ? diet(by('assigns', d.ends[0]).diet).name : '', 'dfEndSheet()', { req: true, placeholder: 'Search and choose a diet', id: 'f-end', icon: 'search' }) : dfield('Diet to end', '<p class="sg-none">No diet here ends early: only Seasonal, Time-bound or place diets do</p>', true),
       dfield('Last day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(2, 'In 2 days')], v => d.stop === addDays(TODAY, v), v => `S.draft.stop='${addDays(TODAY, v)}';render()`), true), why(REASONS.items)); }
-  if (k === 'skip') out.push(dfield('Day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow')], v => d.date === addDays(TODAY, v), v => `S.draft.date='${addDays(TODAY, v)}';render()`), true),
-    dfield('Feeds', feedChips(d.feeds, v => v === 'all' ? `S.draft.feeds='all';render()` : `dfToggleFeed(${v})`), true), why(REASONS.skip));
-  if (k === 'extra') out.push(select('Food', d.f.item ? item(d.f.item).name : '', 'dfItemSheet()', { req: true, placeholder: 'Choose food', id: 'f-item' }),
-    d.f.item ? dfield('Amount, per animal', `<div class="qtyf"><button class="qtyf__b" aria-label="Less" onclick="S.draft.f.qty=Math.max(${sgStepOf(d.f.unit)},round(S.draft.f.qty-${sgStepOf(d.f.unit)}));render()">${I('remove')}</button><span class="qtyf__v">${qtyText(d.f.qty, d.f.unit)}</span><button class="qtyf__b" aria-label="More" onclick="S.draft.f.qty=round(S.draft.f.qty+${sgStepOf(d.f.unit)});render()">${I('add')}</button></div>`) : '',
-    dfield('When', dchips([[0, 'Today'], [1, 'Tomorrow'], [7, 'Every day this week']], v => (d.f.when ?? 1) === v, v => `S.draft.f.when=${v};render()`)),
-    dfield('With which feed', feedChips(d.f.feed, v => `S.draft.f.feed=[${v}];render()`, false)));
-  if (k === 'medicine') out.push(`<label class="az-field"><span class="az-label">Medicine <span class="az-req">*</span></span><span class="az-input az-input--text"><input id="df-med" placeholder="For example, Meloxicam" value="${esc(d.f.med || '')}" oninput="S.draft.f.med=this.value;render()"></span></label>`,
-    `<label class="az-field"><span class="az-label">Dose, per animal</span><span class="az-input az-input--text"><input id="df-dose" placeholder="For example, 0.2 ml" value="${esc(d.f.dose || '')}" oninput="S.draft.f.dose=this.value"></span></label>`,
-    dfield('Mix into', feedChips(d.f.feed, v => `S.draft.f.feed=[${v}];render()`, false)), dfield('For how many days', dchips([[3, '3 days'], [5, '5 days'], [7, '7 days'], [14, '14 days']], v => (d.f.days ?? 5) === v, v => `S.draft.f.days=${v};render()`)));
-  if (k === 'quality') out.push(dfield('Which feed', dchips([[0, 'Today'], [-1, 'Yesterday']], v => (d.f.day ?? 0) === v, v => `S.draft.f.day=${v};render()`) + feedChips(d.f.feed, v => `S.draft.f.feed=[${v}];render()`, false)),
-    dfield('What was wrong', dchips(QUALITY.map(q => [q, q]), v => (d.f.issues || []).includes(v), v => `dfIssue('${v}')`), true));
   return out.join('');
 }
 function dfToggleFeed(f) { const d = S.draft; let l = d.feeds === 'all' ? [] : [...d.feeds]; l = l.includes(f) ? l.filter(x => x !== f) : [...l, f]; d.feeds = l.length === dfFeeds(d).length ? 'all' : l; render(); }
-function dfIssue(v) { const f = S.draft.f; f.issues = (f.issues || []).includes(v) ? f.issues.filter(x => x !== v) : [...(f.issues || []), v]; render(); }
-/* the form: the app's Request Details card, with Request type and For under Requesting to */
+/* the form: the app's Request Details card. Under Requesting to: Request (Diet request | Diet change), its Type as chips, For */
 function dietForm(d) {
-  const t = d.targets[0], dt = d.dtype && dtOf(d.dtype), ap = d.approver && user(d.approver);
-  if (!dt && !d.edit && !d.askedType) { d.askedType = true; setTimeout(() => { if (S.draft && !S.draft.dtype && !SH.length) dtypeSheet(); }, 150); }
+  const t = d.targets[0], dt = d.dtype && dtOf(d.dtype), g = d.dgroup && dgOf(d.dgroup), ap = d.approver && user(d.approver), words = d.dgroup === 'request', needText = words || (dt && dfKind(d) === 'ask');
+  const kindRows = d.edit && dt ? `<div class="az-field"><span class="az-label">Request</span><div class="az-picked">${pkIc(dt[4])}<span class="grow"><span class="az-who__name">${esc(dt[2])}</span><span class="az-who__sub">${esc(g[1])}</span></span></div></div>`
+    : dfield('Request', pkList(DGROUPS.map(([k, l, h, ic]) => pkRow(`dfGroup('${k}')`, pkIc(ic), l, h, undefined, d.dgroup === k)).join('')), true, 'f-dgroup')
+      + (g ? dfield('Type', dchips(DTYPES.filter(x => x[5] === d.dgroup).map(x => [x[0], x[2]]), v => d.dtype === v, v => `dfType('${v}')`), true, 'f-dtype') : '');
   return section('category', 'Request Details', [
     select('Requesting to', 'Diet', 'deptSheet()', { disabled: !!d.edit }),
-    /* Request type (19 Nov 2026: "it all looks AI-designed"): a field that opens the list, then a picked card, as the Hub's Help Desk form */
-    !dt ? select('Request type', '', 'dtypeSheet()', { req: true, placeholder: 'Choose the request type', id: 'f-dtype' })
-      : `<div class="az-field"><span class="az-label">Request type</span><div class="az-picked">${pkIc(dt[4])}<span class="grow"><span class="az-who__name">${dt[2]}</span><span class="az-who__sub">${dt[3]}</span></span>${d.edit ? '' : '<button class="lnk" onclick="dtypeSheet()">Change</button>'}</div></div>`,
-    dt ? select('For', t ? (t.level === 'species' ? `${sgName(t)} · ${sgWhere(t)}` : `${species(t.sp).name} · ${sgName(t)}`) : '', 'dfWho()', { req: true, placeholder: 'Choose the species, an enclosure or an animal', id: 'f-sp' }) : '',
+    kindRows,
+    dt ? select('For', t ? (t.level === 'species' ? `${sgName(t)} · ${sgWhere(t)}` : `${species(t.sp).name} · ${sgName(t)}`) : '', 'dfWho()', { req: true, placeholder: 'Choose the species, a place or an animal', id: 'f-sp' }) : '',
     dt && t ? dtypeFields(d) : '',
-    dt ? `<span class="az-label">What are you requesting?</span>
+    dt ? `<span class="az-label">${words ? 'Your request' : 'What are you requesting?'}</span>
       <label class="az-input az-input--text"><input id="f-title" placeholder="Title" value="${esc(dfTitle(d))}" oninput="S.draft.title=this.value;S.draft.titleEdited=true;redrawFoot()" aria-label="Title"></label>
-      <label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="3" placeholder="Description / Justification" oninput="S.draft.text=this.value;redrawFoot()" aria-label="Description or justification">${esc(d.text)}</textarea></label>
+      <label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="${words ? 4 : 3}" placeholder="${esc(needText ? `${DT_HINT[d.dtype] || 'Details'} *` : 'Description / Justification')}" oninput="S.draft.text=this.value;redrawFoot()" aria-label="${needText ? 'Details' : 'Description or justification'}">${esc(d.text)}</textarea></label>
       <div class="az-field"><span class="az-label">Requested by</span>${personCard(d.edit ? by('requests', d.edit).by : S.user)}</div>
       ${d.site ? `<div class="az-field"><span class="az-label">Requesting site</span><div class="az-site az-site--picked"><span class="az-site__thumb" style="display:grid;place-items:center;color:var(--Outline)">${I('location_on', 20)}</span><span class="grow"><span class="az-site__name">${esc(by('sites', d.site).name)}</span></span></div></div>` : ''}
-      <div class="az-field"><span class="az-label">To be approved by <span class="az-req">*</span></span><button class="az-picked dfappr" onclick="optionSheet('To be approved by',DIET_APPROVERS.map(id=>[id,user(id).name,user(id).title]),S.draft.approver,'pickApprover')">${avatar(ap.name)}<span class="grow"><span class="az-who__name">${esc(ap.name)}</span><span class="az-who__sub">${esc(ap.title)}</span></span>${I('keyboard_arrow_down')}</button></div>` : ''].join(''), true)
+      <div class="az-field"><span class="az-label">To be approved by <span class="az-req">*</span></span><button class="az-picked dfappr" onclick="optionSheet('To be approved by',DIET_APPROVERS.filter(id=>id!==S.user).map(id=>[id,user(id).name,user(id).title]),S.draft.approver,'pickApprover')">${avatar(ap.name)}<span class="grow"><span class="az-who__name">${esc(ap.name)}</span><span class="az-who__sub">${esc(ap.title)}</span></span>${I('keyboard_arrow_down')}</button></div>` : ''].join(''), true)
     + (dt ? attachSec(d) : '');
 }
-/* the sheets: Request type · For */
-function dtypeSheet() {
-  openSheet(() => { const cur = S.draft && S.draft.dtype;
-    return { title: 'Request type', bottom: true, body: [...new Set(DTYPES.map(x => x[5]))].map(g => `<p class="az-label pk-h">${g}</p>${pkList(DTYPES.filter(x => x[5] === g).map(([k, , l, h, ic]) => pkRow(`dfType('${k}')`, pkIc(ic), l, h, undefined, cur === k)).join(''))}`).join('') }; });
+/* Request: a Diet request or a Diet change; Type: one of its few kinds (chips) */
+function dfGroup(k) { const d = S.draft; if (d.dgroup === k) return; d.dgroup = k; if (d.dtype && dtOf(d.dtype)[5] !== k) dfType(null); else render(); }
+function dfType(k) {
+  const d = S.draft;
+  if (d.dtype !== k) Object.assign(d, { dtype: k, changes: [], diet: null, ends: [], f: {}, reason: null, titleEdited: false, title: '', name: '', how: k === 'move' ? 'once' : null, feeds: 'all', date: addDays(TODAY, 1), stop: addDays(TODAY, 1) });
+  if (k) d.dgroup = dtOf(k)[5];
+  if (d.targets[0]) { const e = dfEat(d)[0]; d.base = e ? e.diet.id : null; }
+  closeAll(); render(); if (k && !d.targets[0]) setTimeout(dfWho, 120);
 }
-function dfType(k) { const d = S.draft; if (d.dtype !== k) Object.assign(d, { dtype: k, changes: [], diet: null, ends: [], f: {}, reason: null, titleEdited: false, title: '', how: k === 'move' ? 'once' : null, feeds: 'all', date: addDays(TODAY, 1), stop: addDays(TODAY, 1) }); closeAll(); render(); if (!d.targets[0]) setTimeout(dfWho, 120); }
 /* For (owner, 19 Nov 2026): the species sheet with search, not a page */
 function dfWho() { spPickSheet('dfPickT', S.draft.targets[0] || null); }
 function dfPickT(sp, level, ref) { dfPick({ sp, level, ref }); }
@@ -814,8 +838,8 @@ function dfWhoDone() { const t = S.draft.pick.sel; S.draft.pick = null; dfPick(t
 function dfPick(t) { const d = S.draft; d.targets = [{ sp: t.sp, level: t.level, ref: t.ref ?? null }]; d.site = sgSite(d.targets[0]); const e = dfEat(d)[0]; d.base = e ? e.diet.id : null; d.changes = []; d.diet = null; d.ends = []; closeAll(); render(); }
 /* the diet fields' sheets (owner, 19 Nov 2026: "Move diet also like a bottom sheet, I can search and select"); no animal counts */
 const dfMoveOpts = d => { const now = dfEat(d)[0]; return [...new Set(D.assigns.filter(a => a.sp === d.targets[0].sp && !ended(a)).map(a => a.diet))].filter(id => !now || id !== now.diet.id); };
-function dfStartSheet() { const d = S.draft, sp = d.targets[0].sp; dietPickSheet({ title: 'Start from', sub: esc(species(sp).name), none: ['Nothing', 'Start from an empty diet'], list: [...new Set(D.assigns.filter(a => a.sp === sp && !ended(a)).map(a => a.diet))].map(id => ({ id, d: diet(id), sub: dietWhere(id, sp) })), cur: d.f.start || '', cb: 'dfSetStart' }); }
-function dfSetStart(id) { S.draft.f.start = id; render(); }
+function dfStartSheet() { const d = S.draft, sp = d.targets[0].sp; dietPickSheet({ title: 'Start from', sub: esc(species(sp).name), none: ['Nothing', 'The dietician builds it'], list: [...new Set(D.assigns.filter(a => a.sp === sp && !ended(a)).map(a => a.diet))].map(id => ({ id, d: diet(id), sub: dietWhere(id, sp) })), cur: d.base || '', cb: 'dfSetStart' }); }
+function dfSetStart(id) { const d = S.draft; if ((d.base || '') !== id) { d.base = id || null; d.changes = []; } render(); }
 function dfMoveSheet() { const d = S.draft, sp = d.targets[0].sp; dietPickSheet({ title: 'Move to', sub: esc(species(sp).name), list: dfMoveOpts(d).map(id => ({ id, d: diet(id), sub: dietWhere(id, sp) })), cur: d.diet, cb: 'dfSetMove' }); }
 function dfSetMove(id) { S.draft.diet = id; render(); }
 function dfEndSheet() { const d = S.draft; dietPickSheet({ title: 'Diet to end', sub: esc(dfPlace(d)), list: endable(d).map(a => ({ id: a.id, d: diet(a.diet), sub: `Set for ${whereSet(a)}${a.end ? ` · till ${fmtDay(a.end)}` : ''}` })), cur: d.ends[0], cb: 'dfSetEnd' }); }
@@ -823,35 +847,26 @@ function dfSetEnd(id) { S.draft.ends = [id]; render(); }
 let DF_WHY = [];
 function dfWhySheet() { textPickSheet({ title: 'Why', items: DF_WHY, cur: S.draft.reason, cb: 'dfSetWhy' }); }
 function dfSetWhy(v) { S.draft.reason = v; render(); }
-let DFQ = '';
-function dfItemSheet() {
-  DFQ = '';
-  openSheet(() => { const q = DFQ.trim().toLowerCase(), list = D.items.filter(i => !i.mix && (!q || i.name.toLowerCase().includes(q))).slice(0, 14);
-    return { title: 'Food', bottom: true, body: `<label class="az-input az-input--text sg-search">${I('search')}<input id="dfq" type="search" placeholder="Search food" value="${esc(DFQ)}" oninput="DFQ=this.value;redrawSheet()" autocomplete="off" aria-label="Search food"></label>
-      <div class="sg-list">${list.map(i => `<button class="sg-opt" onclick="dfItem(${i.id})"><span class="grow"><b>${esc(i.name)}</b><span>${i.stock > 0 ? `In store · ${esc(stockText(i))}` : 'Out of stock'}</span></span>${I('chevron_right', 20)}</button>`).join('')}</div>` };
-  });
-}
-function dfItem(id) { const f = S.draft.f, u = BASE[item(id).unit][0]; Object.assign(f, { item: id, unit: u, qty: u === 'pcs' ? 1 : 50 }); closeAll(); render(); }
-/* Change food: the diet opens in the Suggest a change editor; Done brings the changes back to this form */
+/* Change item values, or a new diet's foods: the diet opens in the Suggest a change editor; Done brings the changes back to this form */
 function dfEditFood() {
   const d = S.draft;
-  SG = { key: 'form', form: true, edit: null, t: { ...d.targets[0] }, base: d.base, changes: d.changes.map(c => ({ ...c })), skip: null, skipDay: 1, how: d.how, days: d.days, from: d.from, season: d.season, reason: d.reason, more: false, text: '', note: false, files: [], prio: d.prio, q: '', aq: '', approver: d.approver, kind: 'items', name: '' };
+  SG = { key: 'form', form: true, edit: null, t: { ...d.targets[0] }, base: d.base, changes: d.changes.map(c => ({ ...c })), skip: null, skipDay: 1, how: d.how, days: d.days, from: d.from, season: d.season, reason: d.reason, more: false, text: '', note: false, files: [], prio: d.prio, q: '', aq: '', approver: d.approver, kind: d.dtype === 'newdiet' ? 'new' : 'items', name: d.name || '' };
   S.sgBack = location.hash; go('#/suggest?form=1');
 }
 /* load a diet request into the form, for Edit Request or Clone request */
 function dfLoad(d, r) {
-  const t = targetsOf(r)[0], dt = DTYPES.find(x => x[1] === r.kind) || DTYPES[0];
-  Object.assign(d, { dtype: dt[0], targets: [{ sp: t.sp, level: t.level, ref: t.ref ?? null }], base: r.base || null, changes: (r.changes || []).map(c => ({ ...c })), diet: r.diet || null, ends: [...(r.ends || [])], stop: r.stop || addDays(TODAY, 1),
+  const t = targetsOf(r)[0], dt = dtOfKind(r.kind) || DTYPES[5];
+  Object.assign(d, { dgroup: dt[5], dtype: dt[0], name: r.name || '', targets: [{ sp: t.sp, level: t.level, ref: t.ref ?? null }], base: r.base || null, changes: (r.changes || []).map(c => ({ ...c })), diet: r.diet || null, ends: [...(r.ends || [])], stop: r.stop || addDays(TODAY, 1),
     date: r.date || addDays(TODAY, 1), feeds: r.feeds === 'all' || !r.feeds ? 'all' : [...r.feeds], reason: r.reason || null, f: JSON.parse(JSON.stringify(r.f || {})), how: r.how || null, days: 14, from: 1, season: 'Winter' });
   if (r.how === 'once' && r.start) { d.from = Math.max(0, daysBetween(TODAY, r.start)); d.days = Math.max(1, daysBetween(r.start, r.end) + 1); }
   if (r.how === 'yearly') d.season = (SG_SEASONS.find(s => s[1] === r.start) || SG_SEASONS[2])[0];
 }
 function dfSubmit(d) {
   const e = dfErr(d);
-  if (e) { toast(e); const at = { 'Choose the request type': '#f-dtype', 'Choose who it is for': '#f-sp', 'Add a title': '#f-title', 'Add a description': '#f-text' }[e], el = at && document.querySelector(at); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+  if (e) { toast(e); const at = { 'Choose a diet request or a diet change': '#f-dgroup', 'Choose the type': '#f-dtype', 'Choose who it is for': '#f-sp', 'Choose why': '#f-reason', 'Add a title': '#f-title', 'Add the details': '#f-text' }[e], el = at && document.querySelector(at); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
   const x = dfReq(d); delete x.by;
   Object.assign(x, { title: dfTitle(d).trim(), text: d.text.trim(), note: '', files: [...d.files], prio: d.prio, site: d.site });
-  /* a job changes no diet: who it is for is kept now, so the kitchen's Completed doesn't run the diet rules */
+  /* a request in words changes no diet: who it is for is kept now */
   if (JOB_KINDS.includes(x.kind)) { x.outcome = { lines: [], get: tAnimals(x.targets[0]).map(a => a.id) }; x.f.rows = dfRows(d); }
   let r;
   if (d.edit) {
