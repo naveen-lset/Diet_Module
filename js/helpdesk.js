@@ -4,10 +4,10 @@
 // details on a Field fill, What changes for a diet request, Activity with the comment box on top, and one current-status bar.
 
 /* ---------- the list ---------- */
-/* sub: under Approved, the app's chips (approved · in_progress · completed); 'all' for the tab counts */
+/* sub: the chips under Approved (approved · in_progress · completed) and Closed (rejected · cancelled · deleted); 'all' for the tab counts */
 function hdList(tab, deptId = S.rDept, sub = 'all') {
   const u = me(), q = S.rQ.trim().toLowerCase();
-  return D.requests.filter(r => visibleTo(r, u) && (tab === 'all' || tabOf(r) === tab) && (tab !== 'approved' || sub === 'all' || r.state === sub) && (deptId === 'all' || r.dept === deptId) && (S.rPrio === 'all' || r.prio === S.rPrio)
+  return D.requests.filter(r => visibleTo(r, u) && (tab === 'all' || tabOf(r) === tab) && (!HDSUBS[tab] || sub === 'all' || r.state === sub) && (deptId === 'all' || r.dept === deptId) && (S.rPrio === 'all' || r.prio === S.rPrio)
     && (!q || [r.id, r.title, r.text, dept(r.dept).name, isDiet(r) ? species(r.sp).name : ''].some(x => (x || '').toLowerCase().includes(q))))
     .sort((a, b) => (S.rSort === 'priority' ? PRIO_RANK[a.prio] - PRIO_RANK[b.prio] : 0) || (lastAt(a) < lastAt(b) ? 1 : -1));
 }
@@ -15,7 +15,7 @@ const ago = s => { const m = Math.round((Date.now() - new Date(s)) / 6e4); retur
 const flag = p => `<span class="az-flag${p === 'high' ? ' az-flag--high' : p === 'emergency' ? ' az-flag--emergency' : ''}" title="${PRIO[p][1]} priority" aria-label="${PRIO[p][1]} priority">${p === 'emergency' ? I('local_fire_department', 20, true) : PRIO[p][0]}</span>`;
 /* what a diet request asks for, in plain words; other requests show their description */
 function whatOf(r) {
-  if (!isDiet(r)) return r.text;
+  if (!isDiet(r) || JOB_KINDS.includes(r.kind)) return r.text;
   const base = diet(r.base);
   if (r.kind === 'skip') return `No diet ${onDay(r.date)} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ') + ' only'}`;
   if (r.kind === 'end') return `${(r.ends || []).map(id => diet(by('assigns', id).diet).name).join(', ')} · last day ${fmtDay(r.stop)}`;
@@ -25,7 +25,8 @@ function whatOf(r) {
 }
 /* the card's second line: what changes, or, when the title already says that (a diet request names itself), who it is for and why */
 const cardLine = r => { const w = whatOf(r); return w !== r.title || !isDiet(r) ? w : [targetsOf(r).length > 1 ? placesText(targetsOf(r)) : `${species(r.sp).name} · ${placeText(r)}`, r.reason].filter(Boolean).join(' · '); };
-const catOf = r => isDiet(r) ? `Diet · ${KIND[r.kind][0]}` : dept(r.dept).name;
+/* a diet request says which of the two it is, and its type: "Diet request · Skip a feed", "Diet change · Another diet" */
+const catOf = r => isDiet(r) ? `${dgOf(dgroupOf(r))[1]} · ${dtOfKind(r.kind)[2]}` : dept(r.dept).name;
 const siteOf = r => r.site ? by('sites', r.site).name : '';
 const lastComment = r => [...r.events].reverse().find(e => e.kind === 'comment');
 const stripTime = r => isOpen(r) || r.state === 'in_progress' ? `Since ${ago(lastAt(r))}` : fmtDay(lastAt(r).slice(0, 10));
@@ -41,11 +42,12 @@ function hdCard(r, cur = false) {
 function paneHelpDesk({ cls = '', cur = null } = {}) {
   const deptsHere = DEPTS.filter(x => D.requests.some(r => r.dept === x.id && visibleTo(r, me())));
   if (S.rDept !== 'all' && !deptsHere.some(x => x.id === S.rDept)) S.rDept = 'all';
-  const tabs = `<div class="az-counttabs" role="tablist">${HDTABS.map(([k, l]) => `<button class="az-counttab" role="tab" aria-selected="${S.rTab === k}" onclick="S.rTab='${k}';go('#/requests')"><span class="az-counttab__in"><b>${hdList(k).length}</b><span>${l}</span></span></button>`).join('')}</div>`;
+  const tabs = `<div class="az-counttabs az-counttabs--fit" role="tablist">${HDTABS.map(([k, l]) => `<button class="az-counttab" role="tab" aria-selected="${S.rTab === k}" onclick="S.rTab='${k}';S.rSub='all';go('#/requests')"><span class="az-counttab__in"><b>${hdList(k).length}</b><span>${l}</span></span></button>`).join('')}</div>`;
   const chips = `<div class="az-chips" role="tablist" aria-label="Department">${[{ id: 'all', name: 'All' }, ...deptsHere].map(x => `<button class="az-chip" role="tab" aria-selected="${S.rDept === x.id}" onclick="S.rDept='${x.id}';go('#/requests')">${x.name} - ${hdList(S.rTab, x.id, S.rSub).length}</button>`).join('')}</div>`;
   const search = S.rSearch ? `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="hd-q" placeholder="Search requests" value="${esc(S.rQ)}" oninput="S.rQ=this.value;render()" aria-label="Search requests"></label></div>` : '';
-  /* under Approved, as the Help Desk app: All · Approved · In progress · Completed, each with its count */
-  const subs = S.rTab === 'approved' ? `<div class="az-chips az-chips--sub" role="tablist" aria-label="Approved requests">${HDSUB.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S.rSub === k}" onclick="S.rSub='${k}';go('#/requests')">${l} - ${hdList('approved', S.rDept, k).length}</button>`).join('')}</div>` : '';
+  /* under Approved (as the Help Desk app: All · Approved · In progress · Completed) and Closed (All · Rejected · Canceled · Deleted), each with its count; a chip with nothing in it is left out */
+  const subOpts = (HDSUBS[S.rTab] || []).filter(([k]) => k === 'all' || k === S.rSub || hdList(S.rTab, S.rDept, k).length);
+  const subs = subOpts.length > 2 ? `<div class="az-chips az-chips--sub" role="tablist" aria-label="${HDTABS.find(x => x[0] === S.rTab)[1]} requests">${subOpts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S.rSub === k}" onclick="S.rSub='${k}';go('#/requests')">${l} - ${hdList(S.rTab, S.rDept, k).length}</button>`).join('')}</div>` : '';
   const list = hdList(S.rTab, S.rDept, S.rSub), filt = S.rPrio !== 'all';
   const count = `<p class="az-countline">Request (${list.length})<span class="hdtools">${iconBtn('swap_vert', `Sort: ${S.rSort === 'priority' ? 'priority' : 'newest'}`, "S.rSort=S.rSort==='priority'?'newest':'priority';render();toast('Sorted by '+(S.rSort==='priority'?'priority':'newest'))")}<button class="az-iconbtn${filt ? ' on' : ''}" onclick="hdFilterSheet()" aria-label="Filter">${I('tune')}</button></span></p>`;
   const body = `<div class="body">${subs}${count}${list.length ? `<div class="list list--16">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1('No requests here')}</div>${isPhone() ? `<a class="az-fab" href="#/new" aria-label="New request">${I('add_circle', 32)}</a>` : `<a class="az-fab az-fab--pill az-fab--no-nav" href="#/new">${I('add_circle')}New Request</a>`}`;
@@ -62,7 +64,7 @@ const EVT = { raised: ['Request raised', 'send', ''], edited: ['Request edited',
 const teamText = e => [plural(e.team || 1, 'person', 'people'), e.people].filter(Boolean).join(' · ');
 const fileBtns = fs => `<span class="files">${fs.map(f => `<button class="file" onclick="toast('Opens ${esc(f.name)}')">${I(f.kind === 'image' ? 'image' : f.kind === 'pdf' ? 'picture_as_pdf' : 'description', 20)}${esc(f.name)}</button>`).join('')}</span>`;
 /* a request's facts, said once for every version of the page (reqviews.js): { k, icon, label, v } in the order the Help Desk app shows them */
-const REQ_JI = { 'Needed from': 'event', 'Start from': 'restaurant', Food: 'restaurant', When: 'event', With: 'schedule', Medicine: 'medication', Dose: 'science', 'Mix into': 'schedule', For: 'date_range', 'Which feed': 'schedule', 'What was wrong': 'report' };
+const REQ_JI = { Feed: 'schedule', From: 'event', 'Which day': 'event', 'Needed from': 'event', 'Start from': 'restaurant', Food: 'restaurant', When: 'event', With: 'schedule', Medicine: 'medication', Dose: 'science', 'Mix into': 'schedule', For: 'date_range', 'Which feed': 'schedule', 'What was wrong': 'report' };
 function reqFacts(r) {
   const acts = actionsFor(r, me()), F = [], add = (k, icon, label, v) => F.push({ k, icon, label, v });
   add('site', 'location_on', 'Requesting site', `<b>${esc(siteOf(r))}</b>`);
@@ -164,7 +166,7 @@ function nextLine(r) {
     return back && back.kind === 'reopened' ? `${youName(back.by)}: ${esc(back.reason)}` : r.assignee ? `Job in charge: ${youName(r.assignee)}` : back ? `By ${youName(back.by)}` : ''; }
   if (r.state === 'completed') return `By ${youName(lastEv(r, 'completed').by)}`;
   const e = lastEv(r, r.state === 'cancelled' ? 'cancelled' : r.state);
-  if (r.state === 'approved') return isDiet(r) ? `By ${youName(e.by)} · ${onTeam(r, me()) ? 'update the diet' : 'with the kitchen'}` : `By ${youName(e.by)}`;
+  if (r.state === 'approved') return isDiet(r) ? (r.kind === 'ask' ? 'The dietician builds the diet' : changesDiet(r) || r.kind === 'skip' ? 'In the diet · the kitchen has it' : 'With the kitchen') : `By ${youName(e.by)}`;
   return `${youName(e.by)}: ${e.reason}`;
 }
 /* the status bar, as the app's ButtonLogsComponent: Current Status · time, the status, a big line once it is decided ("You Approved",
@@ -194,7 +196,7 @@ const MENU_ACTS = ['assign', 'delay', 'edit', 'cancel'];
 function moreMenu(id, btn) {
   const r = by('requests', id), a = actionsFor(r, me()), item = (icon, l, js, danger) => `<button role="menuitem"${danger ? ' class="az-danger"' : ''} onclick="closeMenu();${js}">${I(icon, 20)}${l}</button>`;
   const clone = isDiet(r) ? canRaise(me()) : true;
-  openMenu(btn, [clone ? item('content_copy', 'Clone request', isDiet(r) && r.kind === 'new' ? `SG=null;go('#/suggest?clone=${id}')` : `S.draft=null;go('#/new?clone=${id}')`) : '',
+  openMenu(btn, [clone ? item('content_copy', 'Clone request', `S.draft=null;go('#/new?clone=${id}')`) : '',
     a.includes('assign') ? item('badge', 'Job in charge', `assignSheet('${id}')`) : '', a.includes('delay') ? item('timer', r.state === 'delayed' ? 'Change the delay' : 'Delay', `delaySheet('${id}')`) : '',
     a.includes('edit') ? item('edit', 'Edit request', `go('#/new?edit=${id}')`) : '', a.includes('cancel') ? item('do_not_disturb_on', 'Cancel request', `reasonSheet('${id}','cancel')`, true) : ''].join('') || `<p class="az-menu__none">Nothing to do here</p>`);
 }

@@ -45,6 +45,17 @@ function reqChain(r) {
     p: `${youName(r.approver)} · ${esc(ap.title)}`, at: ok && ae ? ae.at : rej ? ev('rejected').at : can ? ev('cancelled').at : null,
     note: rej ? ev('rejected').reason : can ? ev('cancelled').reason : st === 'delayed' ? r.delay.reason : '', since: isOpen(r) ? lastAt(r) : null });
   if (rej || can) return out;
+  /* a diet request ends at approval (owner, 19 Nov 2026): a Diet change (and a skipped feed) goes into the diet then, and the kitchen works from it;
+     a request in words goes to the kitchen; a new diet with nothing to start from, to the dietician to build */
+  if (isDiet(r)) {
+    const intoDiet = changesDiet(r) && r.kind !== 'ask' || r.kind === 'skip', at = ok && ae ? ae.at : null, day = r.kind === 'skip' ? r.date : r.kind === 'end' ? r.stop : r.start;
+    if (intoDiet) out.push({ k: 'diet', st: ok ? 'done' : 'todo', icon: r.kind === 'skip' ? 'no_meals' : r.kind === 'end' ? 'event_busy' : 'restaurant', who: [],
+      t: r.kind === 'skip' ? (ok ? `No feed ${dayText(r.date)}` : 'The feed is skipped') : r.kind === 'end' ? (ok ? 'Diet ends early' : 'The diet ends early') : r.kind === 'new' ? (ok ? 'New diet added' : 'The new diet is added') : ok ? 'Diet updated' : 'The diet is updated',
+      p: r.kind === 'skip' ? `${fmtDayY(r.date)} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ')}` : r.kind === 'end' ? `Last day ${fmtDayY(r.stop)}` : r.how === 'yearly' ? `Every year, ${mdText(r.start)} – ${mdText(r.end)}` : r.how === 'once' ? `${fmtDay(r.start)} – ${fmtDayY(r.end)}` : day && day > TODAY ? `From ${dayText(day)}` : 'From now on', at });
+    if (r.kind === 'ask') out.push({ k: 'build', st: ok ? 'now' : 'todo', icon: 'add_circle', who: [ap], t: ok ? 'The dietician builds the diet' : 'Then the dietician builds it', p: `${youName(r.approver)} · ${esc(ap.title)}`, at: null });
+    else out.push({ k: 'kitchen', st: ok ? 'done' : 'todo', icon: 'soup_kitchen', who: team, t: ok ? 'With the kitchen' : 'The kitchen gets it', p: team.map(u => esc(u.name)).join(' and '), at });
+    return out;
+  }
   const ce = ev('completed'), dietCh = isDiet(r) && changesDiet(r), who = r.assignee ? [user(r.assignee)] : team;
   out.push({ k: 'team', st: done ? 'done' : ok ? 'now' : 'todo', icon: isDiet(r) ? 'soup_kitchen' : x.icon, who: done && ce ? [user(ce.by)] : who,
     t: done ? (dietCh ? 'Diet updated in the kitchen' : 'Done') : dietCh ? 'The kitchen updates the diet' : isDiet(r) ? 'The kitchen does it' : `${x.name} does the work`,

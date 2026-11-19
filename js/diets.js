@@ -40,24 +40,27 @@ function approvalsRow() {
   const wait = D.requests.filter(r => isDiet(r) && r.approver === S.user && isOpen(r)), delayed = wait.filter(r => r.state === 'delayed').length;
   return `<a class="reqsum" href="#/requests" onclick="S.rTab='pending';S.rDept='diet'"><span class="reqsum__ic">${I('how_to_reg')}</span><span class="grow"><b>Waiting for your approval</b><span class="sub">${wait.length ? `${wait.length - delayed} waiting${delayed ? ` · ${delayed} delayed` : ''}` : 'Nothing waiting'}</span></span><span class="cnt">${wait.length}</span>${I('chevron_right', 20)}</a>`;
 }
-/* a diet and its requests, on top of Overview (owner, 18 Nov: "if the kitchen changed it, the diet has to show changed info"):
-   - updated: the kitchen marked a request Diet updated in the last week; the lines it changed are marked in the table;
-   - on the way: a request on this diet, waiting for the Dietician or for the kitchen (the diet is not changed yet). */
+/* a diet and its requests, on top of Overview (owner, 18 Nov: "the diet has to show changed info"; 19 Nov: approving applies it, the kitchen follows):
+   - updated: a request approved in the last week changed this diet; the lines it changed are marked in the table;
+   - on the way: a request waiting for the Dietician, an approved change that starts later, or an approved request in words for the kitchen. */
 const CHANGE_DAYS = 7;
 function dietChanged(d) {
-  const h = changesIn({ dietId: d.id }).find(x => x.req && x.doneBy && (x.lines || x.follows || x.created || x.skip));
-  const r = h && by('requests', h.req), done = r && [...r.events].reverse().find(e => e.kind === 'completed');
+  const h = changesIn({ dietId: d.id }).find(x => x.req && (x.lines || x.follows || x.created || x.skip));
+  const r = h && by('requests', h.req), done = r && lastEv(r, 'approved');
   return done && h.at.slice(0, 10) >= addDays(TODAY, -CHANGE_DAYS) ? { h, r, done } : null;
 }
-const touches = (r, a) => r.slot === a.id || r.base === a.diet || (r.ends || []).includes(a.id) || (r.kind === 'diet' && r.diet === a.diet) || (r.kind === 'skip' && targetsOf(r).some(t => samePlace(t, a)));
-const dietComing = a => D.requests.filter(r => isDiet(r) && visibleTo(r, me()) && ['pending', 'delayed', 'approved', 'in_progress'].includes(r.state) && touches(r, a)).sort((x, y) => (lastAt(x) < lastAt(y) ? 1 : -1));
+const inWords = r => JOB_KINDS.includes(r.kind) && r.kind !== 'ask';
+const touches = (r, a) => r.slot === a.id || r.base === a.diet || (r.ends || []).includes(a.id) || (r.kind === 'diet' && r.diet === a.diet) || (r.kind === 'skip' && targetsOf(r).some(t => samePlace(t, a)))
+  || (inWords(r) && eatNow(targetsOf(r)).list.some(e => e.diet.id === a.diet));
+const stillComing = r => isOpen(r) || (r.state === 'approved' && (inWords(r) ? lastEv(r, 'approved').at.slice(0, 10) >= addDays(TODAY, -CHANGE_DAYS) : phaseOf(r) === 'next'));
+const dietComing = a => D.requests.filter(r => isDiet(r) && visibleTo(r, me()) && stillComing(r) && touches(r, a)).sort((x, y) => (lastAt(x) < lastAt(y) ? 1 : -1));
 function changedCard({ h, r, done }) {
   const see = visibleTo(r, me());
-  return `<button class="dchg pick" onclick="${see ? `go('#/requests/${r.id}')` : `changeSheet('${h.id}')`}"><span class="eav">${I('published_with_changes', 20)}</span><span class="dchg__t"><span class="dchg__top">${pill('positive', 'Updated')}<span>${fmtDay(h.at.slice(0, 10))} · ${r.id}</span></span><b>${esc(changeSummary(h))}</b><small>Updated in the kitchen by ${youName(done.by)}${h.reason ? ` · ${esc(h.reason)}` : ''}</small></span>${I('chevron_right', 20)}</button>`;
+  return `<button class="dchg pick" onclick="${see ? `go('#/requests/${r.id}')` : `changeSheet('${h.id}')`}"><span class="eav">${I('published_with_changes', 20)}</span><span class="dchg__t"><span class="dchg__top">${pill('positive', 'Updated')}<span>${fmtDay(h.at.slice(0, 10))} · ${r.id}</span></span><b>${esc(changeSummary(h))}</b><small>Approved by ${youName(done.by)}${h.reason ? ` · ${esc(h.reason)}` : ''}</small></span>${I('chevron_right', 20)}</button>`;
 }
 function comingCard(rs) {
   const r = rs[0], s = stateOf(r);
-  const next = r.state === 'pending' ? (r.approver === S.user ? 'Waiting for your approval' : `Waiting for ${youName(r.approver)}`) : r.state === 'delayed' ? s.label : changesDiet(r) ? 'Approved · the kitchen updates it next' : 'Approved · with the kitchen';
+  const next = r.state === 'pending' ? (r.approver === S.user ? 'Waiting for your approval' : `Waiting for ${youName(r.approver)}`) : r.state === 'delayed' ? s.label : inWords(r) ? `Approved · for the kitchen · ${esc(((r.f && r.f.rows) || [])[0] ? r.f.rows[0][1] : '')}` : `Approved · in the diet ${r.kind === 'skip' ? dayText(r.date) : r.kind === 'end' ? `till ${fmtDay(r.stop)}` : `from ${dayText(r.start)}`}`;
   return `<a class="dchg pick" href="#/requests/${r.id}"><span class="eav">${I('pending_actions', 20)}</span><span class="dchg__t"><span class="dchg__top">${pill(isOpen(r) ? 'pending' : 'positive', isOpen(r) ? 'Requested' : 'Approved')}<span>${r.id} · ${youName(r.by)}</span></span><b>${esc(r.title)}</b><small>${next}${rs.length > 1 ? ` · ${plural(rs.length - 1, 'more request')}` : ''}</small></span>${I('chevron_right', 20)}</a>`;
 }
 /* the diet with the kitchen's update marked the Kitchen way (yellow with was …, NEW, stopped struck through), for a week after it changed */
@@ -351,7 +354,7 @@ function reqNow(r) {
   switch (r.state) {
     case 'pending': return `Waiting for ${youName(r.approver)}`;
     case 'delayed': return `Delayed till ${fmtDay(r.delay.until)}`;
-    case 'approved': case 'in_progress': return `Approved by ${by1('approved')} · ${changesDiet(r) ? 'the kitchen updates it next' : 'with the kitchen'}`;
+    case 'approved': case 'in_progress': return `Approved by ${by1('approved')} · ${changesDiet(r) || r.kind === 'skip' ? 'in the diet' : 'with the kitchen'}`;
     case 'completed': return `${changesDiet(r) ? 'Diet updated' : 'Completed'} by ${by1('completed')}`;
     case 'rejected': return `Not approved by ${by1('rejected')}`;
     case 'cancelled': return 'Cancelled';
