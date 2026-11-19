@@ -5,7 +5,7 @@
 const STORE = 'antz-diet-module-v13';   // bump whenever the demo data changes (v13: the diet history says who updated it in the kitchen; v12: diet requests — the Biologist raises, the Dietician approves, the Kitchen updates; v11: Help Desk In progress and Completed, the team's Job in charge; v10: requests say how long and can be for many places; v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
 const AS = { kiran: 'u-kiran', hydar: 'u-hydar', suresh: 'u-suresh', manoj: 'u-manoj' };
 const FRAMES = { phone: 'phone', portrait: 'tab-p', landscape: 'tab-l' };
-function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: TODAY, D, S: { user: S.user, frame: S.frame, site: S.site } })); } catch (e) {} }
+function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: TODAY, D, S: { user: S.user, frame: S.frame, site: S.site, rdv: S.rdv } })); } catch (e) {} }
 (function load() {
   let o = null; try { o = JSON.parse(localStorage.getItem(STORE)); } catch (e) {}
   if (o && o.day === TODAY && o.D) useData(o.D); else { useData(SEED(TODAY)); seedApprovals(); }
@@ -13,6 +13,8 @@ function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: T
   const q = new URLSearchParams(location.search);
   if (AS[q.get('as')]) S.user = AS[q.get('as')];
   if (FRAMES[q.get('f')]) S.frame = FRAMES[q.get('f')];
+  /* the Request page's version to compare (reqviews.js): ?rd=a|b|c */
+  if (['a', 'b', 'c'].includes(q.get('rd'))) S.rdv = q.get('rd');
 })();
 function resetData() { try { localStorage.removeItem(STORE); } catch (e) {} Object.assign(S, { site: 'all', draft: null, rTab: 'pending', rSub: 'all', rDept: 'all', rPrio: 'all', rQ: '', rSearch: false, hWeek: 0, hDay: null, hType: 'all', lvl: {} }); useData(SEED(TODAY)); seedApprovals(); storeSave(); closeAll(); go('#/home'); toast('Demo data reset'); }
 
@@ -98,6 +100,7 @@ function drawStage() {
   $('#stage-bar').innerHTML = `<b class="cap">Prototype controls</b>
     <span class="stage__grp">Frame ${[['phone', 'Phone'], ['tab-p', 'iPad portrait'], ['tab-l', 'iPad landscape']].map(([k, l]) => opt(S.frame === k, l, `setFrame('${k}')`)).join(' · ')}</span>
     <span class="stage__grp">Viewing as ${VIEWERS.map(id => opt(S.user === id, `${user(id).name} (${user(id).title})`, `setUser('${id}')`)).join(' · ')}</span>
+    <span class="stage__grp">Request page ${RD.map(([k, l]) => opt((S.rdv || RD_DEFAULT) === k, l, `setRd('${k}')`)).join(' · ')}</span>
     <span class="stage__grp">${opt(false, 'Home', "go('#/home')")} · ${opt(false, 'Reset demo data', 'resetData()')} · ${opt(figmaOpen, 'Copy to Figma', 'copyToFigma()')}</span>`;
 }
 /* Copy to Figma: Figma's own capture script, loaded on first use. It copies the screen in the frame as Figma layers (paste with Cmd+V

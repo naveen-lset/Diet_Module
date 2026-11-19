@@ -30,11 +30,12 @@ Open http://127.0.0.1:8766/
 |---|---|---|
 | `?f=` | `phone` · `portrait` · `landscape` | Device frame |
 | `?as=` | `kiran` · `hydar` · `suresh` · `manoj` | Person you view as |
+| `?rd=` | `a` · `b` · `c` | Request page version to compare: A Help Desk, B Item requests, C Summary first (the default) |
 | `?fill` | | Fill the window with no frame (a real phone or iPad fills on its own) |
 
 Example: http://127.0.0.1:8766/?f=landscape&as=suresh
 
-The controls above the device frame (Frame · Viewing as · Home · Reset demo data · Copy to Figma) are prototype tools, not part of the app. **Copy to Figma** loads Figma's capture script (mcp.figma.com) on first use, copies the screen in the frame as editable Figma layers, and opens its bar (Entire screen · Select element); paste with Cmd+V in Figma.
+The controls above the device frame (Frame · Viewing as · Request page · Home · Reset demo data · Copy to Figma) are prototype tools, not part of the app. **Copy to Figma** loads Figma's capture script (mcp.figma.com) on first use, copies the screen in the frame as editable Figma layers, and opens its bar (Entire screen · Select element); paste with Cmd+V in Figma.
 
 ## Demo people
 
@@ -60,9 +61,10 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
 │   ├── ui.js             State, top bar, sheets, diet tables, cards, in-place redraw (morph)
 │   ├── diets.js          Diet module screens
 │   ├── history.js        A diet's change history
-│   ├── helpdesk.js       Help Desk list and request details
-│   ├── form.js           New Request (and Edit) for the other departments
-│   ├── suggest.js        Diet change: Suggest a change (Biologist), the request's tracker, Save it as, Diet updated
+│   ├── helpdesk.js       Help Desk list, request facts, request page A, status bar, Activity
+│   ├── form.js           New Request (and Edit): the departments' forms and the diet request types
+│   ├── suggest.js        Diet change: Suggest a change (Biologist), Review request, Save it as, Diet updated; the species, diet and reason search sheets
+│   ├── reqviews.js       Request page versions B (Item requests) and C (Summary first), and the parts all three share
 │   ├── pdf.js            The diet PDF: one A4 page as Kitchen & Diet prints it, in a full-screen viewer
 │   └── app.js            Router, Home frame, prototype controls, saving, frame fitting
 ├── assets/               Antz Design phone and tablet system (copied unchanged, do not edit)
