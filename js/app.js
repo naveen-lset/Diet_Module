@@ -42,10 +42,10 @@ function baseView() {
 /* the Antz Home, loaded once and kept, so coming back finds it as it was */
 function showHome(on) {
   const fr = $('#homefr');
-  if (on && !fr.src) fr.src = 'home/index.html?v=4';
+  if (on && !fr.src) fr.src = 'home/index.html?v=5';
   fr.hidden = !on; $('#app').hidden = on;
 }
-addEventListener('message', e => { const r = e.data && e.data.antzOpen; if (r === 'diets' || r === 'requests') { if (r === 'requests') { S.rDept = 'all'; S.rTab = 'pending'; S.rSub = 'all'; } go('#/' + r); } });
+addEventListener('message', e => { if (e.data && e.data.antzWho) { whoSheet(); return; } const r = e.data && e.data.antzOpen; if (r === 'diets' || r === 'requests') { if (r === 'requests') { S.rDept = 'all'; S.rTab = 'pending'; S.rSub = 'all'; } go('#/' + r); } });
 /* the app's own back trail: Back returns to the screen you came from, even after a reload, a shared link or inside the hub viewer */
 const TRAIL = [];
 /* a sheet is never a place Back returns to (design system: a sheet works "without leaving the page"). Leaving the phone's species
@@ -119,6 +119,24 @@ function copyToFigma() {
   loadFigma(w).then(() => w.figma.captureForDesign({ selector: home ? 'body' : '.device' }), () => toast("Couldn't load Figma's capture tool. Check the internet connection."))
     .finally(() => { figmaOpen = false; fit(); });
 }
+/* who you are (owner, 19 Nov 2026: "on the mobile there is no role selection, so I can't request"). On a phone or iPad the prototype fills the screen and
+   the controls above the frame are gone, so the app asks once (remembered in this browser) and the Home avatar or the avatar in a module's top bar
+   switches later. ?as= in the link still decides, and then nothing is asked */
+const WHO_KEY = 'antz-diet-module-who';
+const WHO_DOES = { 'u-kiran': 'Raises diet requests: Suggest a change and New Request', 'u-hydar': 'Approves diet requests and sees every diet', 'u-suresh': 'Updates the diet in the kitchen once it is approved', 'u-manoj': 'Updates the diet in the kitchen, and can approve' };
+function whoSheet(firstTime = false) {
+  openSheet(() => ({ title: firstTime ? 'Who are you?' : 'View as', sub: 'Each role sees its own screens', bottom: true,
+    body: `<div class="sg-list">${VIEWERS.map(id => { const u = user(id); return pkRow(`pickWho('${id}')`, avatar(u.name, '48'), esc(u.name), `<span class="who-role">${esc(u.title)}</span>${esc(WHO_DOES[id])}`, '', S.user === id); }).join('')}</div>` }));
+}
+function pickWho(id) { try { localStorage.setItem(WHO_KEY, id); } catch (e) {} closeAll(); if (S.user !== id) setUser(id); }
+/* where only a Biologist can go on: switch to Kiran and carry on */
+function asBiologist(then) { try { localStorage.setItem(WHO_KEY, 'u-kiran'); } catch (e) {} S.user = 'u-kiran'; S.draft = null; SG = null; S.rDept = 'all'; closeAll(); storeSave(); toast(`Viewing as ${user('u-kiran').name}, ${user('u-kiran').title}`); go(then); }
+const whoBtn = () => document.body.classList.contains('fill') ? `<button class="whobtn" onclick="whoSheet()" aria-label="Viewing as ${esc(me().name)}. Switch person" title="Switch person">${avatar(me().name)}</button>` : '';
+function askWhoOnce() {
+  if (askWhoOnce.done || !document.body.classList.contains('fill') || new URLSearchParams(location.search).get('as')) return;
+  askWhoOnce.done = true; let had = null; try { had = localStorage.getItem(WHO_KEY); } catch (e) {}
+  if (!had) setTimeout(() => { if (!SH.length) whoSheet(true); }, 500);
+}
 function setFrame(f) { S.frame = f; closeAll(); storeSave(); fit(); }
 function setUser(id) { S.user = id; S.draft = null; S.rDept = 'all'; closeAll(); storeSave(); if (['new', 'suggest'].includes(route()[0])) { SG = null; go('#/requests'); } else render(); toast(`Viewing as ${user(id).name}, ${user(id).title}`); }
 /* the frame: scaled to fit the window on a desktop; on a real phone or iPad (or ?fill) it is the screen */
@@ -126,7 +144,7 @@ function fit() {
   const dev = $('.device'), slot = $('.device-slot'), q = new URLSearchParams(location.search);
   const touch = matchMedia('(pointer: coarse)').matches, fill = q.has('fill') || (touch && Math.min(innerWidth, innerHeight) < 1400);
   document.body.classList.toggle('fill', fill);
-  if (fill) { S.frame = Math.min(innerWidth, innerHeight) < 600 ? 'phone' : innerWidth > innerHeight ? 'tab-l' : 'tab-p'; dev.style.transform = ''; slot.style.width = slot.style.height = ''; render(); return; }
+  if (fill) { S.frame = Math.min(innerWidth, innerHeight) < 600 ? 'phone' : innerWidth > innerHeight ? 'tab-l' : 'tab-p'; dev.style.transform = ''; slot.style.width = slot.style.height = ''; render(); askWhoOnce(); return; }
   const W = { phone: 390, 'tab-p': 834, 'tab-l': 1194 }[S.frame], H = { phone: 844, 'tab-p': 1194, 'tab-l': 834 }[S.frame];
   drawStage();
   const k = figmaOpen ? 1 : Math.min(1, (innerHeight - slot.getBoundingClientRect().top - 24) / H, (innerWidth - 48) / W);
