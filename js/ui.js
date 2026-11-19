@@ -24,10 +24,10 @@ const siteName = () => S.site === 'all' ? 'All sites' : by('sites', S.site).name
 const youName = id => `${esc(user(id).name)}${id === S.user ? ' (You)' : ''}`;
 
 /* ---------- top bar: back, close or none · title (and a line) · actions · the site switch ---------- */
-function topbar({ back = '', close = '', lead = '', title = '', sub = '', actions = '', site = false }) {
+function topbar({ back = '', close = '', lead = '', title = '', sub = '', actions = '', site = false, end = '' }) {
   const l = back ? `<button class="az-iconbtn" onclick="go('${back}')" aria-label="Back">${I('arrow_back')}</button>`
     : close ? `<button class="az-iconbtn" onclick="${close}" aria-label="Close">${I('close')}</button>` : lead;
-  return `<header class="az-topbar${sub ? ' az-topbar--two' : ''}">${l}<h1 class="az-topbar__title">${title}${sub ? `<small>${sub}</small>` : ''}</h1>${actions}${site ? `<button class="az-topswitch" onclick="siteSheet()" aria-haspopup="dialog" aria-label="Site: ${esc(siteName())}">${esc(siteName())}${I('keyboard_arrow_down', 20)}</button>` : ''}</header>`;
+  return `<header class="az-topbar${sub ? ' az-topbar--two' : ''}">${l}<h1 class="az-topbar__title">${title}${sub ? `<small>${sub}</small>` : ''}</h1>${actions}${site ? `<button class="az-topswitch" onclick="siteSheet()" aria-haspopup="dialog" aria-label="Site: ${esc(siteName())}">${esc(siteName())}${I('keyboard_arrow_down', 20)}</button>` : ''}${end}</header>`;
 }
 const iconBtn = (icon, label, js) => `<button class="az-iconbtn" onclick="${js}" aria-label="${label}" title="${label}">${I(icon)}</button>`;
 const pane = (cls, top, body, foot = '', key = '') => `<section class="pane ${cls}"${key ? ` data-k="${key}"` : ''}>${top}<div class="pane__body">${body}</div>${foot ? `<div class="pane__foot">${foot}</div>` : ''}</section>`;

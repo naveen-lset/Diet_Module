@@ -126,7 +126,7 @@ function deptSheet() {
     return { title: 'Select Department', bottom: true, body: `<label class="az-input az-input--text deptsel__q">${I('search')}<input id="dq" type="search" placeholder="Search" value="${esc(DQ)}" oninput="DQ=this.value;redrawSheet()" autocomplete="off" aria-label="Search departments"></label>
       <p class="deptsel__n">Departments - ${list.length}</p>
       <div class="deptsel" role="radiogroup" aria-label="Departments">${list.map(x => { const locked = x.id === 'diet' && !canRaise(u), on = cur === x.id;
-        return `<button class="deptsel__r${locked ? ' deptsel__r--locked' : ''}" role="radio" aria-checked="${on}" ${locked ? 'aria-disabled="true" disabled' : `onclick="pickDept('${x.id}')"`}><span class="grow"><b>${esc(x.name)}</b>${locked ? '<small>Biologists suggest diet changes</small>' : ''}</span>${locked ? I('lock', 22) : `<span class="deptsel__radio${on ? ' on' : ''}" aria-hidden="true"></span>`}</button>`; }).join('') || '<p class="deptsel__none">No department by that name</p>'}</div>` };
+        return `<button class="deptsel__r${locked ? ' deptsel__r--locked' : ''}" role="radio" aria-checked="${on}" onclick="${locked ? `asBiologist('#/new?dept=diet')` : `pickDept('${x.id}')`}"><span class="grow"><b>${esc(x.name)}</b>${locked ? `<small>Only biologists raise diet requests · tap to view as ${esc(user('u-kiran').name)}</small>` : ''}</span>${locked ? I('lock', 22) : `<span class="deptsel__radio${on ? ' on' : ''}" aria-hidden="true"></span>`}</button>`; }).join('') || '<p class="deptsel__none">No department by that name</p>'}</div>` };
   });
 }
 function pickReqSite(v) { S.draft.site = +v; closeAll(); render(); }
