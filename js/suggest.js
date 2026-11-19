@@ -280,7 +280,7 @@ function paneSuggest(q) {
   /* New Request with Diet, and Edit Request, are the Help Desk form (form.js); this screen keeps Suggest a change, Change food from that form, and the new-diet requests' editor */
   { const e = q.get('edit') && by('requests', q.get('edit')); if ((q.get('dept') === 'diet' && !q.get('form')) || (e && isDiet(e) && e.kind !== 'new')) return paneForm(q); }
   const d = sgInit(q), top = topbar({ close: d.form ? 'sgFormBack(false)' : 'sgClose()', title: d.form ? 'Change food' : d.edit ? 'Edit Request' : 'Suggest a change', actions: d.t && sgCount() ? iconBtn('restart_alt', 'Start again', 'sgClear()') : '' });
-  if (!canRaise(me()) && !d.edit) return pane('pane--fill', top, empty1(`Biologists suggest diet changes. ${esc(me().title)}s see them in Help Desk.`), '', 'sg-no');
+  if (!canRaise(me()) && !d.edit) return pane('pane--fill', top, `${empty1(`Biologists suggest diet changes. ${esc(me().title)}s see them in Help Desk.`)}<div class="who-cta"><button class="az-btn az-btn--outline" onclick="asBiologist('#/suggest')">${avatar(user('u-kiran').name, '24')}View as ${esc(user('u-kiran').name)}, Biologist</button></div>`, '', 'sg-no');
   /* nobody chosen yet: one field to choose who, and the species sheet opens by itself the first time (owner, 19 Nov: a bottom sheet, not a page) */
   if (!d.t) { if (!d.askedWho) { d.askedWho = true; setTimeout(() => { if (SG && !SG.t && !SH.length) sgWho(); }, 120); }
     return pane('pane--fill sg-page', top, `<div class="body sg-body"><button class="sg-hd sg-hd--pick" onclick="sgWho()"><span class="sg-hd__ph">${I('pets', 26)}</span><span class="grow"><b>Who is it for?</b><span>A species, an enclosure or one animal</span></span>${I('expand_more')}</button>

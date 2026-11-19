@@ -104,7 +104,7 @@ function listHead(tab, n) {
 const listToggle = (key, opts) => `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Certification">${thumb()}${opts.map(([k, l]) => `<button role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l}</button>`).join('')}</div></div>`;
 /* the page scrolls as one: the requests row, search and chips go up with the list; Diet wise | Species wise stays pinned under the top bar */
 function paneDietHome({ cls = '', cur = null } = {}) {
-  const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true }), head = dietTabs(tab);   /* owner, 18 Nov: no request rows above the tabs; requests live in Help Desk */
+  const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true, end: whoBtn() }), head = dietTabs(tab);   /* owner, 18 Nov: no request rows above the tabs; requests live in Help Desk */
   const chips = (key, opts, count) => `<div class="az-chips" role="tablist">${opts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l} - ${count(k)}</button>`).join('')}</div>`;
   if (tab === 'diets') {
     const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species, place or ID" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label></div>`;
@@ -140,7 +140,8 @@ function spHead(sp, close = '') {
 function speciesParts(spId, cur) {
   const l = lvlOf(spId);
   if (!slotsOf(spId).length) return { chips: '', body: `<div class="empty1"><div>No diet added for ${esc(species(spId).name)}${canRaise(me()) ? `<button class="az-btn empty1__btn" onclick="go('#/new?dept=diet&sp=${spId}&kind=new')">${I('add_circle')}Request a diet</button>` : ''}</div></div>` };
-  const chips = `<div class="az-chips az-chips--wrap" role="tablist" aria-label="Level">${levelsOf(spId).map(k => `<button class="az-chip" role="tab" aria-selected="${l === k}" onclick="pickLevel(${spId},'${k}')">${LEVEL[k]} - ${dietCount(spId, k, S.site)}</button>`).join('')}</div>`;
+  /* one line that scrolls sideways (owner, 19 Nov 2026: "make it horizontal scroll") */
+  const chips = `<div class="az-chips az-chips--lvl" role="tablist" aria-label="Level">${levelsOf(spId).map(k => `<button class="az-chip" role="tab" aria-selected="${l === k}" onclick="pickLevel(${spId},'${k}')">${LEVEL[k]} - ${dietCount(spId, k, S.site)}</button>`).join('')}</div>`;
   let body;
   if (l === 'species') {
     const list = slotsOf(spId).filter(a => a.level === 'species'), gone = endedOf(spId);
