@@ -115,8 +115,8 @@ function reqFacts(r) {
     add('for', 'pets', 'For', forCard(r), goLnk('See Animals', `animalsSheet('${r.id}')`));
     const open = s && !ended(s) && base ? `<a class="lnk" href="#/diets/${s.sp}/${s.id}">Open Diet${I('chevron_right', 18)}</a>` : '';
     /* what changes, as the review showed it before sending: Food | Was | Now, the old value struck through */
-    if (r.kind === 'items' && base && (r.changes || []).length) add('chg', 'swap_horiz', 'What Changes', `<span class="sub">${esc(base.name)}${s ? ` · Set for ${esc(whereSet(s))}` : ''}</span>${diffTable(r.changes, base)}`, open);
-    if (r.kind === 'items' && r.base === 'many') add('chg', 'swap_horiz', 'What Changes', `<b>All their diets, changed by item</b>${(r.rules || []).map(u => `<p>${esc(ruleText(u))}</p>`).join('')}`);
+    if (r.kind === 'items' && base && (r.changes || []).length) add('chg', 'tune', 'What Changes', `<span class="sub">${esc(base.name)}${s ? ` · Set for ${esc(whereSet(s))}` : ''}</span>${diffTable(r.changes, base)}`, open);
+    if (r.kind === 'items' && r.base === 'many') add('chg', 'tune', 'What Changes', `<b>All their diets, changed by item</b>${(r.rules || []).map(u => `<p>${esc(ruleText(u))}</p>`).join('')}`);
     if (r.kind === 'new') add('diet', 'add_circle', 'New Diet', `<b>${esc(r.name || (planOf(r).ops.find(o => o.type === 'new') || {}).name || 'New diet')}</b><span class="sub">${r.base && diet(r.base) ? `From ${esc(diet(r.base).name)}` : 'Made from empty'}</span>`);
     if (r.kind === 'diet' && base) add('diet', 'restaurant', 'Instead Of', `<b>${esc(base.name)}</b>`);
     if (r.kind === 'end') add('diet', 'restaurant', 'Diet To End', (r.ends || []).map(id => { const a = by('assigns', id); return `<b>${esc(diet(a.diet).name)}</b><span class="sub">Set for ${esc(whereSet(a))}</span>`; }).join(''));
@@ -139,7 +139,7 @@ function reqFacts(r) {
   }
   /* why, with the note to the kitchen under it */
   if (isDiet(r) && (r.reason || r.note)) add('why', 'label', r.reason ? 'Why' : 'Note To Kitchen', `${r.reason ? `<b>${esc(r.reason)}</b>` : ''}${r.note ? `<p class="${r.reason ? 'sub' : ''}">${r.reason ? 'Note To Kitchen: ' : ''}${esc(r.note)}</p>` : ''}`);
-  add('by', 'person', 'Requested By', personRow(r.by));
+  add('by', 'person', 'Requested By', personRow(r.by, r.raisedBy ? ` · raised by ${youName(r.raisedBy)}` : ''));
   /* the approval (Figma note: no names here before approval; the approvers are in the sheet behind View) */
   { const rej = r.state === 'rejected', ok = wasApproved(r), e = lastEv(r, rej ? 'rejected' : 'approved');
     add('appr', rej ? 'block' : ok ? 'verified' : 'how_to_reg', rej ? 'Rejected By' : ok ? 'Approved By' : 'Approval',
@@ -155,30 +155,38 @@ function reqExtra(r) {
   const [t, lines] = r.kind === 'items' ? ['', ''] : reqLines(r);
   return (lines ? `<p class="secttl">${t}</p>${lines}` : '') + saveAsSec(r) + reqEffect(r) + reqDietNow(r);
 }
-/* the Request page (owner, 20 Nov 2026, the Figma alignment mockup): a dark header (number, category with its flag, when, the requester
-   with call and chat), any low stock, then one fact per row with its icon, the diet parts, Activity, and the status bar.
-   iPad landscape: the same facts as white section cards in two columns (Hospital iPad, 22 Sep 2026) */
+/* the Request page (owner, 20 Nov 2026: "check the Request Details from the Design Hub (Incident Reports, IR-26-0107), mix and give the best
+   details page; the animation has to be perfect"). As the Hub's Incident record, on the Figma's Req Details: a dark head (the category and its
+   flag, the request's title big, the site, when), the requester on a darker strip with call and chat, then one white box per subject on the
+   page colour (no outlines): Request · For · What Changes · When · Why · Site, Requested By and Approval together · Attachments · the kitchen's
+   part · Activity. The status bar stays at the foot. On arrival the boxes rise in one after another and the status bar slides up.
+   iPad landscape: the same boxes in two columns */
 function paneRequest(id, { cls = '' } = {}) {
   const r = by('requests', id), back = isPhone() ? '#/requests' : '';
   if (!r || !visibleTo(r, me())) return pane(cls, topbar({ back, title: 'Request' }), empty1('Not one of your requests'));
   const more = iconBtn('more_vert', 'More', `moreMenu('${r.id}',this)`);
   const req = user(r.by), edited = r.events.some(e => e.kind === 'edited');
-  const head = `<div class="rhead rhead--dark"><span class="rhead__row"><span class="az-dept">${I(isDiet(r) ? KIND[r.kind][1] : dept(r.dept).icon, 20)}</span><span class="rhead__catn">${esc(catOf(r))}</span>${flag(r.prio)}</span>
-    <span class="meta">${fmtTime(r.events[0].at)} • ${fmtDayY(r.events[0].at.slice(0, 10))}${edited ? '<span class="rhead__edited">Edited</span>' : ''}</span>
-    <span class="rhead__who">${avatar(req.name, '28')}<span class="az-who__name">${youName(r.by)}</span>${callChat(req)}</span></div>`;
-  const low = reqLowStock(r), F = reqFacts(r), extra = reqExtra(r);
-  const row = f => `<div class="rrow rrow--${f.k}">${I(f.icon, 20)}<div class="rrow__b"><div class="rrow__h"><span>${f.label}</span>${f.link}</div>${f.v}</div></div>`;
-  let body;
-  if (isLand()) {
-    const card = (title, inner, { link = '', span = false, k = '' } = {}) => `<section class="rcard${span ? ' rcard--span' : ''}${k ? ` rcard--${k}` : ''}"><div class="rcard__h"><b>${title}</b>${link}</div>${inner}</section>`;
-    const kv = fs => `<div class="rkv">${fs.map(f => `<div class="rkv__c rkv__c--${f.k}"><span class="rkv__k">${f.label}</span>${f.v}${f.link ? `<span class="rkv__l">${f.link}</span>` : ''}</div>`).join('')}</div>`;
-    const reqF = F.find(f => f.k === 'req'), chg = F.find(f => f.k === 'chg'), files = F.find(f => f.k === 'files');
-    const det = F.filter(f => !['req', 'chg', 'files'].includes(f.k)), act = activityView(r, { bare: true });
-    body = `${low ? `<div class="rlow">${low}</div>` : ''}<div class="body rgrid">${card('Request', reqF.v, { span: true, k: 'req' })}${chg ? card('What Changes', chg.v, { link: chg.link, k: 'chg' }) : ''}${card('Details', kv(det), { span: !chg })}
-      ${files ? card('Attachments', files.v) : ''}${card('Activity', act.html, { link: act.filter, span: !files })}${extra ? `<div class="rcard--span rextra">${extra}</div>` : ''}</div>`;
-  } else body = `${low ? `<div class="rlow">${low}</div>` : ''}<div class="rrows">${F.map(row).join('')}</div>${extra ? `<div class="body rextra">${extra}</div>` : ''}${activityView(r)}`;
-  /* the record header scrolls away with the request; only the top bar and the status bar stay */
-  return pane(`${cls} req-a${isLand() ? ' req-wide' : ''}`, topbar({ back, title: r.id, actions: more }), head + body, statusBar(r), `req-${r.id}`);
+  const head = `<div class="rhd"><div class="rhd__cat"><span class="az-dept">${I(isDiet(r) ? KIND[r.kind][1] : dept(r.dept).icon, 20)}</span><span class="rhd__catn">${esc(catOf(r))}</span>${flag(r.prio)}</div>
+    <h2 class="rhd__t">${esc(r.title)}</h2>${siteLine(r) ? `<p class="rhd__s">${esc(siteLine(r))}</p>` : ''}
+    <p class="rhd__m">${I('schedule', 16)}${fmtTime(r.events[0].at)} • ${fmtDayY(r.events[0].at.slice(0, 10))}${edited ? '<span class="rhead__edited">Edited</span>' : ''}</p></div>
+    <div class="rhd__who">${avatar(req.name)}<span class="grow"><b>${youName(r.by)}</b><small>${esc(req.title)}</small></span>${callChat(req)}</div>`;
+  const low = reqLowStock(r), F = reqFacts(r), extra = reqExtra(r), act = activityView(r, { bare: true });
+  const hd = (f, link = f.link) => `<div class="rbox__h">${I(f.icon, 20)}<span class="grow">${f.label}</span>${link || ''}</div>`;
+  const box = (f, wide = false) => `<section class="rbox rbox--${f.k}${wide ? ' rbox--wide' : ''}">${hd(f)}<div class="rbox__b">${f.v}</div></section>`;
+  /* the title is in the head now: the Request box keeps the words only */
+  const reqF = F.find(f => f.k === 'req'), words = r.text ? `<p>${esc(r.text)}</p>` : '';
+  const grp = F.filter(f => ['site', 'by', 'appr'].includes(f.k)), rest = F.filter(f => !['req', 'site', 'by', 'appr', 'form'].includes(f.k)), form = F.filter(f => f.k === 'form');
+  const boxes = [];
+  if (low) boxes.push(`<div class="rlow rbox rbox--wide">${low}</div>`);
+  if (words) boxes.push(box({ ...reqF, label: 'Request', v: words }, true));
+  if (form.length) boxes.push(`<section class="rbox rbox--form">${hd({ icon: dept(r.dept).icon, label: 'Details' }, '')}<div class="rbox__kv">${form.map(f => `<div><span>${f.label}</span>${f.v}</div>`).join('')}</div></section>`);
+  rest.forEach(f => boxes.push(box(f, f.k === 'chg')));
+  boxes.push(`<section class="rbox rbox--grp">${grp.map(f => `<div class="rbox__f">${hd(f)}<div class="rbox__b">${f.v}</div></div>`).join('')}</section>`);
+  if (extra) boxes.push(`<div class="rbox rbox--extra rbox--wide">${extra}</div>`);
+  boxes.push(`<section class="rbox rbox--act rbox--wide"><div class="rbox__h">${I('forum', 20)}<span class="grow">Activity</span>${act.filter}</div>${act.html}</section>`);
+  const body = head + `<div class="rboxes">${boxes.join('')}</div>`;
+  /* the record head scrolls away with the request; only the top bar and the status bar stay */
+  return pane(`${cls} req-a req-b${isLand() ? ' req-wide' : ''}`, topbar({ back, title: r.id, actions: more }), body, statusBar(r), `req-${r.id}`);
 }
 /* Activity, as the Figma (Comment Input, 1 Sep 2025): Show All with its filter, an attach button and "Add Your Comment", then each entry;
    a status change shows old → new in its colour */
@@ -306,7 +314,7 @@ const DONE = { approve: 'Approved', delay: 'Delayed', reject: 'Rejected', cancel
 function doAct(id, kind, x = {}) {
   const r = by('requests', id);
   try { act(r, kind, S.user, x); } catch (e) { toast(e.message); return; }
-  storeSave(); closeAll(); toast(`${DONE[kind]} · ${id}`); render();
+  storeSave(); closeAll(); toast(`${DONE[kind]} · ${id}`); render(); playFx($('.az-statusbar'), 'sb-swap');
 }
 function animalsSheet(id) { animalsSheetFor(by('requests', id)); }
 function animalsSheetFor(t) {

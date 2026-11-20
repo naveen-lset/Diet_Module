@@ -295,11 +295,13 @@ const isApprover = u => u.role === 'dietician';
 const canRaise = u => !!u;
 /* the department's team does the approved work: for Diet, the Kitchen Head and the Kitchen Operator */
 const onTeam = (r, u) => { const x = dept(r.dept); return (x.team || [x.head]).includes(u.id); };
-const visibleTo = (r, u) => r.by === u.id || r.approver === u.id || (wasApproved(r) && onTeam(r, u));
+/* the requester, or whoever raised it for them (owner, 20 Nov 2026: "Requester also I can change") */
+const ownsReq = (r, uid) => r.by === uid || r.raisedBy === uid;
+const visibleTo = (r, u) => ownsReq(r, u.id) || r.approver === u.id || (wasApproved(r) && onTeam(r, u));
 const isOpen = r => ['pending', 'delayed'].includes(r.state);
 function actionsFor(r, u) {
   const a = [];
-  if (r.by === u.id && isOpen(r)) a.push('cancel', 'edit');
+  if (ownsReq(r, u.id) && isOpen(r)) a.push('cancel', 'edit');
   if (r.approver === u.id && isOpen(r)) a.push('reject', 'delay', 'approve');
   /* after approval, as the Help Desk app: Move to In progress → Move to Completed; a completed request can be moved back to In progress, with a reason */
   /* a diet request ends at approval: the change is in the diet, and the kitchen has it (no kitchen step) */
