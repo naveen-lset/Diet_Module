@@ -1753,3 +1753,267 @@ button.step{cursor:pointer}
 .selcard .az-animal__d{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .selcard > .az-i{color:var(--OnSurfaceVariant);flex:none}
 .selcard--on > .az-i{color:var(--Primary)}
+
+/* ===================== Round 25, 20 Nov 2026 (owner: "remove the outline in each sheet card, the animations are not good; Select Species and
+   animals need more work; Change Item Values a proper UI; How Long, Why with a text box; priority on the header; requester can change;
+   the Request page as the Hub's Incident record, and the animation has to be perfect") ===================== */
+:root{--ease-sheet:cubic-bezier(.32,.72,0,1);--ease-close:cubic-bezier(.4,0,1,1);--pick:color-mix(in srgb,var(--Primary) 13%,var(--white))}
+
+/* ---- sheets: one container whose content changes; rows white on the sheet colour, no outline ---- */
+.az-sheet__in{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;max-height:100%}
+.az-sheet__in > .az-sheet__title,.az-sheet__in > .az-sheet__foot{flex:none}
+.az-sheet__body{position:relative;overflow-x:hidden}
+.pickcard .az-sheet__body{background:var(--Background)}
+.az-sheet--tall{height:88%}
+.az-sheet--wide.az-sheet--tall{height:80%}
+.pickcard.az-sheet--tall{height:80%}
+.az-sheet :is(.az-pickrow,.az-option,.deptsel__r,.selcard,.apr,.az-site),.side :is(.az-pickrow,.az-option,.deptsel__r,.selcard,.az-site),.pickcard :is(.az-pickrow,.az-option,.az-site){border-color:transparent!important;background:var(--white)}
+.az-sheet :is(.az-pickrow,.az-option,.deptsel__r,.selcard,.az-site)[aria-checked="true"],.side :is(.az-pickrow,.az-option,.deptsel__r,.selcard,.az-site)[aria-checked="true"],.pickcard :is(.az-pickrow,.az-option,.az-site)[aria-checked="true"]{background:var(--pick)}
+.az-sheet__body--form :is(.az-pickrow,.az-option){background:var(--Background)}
+.az-sheet :is(.az-pickrow,.az-option,.deptsel__r,.selcard),.pickcard :is(.az-pickrow,.az-option),.side :is(.az-pickrow,.az-option,.deptsel__r,.selcard){border-radius:12px;transition:background-color .18s,transform .14s var(--ease-sheet)}
+.az-sheet :is(.az-pickrow,.az-option,.deptsel__r,.selcard):active,.pickcard :is(.az-pickrow,.az-option):active,.side :is(.az-pickrow,.az-option,.deptsel__r,.selcard):active{transform:scale(.98)}
+@media (hover:hover){.az-sheet :is(.az-pickrow,.az-option,.deptsel__r,.selcard):not([aria-checked="true"]):hover,.pickcard :is(.az-pickrow,.az-option):not([aria-checked="true"]):hover,.side :is(.az-pickrow,.az-option,.deptsel__r,.selcard):not([aria-checked="true"]):hover{background:#F7FBFA}}
+.az-sheet .pk-ic,.side .pk-ic,.pickcard .pk-ic{background:var(--Background)}
+.deptsel__q{background:var(--white)!important}
+.deptsel__n{background:transparent;margin:0 -2px;padding:4px 2px 0}
+.apr{border:0}
+/* the picked radio pops in */
+@keyframes radpop{0%{transform:scale(.55)}60%{transform:scale(1.14)}100%{transform:none}}
+[aria-checked="true"] > .az-i:last-child,.deptsel__radio.on::after{animation:radpop .3s var(--ease-sheet)}
+/* motion: rise and settle (iOS sheet curve); leave quicker; a new sheet's blocks arrive a beat apart */
+@keyframes rowin{from{opacity:0;transform:translateY(10px)}}
+@keyframes shfwd{from{opacity:0;transform:translateX(32px)}}
+@keyframes shback{from{opacity:0;transform:translateX(-32px)}}
+@keyframes shswap{from{opacity:0;transform:translateY(8px)}}
+.az-scrim,.side-scrim,.pick-scrim{animation:fadein .28s ease-out}
+.az-scrim.over,.side-scrim.over,.pick-scrim.over{animation:none}
+.az-sheet{animation:sheetup .46s var(--ease-sheet)}
+.side{animation:sidein2 .42s var(--ease-sheet)}
+.pickcard{animation:popin2 .28s var(--ease-sheet)}
+.out{animation:fadeout .26s var(--ease-close) forwards}
+.out .az-sheet{animation:sheetdown .26s var(--ease-close) forwards}
+.out .side{animation:sideout .26s var(--ease-close) forwards}
+.out .pickcard{animation:popout .2s var(--ease-close) forwards}
+.sh-new .az-sheet__body > *{animation:rowin .42s var(--ease-sheet) both}
+.sh-new .az-sheet__body > :nth-child(2){animation-delay:.04s}
+.sh-new .az-sheet__body > :nth-child(3){animation-delay:.08s}
+.sh-new .az-sheet__body > :nth-child(4){animation-delay:.12s}
+.sh-new .az-sheet__body > :nth-child(5){animation-delay:.16s}
+.sh-new .az-sheet__body > :nth-child(6){animation-delay:.2s}
+.sh-new .az-sheet__body > :nth-child(n+7){animation-delay:.24s}
+.sh-fwd{animation:shfwd .36s var(--ease-sheet)}
+.sh-back{animation:shback .36s var(--ease-sheet)}
+.sh-swap{animation:shswap .3s var(--ease-sheet)}
+
+/* ---- Select Species: A to Z under pinned letters; a species' places as pinned tabs, the list right under them ---- */
+.pk-gh{position:sticky;top:0;z-index:1;margin:0 -16px;padding:8px 18px 6px;background:var(--Background);font:var(--t-body-medium);color:var(--neutralSecondary)}
+.pk-gh--l{font:600 13px/18px var(--font);letter-spacing:.4px;color:var(--OnPrimaryContainer)}
+.pk-sp,.pk-g{display:flex;flex-direction:column;gap:8px}
+.pk-sp{gap:4px}
+.pk-list--sp .az-pickrow{min-height:76px}
+.pk-list--sp .az-pickrow > .thumb{width:76px;min-height:76px}
+.pk-t{gap:8px}
+.pk-tsp{display:flex;align-items:center;gap:10px;min-width:0}
+.pk-tsp .thumb{width:40px;height:40px;border-radius:var(--r-8)}
+.pk-tsp__n{display:flex;flex-direction:column;min-width:0;font:var(--t-minor-medium);color:var(--OnSecondaryContainer);line-height:22px}
+.pk-tsp__n i{font:italic 400 13px/18px var(--font);color:var(--neutralSecondary)}
+.pk-lv{position:sticky;top:0;z-index:2;display:flex;gap:8px;height:60px;box-sizing:border-box;align-items:center;margin:-16px -16px 0;padding:0 16px;background:var(--Background);overflow-x:auto;scrollbar-width:none}
+.pk-lv::-webkit-scrollbar{display:none}
+.pk-lv > .hl{background:var(--OnPrimaryContainer);border-radius:var(--r-full)}
+.pk-lv__c{position:relative;z-index:1;flex:none;display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 14px 0 10px;border-radius:var(--r-full);background:var(--white);color:var(--OnPrimaryContainer);font:var(--t-body-medium);cursor:pointer;transition:color .2s,background-color .2s}
+.pk-lv__c[aria-selected="true"]{background:transparent;color:var(--white)}
+.pk-pane{display:flex;flex-direction:column;gap:12px;padding-top:4px}
+.pk-pane .pk-gh{top:60px}
+.pk-dn{font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+.selcard{border-color:transparent}
+.selcard .az-photo{border-radius:var(--r-8)}
+
+/* ---- form: priority on the header (Figma: Priority Selection) ---- */
+.prio-hd{width:44px;height:44px;display:grid;place-items:center;margin-right:-6px;flex:none;cursor:pointer}
+.prio-ic{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--white);flex:none;transition:background-color .2s}
+.prio-ic b{font:700 15px/1 var(--font);letter-spacing:-.5px}
+.prio-ic--normal{background:var(--Secondary)}
+.prio-ic--high{background:var(--Tertiary)}
+.prio-ic--emergency{background:var(--Error)}
+@keyframes pop{0%{transform:scale(.7)}60%{transform:scale(1.12)}100%{transform:none}}
+.prio-hd.pop .prio-ic{animation:pop .34s var(--ease-sheet)}
+.az-menu.prio-menu{width:290px;gap:0}
+.az-menu__h{margin:0;padding:12px 16px 8px;background:var(--white);font:var(--t-body-medium);color:var(--neutralSecondary)}
+.prio-mi{gap:12px!important;text-align:left;width:100%;min-height:60px!important}
+.prio-mi .grow{display:flex;flex-direction:column;gap:2px;min-width:0}
+.prio-mi b{font:var(--t-body-medium);color:var(--OnSurfaceVariant)}
+.prio-mi small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.prio-mi.on{background:var(--pick)!important}
+.prio-mi > .az-i{color:var(--Primary)}
+.prio-mi .prio-ic{width:28px;height:28px}
+.prio-mi .prio-ic b{font-size:13px}
+/* the requester and the approver: a card that opens its people */
+.dfappr{border:0}
+.dfappr__c{flex:none;font:var(--t-body-medium);color:var(--Primary)}
+
+/* ---- What Changes: the diet as meal cards, a food per row, amounts on the right ---- */
+.fe-diet{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:var(--Background)}
+.fe-diet .grow{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fe-diet b{font:var(--t-minor-medium);color:var(--OnSurfaceVariant)}
+.fe-diet small{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.fe{display:flex;flex-direction:column;gap:16px;margin-top:4px}
+.fe-band{display:flex;flex-direction:column}
+.fe-bh{display:flex;align-items:center;gap:8px;margin:0 2px 8px;font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+.fe-bh small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.fe-rows{display:flex;flex-direction:column;gap:2px;border-radius:12px;overflow:hidden}
+.fe-r{display:flex;align-items:center;gap:10px;width:100%;min-height:60px;padding:10px 8px 10px 14px;background:var(--Background);text-align:left;cursor:pointer;transition:background-color .2s,transform .14s var(--ease-sheet)}
+.fe-r:active{transform:scale(.985)}
+.fe-r .grow{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fe-r b{display:flex;align-items:center;gap:6px;font:var(--t-minor-medium);color:var(--OnSurfaceVariant)}
+.fe-r small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.fe-r > .az-i{color:var(--Outline);flex:none}
+.fe-amt{display:flex;flex-direction:column;align-items:flex-end;gap:0;flex:none;text-align:right}
+.fe-amt s{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.fe-amt b{font:600 16px/22px var(--font);color:var(--OnSurfaceVariant)}
+.fe-r--chg,.fe-r--new{background:#FFF3CF}
+.fe-r--chg .fe-amt b,.fe-r--new .fe-amt b{color:#8A5A00}
+.fe-r--stop{background:#FDE8EB}
+.fe-r--stop .grow b{text-decoration:line-through;color:var(--neutralSecondary)}
+.fe-tag{display:inline-flex;padding:2px 8px;border-radius:var(--r-4);font:600 12px/16px var(--font);flex:none}
+.fe-tag--new{background:#8A5A00;color:var(--white)}
+.fe-tag--stop{background:var(--Error);color:var(--white)}
+.fe-add{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:4px;padding:10px 4px;font:var(--t-body-medium);color:var(--OnPrimaryContainer);cursor:pointer}
+/* the food's sheet (Figma: Quantity): the amount big in the middle, plain rows under it */
+.qhead{display:flex;flex-direction:column;align-items:center;gap:12px;padding:4px 0 8px}
+.qbig{display:flex;align-items:center;justify-content:center;gap:16px;width:100%}
+.qbig__b{width:52px;height:52px;border-radius:50%;background:var(--Background);color:var(--OnPrimaryContainer);display:grid;place-items:center;flex:none;cursor:pointer;transition:transform .14s var(--ease-sheet),background-color .18s}
+.qbig__b:active{transform:scale(.9);background:var(--displaybgSecondary)}
+.qbig__v{display:flex;align-items:baseline;gap:4px;min-width:0}
+.qbig__v input{width:128px;border:0;outline:0;background:none;text-align:right;font:600 40px/48px var(--font);color:var(--OnSurfaceVariant);padding:0;-moz-appearance:textfield}
+.qbig__v input::-webkit-inner-spin-button,.qbig__v input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.qbig__u{display:inline-flex;align-items:center;font:500 20px/28px var(--font);color:var(--neutralSecondary);cursor:pointer;min-width:28px}
+.qbig__u[disabled]{cursor:default}
+.qwas{margin:0;font:var(--t-body-regular);color:var(--neutralSecondary)}
+.qwas b{color:#8A5A00;font-weight:600}
+.qpct{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.qpct .az-chip{height:36px;padding:0 14px;border-radius:var(--r-full);background:var(--Background);font:var(--t-body-medium)}
+.qpick{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;padding:24px;border-radius:12px;background:var(--Background);font:var(--t-body-medium);color:var(--OnPrimaryContainer);cursor:pointer}
+.qrows{display:flex;flex-direction:column;border-radius:12px;background:var(--Background);overflow:hidden}
+.qrow{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:8px 8px 8px 14px;text-align:left;cursor:pointer;border-top:1px solid var(--white)}
+.qrow:first-child{border-top:0}
+.qrow__l{flex:1;font:var(--t-body-regular);color:var(--neutralSecondary)}
+.qrow__v{font:var(--t-body-medium);color:var(--OnSurfaceVariant);text-align:right}
+.qrow__v small{display:block;font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.qrow__ph{color:var(--Outline)}
+.qrow > .az-i{color:var(--Outline)}
+.qdays{display:flex;flex-direction:column;gap:12px;padding:12px 14px 14px;border-top:1px solid var(--white)}
+.ls-stop{color:var(--Error);border-color:transparent;background:#FDE8EB}
+
+/* ---- How Long: the segment, what that choice needs, and the dates as a line in the kind's colour ---- */
+.how-seg{display:flex;width:100%}
+.how-body{display:flex;flex-direction:column;gap:16px;margin-top:16px}
+.how-none{margin:10px 2px 0;font:var(--t-body-regular);color:var(--neutralSecondary)}
+.how-days{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.how-step{width:44px;height:44px;border-radius:50%;background:var(--Background);color:var(--OnPrimaryContainer);display:grid;place-items:center;cursor:pointer;transition:transform .14s var(--ease-sheet)}
+.how-step:active{transform:scale(.9)}
+.how-step[disabled]{opacity:.4;cursor:default}
+.how-days b{min-width:92px;text-align:center;font:600 18px/24px var(--font);color:var(--OnSurfaceVariant)}
+.how-tl{display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;background:var(--Background)}
+.how-tl__d{display:flex;flex-direction:column;gap:2px;flex:none}
+.how-tl__d small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.how-tl__d b{font:var(--t-body-medium);color:var(--OnSurfaceVariant)}
+.how-tl__d--end{text-align:right}
+.how-tl__line{flex:1;min-width:36px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.how-tl__line i{display:block;width:100%;height:4px;border-radius:2px;background:var(--kc);transform-origin:left}
+.how-tl__line em{font:500 12px/16px var(--font);font-style:normal;color:var(--kc);white-space:nowrap}
+.how-tl--always{--kc:#2E9E5B}
+.how-tl--once{--kc:#1C8DB0}
+.how-tl--yearly{--kc:#D9661E}
+.how-note{display:flex;gap:6px;align-items:flex-start;margin:-8px 2px 0;font:var(--t-body-regular);color:var(--neutralSecondary)}
+.how-note .az-i{color:var(--Outline);margin-top:1px}
+@keyframes linegrow{from{transform:scaleX(0)}}
+.tl-in .how-tl__line i{animation:linegrow .55s var(--ease-sheet)}
+.tl-in .how-tl__d,.tl-in .how-tl__line em,.tl-in + .how-note{animation:rowin .36s var(--ease-sheet) both}
+/* ---- Why: reasons as chips (no outline), More Reasons, and a text box ---- */
+.why-chips{display:flex;flex-wrap:wrap;gap:8px}
+.why-c{height:auto;min-height:40px;padding:8px 14px;gap:6px;border-radius:var(--r-full);font:var(--t-body-medium);transition:background-color .2s,color .2s,transform .14s var(--ease-sheet)}
+.why-c:active{transform:scale(.96)}
+.why-more{background:transparent;color:var(--OnPrimaryContainer);padding-left:8px}
+.why-t{margin-top:4px}
+
+/* ---- the Request page as the Hub's Incident record ---- */
+.req-b .rhd{background:var(--OnPrimaryContainer);color:var(--white);padding:4px 16px 16px;display:flex;flex-direction:column;gap:8px}
+.tab .req-b .rhd{padding:8px 20px 18px}
+.rhd__cat{display:flex;align-items:center;gap:10px;margin-right:-16px;min-height:34px}
+.tab .rhd__cat{margin-right:-20px}
+.rhd__cat .az-dept{background:rgba(255,255,255,.16);color:var(--white)}
+.rhd__catn{flex:1;min-width:0;font:var(--t-body-medium);color:rgba(255,255,255,.86)}
+.rhd__t{margin:6px 0 0;font:500 22px/28px var(--font);color:var(--white)}
+.rhd__s{margin:0;font:var(--t-body-regular);color:#CFE6E3}
+.rhd__m{display:flex;align-items:center;gap:6px;margin:2px 0 0;font:var(--t-subtext-regular);color:rgba(255,255,255,.7)}
+.rhd__who{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#1A464F;color:var(--white)}
+.tab .rhd__who{padding:12px 20px}
+.rhd__who .az-avatar{background:#3C6E78}
+.rhd__who .grow{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rhd__who b{font:var(--t-body-medium);color:var(--white)}
+.rhd__who small{font:var(--t-subtext-regular);color:rgba(255,255,255,.72)}
+.rhd__who .rperson__acts .az-iconbtn{width:36px;height:36px;background:rgba(0,0,0,.22);color:var(--white)}
+.rboxes{display:flex;flex-direction:column;gap:8px;padding:12px 12px 20px}
+.tab .rboxes{padding:16px 20px 24px;gap:10px}
+.rbox{background:var(--white);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.rbox__h{display:flex;align-items:center;gap:8px;min-height:22px;font:var(--t-body-medium);color:var(--OnSecondaryContainer)}
+.rbox__h > .az-i{color:var(--OnSecondaryContainer)}
+.rbox__h .lnk{font:var(--t-body-medium);color:var(--Primary);min-height:0}
+.rbox__b{display:flex;flex-direction:column;gap:6px;min-width:0}
+.rbox__b > b{font:500 16px/22px var(--font);color:var(--OnSurfaceVariant)}
+.rbox__b > p,.rbox__b > .v{margin:0;font:400 15px/22px var(--font);color:var(--OnSurfaceVariant)}
+.rbox__b .sub{font:400 14px/20px var(--font);color:var(--neutralSecondary)}
+.rbox__b > .ktag{align-self:flex-start}
+.rbox--grp{gap:18px}
+.rbox__f{display:flex;flex-direction:column;gap:8px}
+.rbox__kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.rbox__kv > div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.rbox__kv > div > span{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.rbox__kv > div > b{font:var(--t-body-medium);color:var(--OnSurfaceVariant)}
+.rbox .forcard{background:var(--Background);border:0;border-radius:12px}
+.rbox--chg .dtab{border-radius:12px}
+.rbox--act{padding-bottom:6px;gap:14px}
+.rbox--act .acts .act:first-child{border-top:0}
+.rbox--extra{background:transparent;padding:0;gap:8px}
+.rlow.rbox{padding:0;overflow:hidden;background:var(--notes)}
+.req-wide .rboxes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:12px}
+.req-wide .rbox--wide{grid-column:1 / -1}
+/* arrival: the boxes rise one after another, the status bar slides up; a change of status settles in place */
+@keyframes boxin{from{opacity:0;transform:translateY(16px)}}
+@keyframes sbup{from{transform:translateY(100%)}}
+.req-b .rhd__t,.req-b .rhd__s,.req-b .rhd__m{animation:rowin .4s var(--ease-sheet) both}
+.req-b .rhd__s{animation-delay:.03s}
+.req-b .rhd__m{animation-delay:.06s}
+.req-b .rboxes > *{animation:boxin .5s var(--ease-sheet) both}
+.req-b .rboxes > :nth-child(1){animation-delay:.06s}
+.req-b .rboxes > :nth-child(2){animation-delay:.1s}
+.req-b .rboxes > :nth-child(3){animation-delay:.14s}
+.req-b .rboxes > :nth-child(4){animation-delay:.18s}
+.req-b .rboxes > :nth-child(5){animation-delay:.22s}
+.req-b .rboxes > :nth-child(6){animation-delay:.26s}
+.req-b .rboxes > :nth-child(n+7){animation-delay:.3s}
+.req-b .pane__foot{animation:sbup .5s var(--ease-sheet) .1s both}
+.sb-swap > *{animation:shswap .34s var(--ease-sheet) both}
+.sb-swap > :nth-child(2){animation-delay:.04s}
+.sb-swap > :nth-child(n+3){animation-delay:.08s}
+.az-sheet .pk-q,.side .pk-q,.pickcard .pk-q{border-color:transparent;background:var(--white)}
+.forpick .forcard,.forcard{border:0!important;background:var(--Background);border-radius:12px}
+.why-c{border-radius:var(--r-8)}
+.how-body .dchips{gap:8px}
+.how-body .dchips .az-chip{padding:8px 10px}
+/* inside the record's boxes nothing is outlined: the table, the file tiles and the Save It As choices sit on the light fill */
+.rbox .dtab,.fe + .dtab{border:0;background:var(--Background);border-radius:12px}
+.rbox .dtab__h{background:var(--displaybgSecondary)}
+.rbox .dtab__r{border-color:var(--white)}
+.rbox .ftile{border:0;box-shadow:none;background:var(--Background)}
+.rbox--extra .sg-radio{border-color:transparent!important;background:var(--white);border-radius:12px}
+.rbox--extra .sg-radio[aria-pressed="true"]{background:var(--pick)}
+.rbox--extra .secttl{margin:8px 4px 0}
+.req-wide .rboxes{grid-auto-flow:row dense}
+.az-sheet .fopt,.side .fopt,.pickcard .fopt{border-color:transparent;background:var(--Background)}
+.az-sheet .fopt[aria-checked="true"],.side .fopt[aria-checked="true"]{background:var(--OnPrimaryContainer)}
+.az-sheet .itemchips button,.side .itemchips button{border-color:transparent;background:var(--white)}
+.az-sheet .itemchips button[aria-pressed="true"],.side .itemchips button[aria-pressed="true"]{background:var(--OnPrimaryContainer);color:var(--white)}
+.az-sheet .itemchips button.warn,.side .itemchips button.warn{background:var(--notes)}
+/* iPad landscape: one column of boxes as the Hub's Incident record on tablet (two columns left gaps between uneven boxes) */
+.req-wide .rboxes{display:flex;flex-direction:column;align-items:stretch}

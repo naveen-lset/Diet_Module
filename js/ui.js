@@ -77,32 +77,68 @@ function swapFx(sel) { if (calm()) return; requestAnimationFrame(() => document.
 function enter(el, cls) { if (calm() || !el) return; el.classList.add(cls); el.addEventListener('animationend', () => el.classList.remove(cls), { once: true }); }
 
 /* ---------- sheets ---------- */
+/* (owner, 20 Nov 2026: "the animations are not good") one sheet stays on screen while its content changes: a second step (a species → its places)
+   slides in from the side it comes from, a pushed choice (Item, Unit) slides forward and back, and the sheet's height eases to the new content
+   instead of jumping. A new sheet rises with its blocks a beat apart; closing slides it down. A sheet with search keeps one height while typing. */
 let SH = [];
 let SHSEQ = 0;
-function openSheet(fn, push = false) { if (!push) SH = []; fn._k = ++SHSEQ; SH.push(fn); drawOverlay(); }
-function closeSheet() { SH.pop(); drawOverlay(); }
+function openSheet(fn, push = false) { if (!push) SH = []; fn._k = ++SHSEQ; SH.push(fn); drawOverlay.dir = push ? 'fwd' : ''; drawOverlay(); }
+function closeSheet() { SH.pop(); drawOverlay.dir = 'back'; drawOverlay(); }
 function closeAll() { SH = []; drawOverlay(); }
+const SHEET_SEL = '.az-sheet, .side, .pickcard';
+/* the sheet's height moves from what it was to what the new content needs */
+function sheetFlip(sh, h0) {
+  if (calm() || !h0) return;
+  const h1 = sh.offsetHeight; if (Math.abs(h1 - h0) < 2) return;
+  clearTimeout(sh._ft); sh.style.transition = 'none'; sh.style.height = h0 + 'px'; void sh.offsetHeight;
+  sh.style.transition = 'height .36s cubic-bezier(.32,.72,0,1)'; sh.style.height = h1 + 'px';
+  sh._ft = setTimeout(() => { sh.style.transition = ''; sh.style.height = ''; }, 380);
+}
+/* play a class once on an element (restarts it if it is already playing) */
+function playFx(el, cls) { if (calm() || !el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); clearTimeout(el['_fx' + cls]); el['_fx' + cls] = setTimeout(() => el.classList.remove(cls), 700); }
 function drawOverlay() {
   const el = $('#ovl'), act = document.activeElement, fid = act && act.id && el.contains(act) ? act.id : null, pos = fid ? act.selectionStart : null;
-  if (!SH.length) { const c = el.firstElementChild; if (!c) return;
+  /* forward when a choice is pushed over the sheet, back when it is taken off */
+  const n = SH.length, dir = drawOverlay.dir || (n < (drawOverlay.n || 0) ? 'back' : n > (drawOverlay.n || 0) && drawOverlay.n ? 'fwd' : ''); drawOverlay.dir = ''; drawOverlay.n = n;
+  if (!SH.length) { drawOverlay.n = 0; drawOverlay.step = ''; const c = el.firstElementChild; if (!c) return;
     if (calm()) { el.innerHTML = ''; return; }
-    if (!c.classList.contains('out')) { c.classList.add('out'); setTimeout(() => { if (!SH.length && c.parentNode === el) el.innerHTML = ''; }, 210); } return; }
-  const top1 = SH[SH.length - 1], k = ` data-k="sh${top1._k}"`, s = top1(), inner = `<div class="az-sheet__title"><span>${s.title}${s.sub ? `<small>${s.sub}</small>` : ''}</span>${SH.length > 1 ? '' : ''}<button class="az-iconbtn" onclick="closeSheet()" aria-label="Close">${I('close')}</button></div><div class="az-sheet__body${s.form ? ' az-sheet__body--form' : ''}">${s.body}</div>${s.foot ? `<div class="az-sheet__foot">${s.foot}</div>` : ''}`;
+    if (!c.classList.contains('out')) { c.classList.add('out'); setTimeout(() => { if (!SH.length && c.parentNode === el) el.innerHTML = ''; }, 280); } return; }
+  /* a sheet still sliding away is gone at once: the next one rises fresh */
+  if (el.firstElementChild && el.firstElementChild.classList.contains('out')) el.innerHTML = '';
+  const top1 = SH[SH.length - 1], s = top1(), key = `sh${top1._k}`, step = String(s.step ?? ''), depth = +s.depth || 0;
+  const was = el.querySelector(SHEET_SEL), wasIn = was && was.querySelector('.az-sheet__in'), h0 = was ? was.offsetHeight : 0;
+  const typing = !!fid && /^(INPUT|TEXTAREA)$/.test(act.tagName);
+  const inner = `<div class="az-sheet__in" data-k="${key}" data-step="${esc(step)}" data-depth="${depth}"><div class="az-sheet__title"><span>${s.title}${s.sub ? `<small>${s.sub}</small>` : ''}</span><button class="az-iconbtn" onclick="closeSheet()" aria-label="Close">${I('close')}</button></div><div class="az-sheet__body${s.form ? ' az-sheet__body--form' : ''}">${s.body}</div>${s.foot ? `<div class="az-sheet__foot">${s.foot}</div>` : ''}</div>`;
   /* one dimming at a time: over a window or another overlay the sheet only lifts, it does not darken again */
-  const over = $('#over').children.length ? ' over' : '';
-  morph(el, isPhone() || s.bottom ? `<div class="az-scrim${over}" onclick="if(event.target===this)closeSheet()"><div class="az-sheet${isTab() ? ' az-sheet--wide' : ''}" role="dialog" aria-modal="true"${k}>${inner}</div></div>`
-    : s.pick ? `<div class="pick-scrim${over}" onclick="if(event.target===this)closeSheet()"><div class="pickcard" role="dialog" aria-modal="true"${k}>${inner}</div></div>`
-    : `<div class="side-scrim${over}" onclick="if(event.target===this)closeSheet()"><aside class="side" role="dialog" aria-modal="true"${k}>${inner}</aside></div>`);
+  const over = $('#over').children.length ? ' over' : '', tall = s.tall ? ' az-sheet--tall' : '';
+  morph(el, isPhone() || s.bottom ? `<div class="az-scrim${over}" onclick="if(event.target===this)closeSheet()"><div class="az-sheet${isTab() ? ' az-sheet--wide' : ''}${tall}" role="dialog" aria-modal="true" data-js-style>${inner}</div></div>`
+    : s.pick ? `<div class="pick-scrim${over}" onclick="if(event.target===this)closeSheet()"><div class="pickcard${tall}" role="dialog" aria-modal="true" data-js-style>${inner}</div></div>`
+    : `<div class="side-scrim${over}" onclick="if(event.target===this)closeSheet()"><aside class="side${tall}" role="dialog" aria-modal="true" data-js-style>${inner}</aside></div>`);
+  const sh = el.querySelector(SHEET_SEL), nowIn = sh.querySelector('.az-sheet__in'), body = nowIn.querySelector('.az-sheet__body');
+  if (!was || was !== sh) playFx(sh, 'sh-new');
+  else if (wasIn !== nowIn) { playFx(nowIn, dir === 'back' ? 'sh-back' : dir === 'fwd' ? 'sh-fwd' : 'sh-swap'); if (!typing) sheetFlip(sh, h0); }
+  else if (step !== (drawOverlay.step || '')) {
+    /* a tab inside the same page (Species · Site … of one species) moves only the list under the tabs; a new page moves the whole body */
+    const same = (drawOverlay.step || '').split(':')[0] === step.split(':')[0], fx = same && body.querySelector('[data-fx]') || body;
+    body.scrollTop = 0; playFx(fx, depth < (drawOverlay.depth || 0) ? 'sh-back' : 'sh-fwd'); sheetFlip(sh, h0); }
+  else if (!typing) sheetFlip(sh, h0);
+  drawOverlay.step = step; drawOverlay.depth = depth;
+  /* a list that changed under a tab, or the picked row of a long list, comes into view by itself */
+  const to = drawOverlay.scroll; drawOverlay.scroll = null;
+  if (to === 'top') body.scrollTo({ top: 0, behavior: calm() ? 'auto' : 'smooth' });
+  else if (to) { const t = body.querySelector(to); if (t) body.scrollTop = Math.max(0, t.offsetTop - body.clientHeight / 2 + t.offsetHeight / 2); }
   if (fid && document.getElementById(fid)) { const f = document.getElementById(fid); f.focus({ preventScroll: true }); try { if (pos != null) f.setSelectionRange(pos, pos); } catch (e) {} }
+  /* a tab row that scrolls sideways keeps the picked tab in view */
+  nowIn.querySelectorAll('.pk-lv').forEach(row => { const c = row.querySelector('[aria-selected="true"]'); if (c && (c.offsetLeft < row.scrollLeft || c.offsetLeft + c.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollTo({ left: c.offsetLeft - 16, behavior: calm() ? 'auto' : 'smooth' }); });
   positionThumbs(el);
 }
 /* redraw the sheet on top keeping its scroll (typing, ticking) */
 function redrawSheet() { drawOverlay.same = true; drawOverlay(); drawOverlay.same = false; }
 document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if ($('#ovl .menu-scrim')) closeMenu(); else if (SH.length) closeSheet(); });
 /* a menu (Antz Menu): drops below its icon with the right edges lined up, or opens above when there is no room; a tap outside closes it */
-function openMenu(btn, items) {
+function openMenu(btn, items, cls = '') {
   const dev = $('.device'), d = dev.getBoundingClientRect(), k = d.width / dev.offsetWidth || 1, b = btn.getBoundingClientRect();
-  $('#ovl').innerHTML = `<div class="menu-scrim" onclick="if(event.target===this)closeMenu()"><div class="az-menu" role="menu" style="right:${(d.right - b.right) / k}px;top:${(b.bottom - d.top) / k + 4}px">${items}</div></div>`;
+  $('#ovl').innerHTML = `<div class="menu-scrim" onclick="if(event.target===this)closeMenu()"><div class="az-menu${cls ? ' ' + cls : ''}" role="menu" style="right:${(d.right - b.right) / k}px;top:${(b.bottom - d.top) / k + 4}px">${items}</div></div>`;
   const m = $('#ovl .az-menu');
   if (m.offsetTop + m.offsetHeight > dev.offsetHeight - 8) { m.style.top = ''; m.style.bottom = `${(d.bottom - b.top) / k + 4}px`; m.classList.add('az-menu--up'); }
   m.querySelector('button').focus({ preventScroll: true });
@@ -111,6 +147,22 @@ function closeMenu() { const m = $('#ovl .menu-scrim'); if (m) m.remove(); }
 /* choose one from a list: the design system's bottom sheet with option rows */
 function optionSheet(title, opts, cur, onpick) {
   openSheet(() => ({ title, pick: true, body: opts.map(([v, l, s]) => `<button class="az-option" role="radio" aria-checked="${String(v) === String(cur)}" onclick="${onpick}(${JSON.stringify(v).replace(/"/g, '&quot;')})"><span>${esc(l)}${s ? `<small>${esc(s)}</small>` : ''}</span>${I(String(v) === String(cur) ? 'radio_button_checked' : 'radio_button_unchecked', 24, String(v) === String(cur))}</button>`).join('') }), SH.length > 0);
+}
+/* people to choose from (Requester, Approver): the design system's rows with the face, the name and the role, no outline; search when the list is long */
+let PSQ = { q: '' };
+function personSheet(title, ids, cur, cb) {
+  PSQ = { q: '', title, ids, cur, cb };
+  openSheet(() => { const q = PSQ.q.trim().toLowerCase(), long = PSQ.ids.length > 6, list = PSQ.ids.filter(id => !q || `${user(id).name} ${user(id).title}`.toLowerCase().includes(q));
+    return { title: PSQ.title, bottom: true, tall: long, body: (long ? pkSearch('ps-q', PSQ.q, 'Search people', 'PSQ.q=this.value;redrawSheet()') : '')
+      + (list.length ? pkList(list.map(id => pkRow(`${PSQ.cb}('${id}')`, avatar(user(id).name), youName(id), esc(user(id).title), undefined, PSQ.cur === id)).join('')) : '<p class="sg-none">No one by that name</p>') }; });
+  if (PSQ.ids.length > 6) pkFocus('ps-q');
+}
+/* priority on the form's header, as the Figma (Request Module, Changes 12 Aug 2025, "Priority Selection"): a round icon in the colour of the
+   priority; a tap opens Set Priority under it (Normal · High · Emergency, a tick on the one picked) */
+const prioIc = (k, sz = 20) => `<span class="prio-ic prio-ic--${k}" aria-hidden="true">${k === 'emergency' ? I('local_fire_department', sz, true) : `<b>${PRIO[k][0]}</b>`}</span>`;
+const prioBtn = (cur, js) => `<button class="prio-hd" onclick="${js}" aria-haspopup="menu" aria-label="Priority: ${PRIO[cur][1]}" title="Priority: ${PRIO[cur][1]}">${prioIc(cur)}</button>`;
+function prioMenu(btn, cur, cb) {
+  openMenu(btn, `<p class="az-menu__h">Set Priority</p>${Object.entries(PRIO).map(([k, [, l]]) => `<button role="menuitemradio" aria-checked="${cur === k}" class="prio-mi${cur === k ? ' on' : ''}" onclick="closeMenu();${cb}('${k}')">${prioIc(k, 18)}<span class="grow"><b>${l}</b><small>${esc(PRI_TEXT[k])}</small></span>${cur === k ? I('check', 20) : ''}</button>`).join('')}`, 'prio-menu');
 }
 /* the site switch (Antz pattern): one site card per site, a count to tell them apart, a filled radio for the one picked */
 function siteSheet() {
