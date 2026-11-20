@@ -15,7 +15,7 @@ const USERS = [
   { id: 'u-arjun', name: 'Arjun P', title: 'IT Head', role: 'other' },
 ];
 const VIEWERS = ['u-kiran', 'u-hydar', 'u-suresh', 'u-manoj'];
-/* diet requests (owner, 18 Nov): the Biologist raises, the Dietician approves, then the Kitchen updates the diet */
+/* diet requests (owner, 19 Nov 2026): anybody raises, the Dietician approves; approving applies it, and the kitchen works from the diet */
 const APPROVER = 'u-hydar';
 /* Help Desk departments: who approves by default; Diet requests need the Dietician permission.
    team: the department's members, who do the work once a request is approved (In progress → Completed), as the Help Desk app's department members; the head alone when not given */
@@ -195,20 +195,18 @@ function SEED_REQUESTS(t) {
   return [
     { id: 'REQ38-00513', kind: 'skip', sp: 150254, level: 'enclosure', ref: 19996, by: 'u-kiran', prio: 'normal', reason: 'Fasting day',
       title: 'Fasting day for Q Pen 1', text: 'Both birds in quarantine are on their weekly fast. Hold every feed for the day.', note: '', files: [],
-      date: d(-6), feeds: 'all', state: 'completed', assignee: 'u-manoj',
+      date: d(-6), feeds: 'all', state: 'approved',
       events: [{ kind: 'raised', by: 'u-kiran', at: at(-9, '10:20') }, { kind: 'approved', by: 'u-hydar', at: at(-8, '09:05'), note: '' },
-        { kind: 'started', by: 'u-manoj', at: at(-7, '16:00') },
-        { kind: 'completed', by: 'u-manoj', at: at(-6, '18:10'), note: 'No feed given in Q Pen 1 all day. Water as usual. Both birds back on feed the next morning.', team: 1, people: '', files: [] }] },
+        { kind: 'comment', by: 'u-manoj', at: at(-6, '18:10'), note: 'No feed given in Q Pen 1 all day. Water as usual. Both birds back on feed the next morning.' }] },
     { id: 'REQ38-00514', kind: 'diet', sp: 195022, level: 'species', ref: null, by: 'u-kiran', prio: 'normal', reason: 'Behavioral',
       title: 'Meerkats onto the insectivore diet', text: 'More foraging time: move the mob to the insectivore diet with mealworm scatter feeds.', note: 'Scatter the mealworm across the sand, not in a bowl.', files: [],
       base: 'D-331', diet: 'D-330', start: d(-6), end: null, state: 'rejected',
       events: [{ kind: 'raised', by: 'u-kiran', at: at(-8, '11:40') },
         { kind: 'rejected', by: 'u-hydar', at: at(-7, '14:10'), reason: 'Mealworm is out of stock and the supplier has no date yet. Raise it again with another protein.' }] },
     { id: 'REQ38-00515', kind: 'diet', sp: 135332, level: 'animal', ref: 215920, by: 'u-kiran', prio: 'high', reason: 'Post-op recovery',
-      title: 'Soft recovery diet for #215920', text: 'Jaw surgery on Friday. Soft, mashed food for two weeks while the stitches heal.', note: 'Mash fully. No whole pieces.', files: [{ name: 'Surgery notes #215920.pdf', kind: 'pdf', size: '640 KB' }],
-      base: 'D-273', diet: 'D-502', start: d(-3), end: d(11), state: 'completed', assignee: 'u-manoj', applied: true,
-      events: [{ kind: 'raised', by: 'u-kiran', at: at(-5, '16:30') }, { kind: 'approved', by: 'u-hydar', at: at(-4, '08:50'), note: 'Morning shift will do the mashing.' },
-        { kind: 'completed', by: 'u-manoj', at: at(-4, '09:40'), note: 'Diet updated. Mashed from the evening feed.', team: 1, people: '', files: [] }] },
+      title: 'Soft recovery diet for AID 215920', text: 'Jaw surgery on Friday. Soft, mashed food for two weeks while the stitches heal.', note: 'Mash fully. No whole pieces.', files: [{ name: 'Surgery notes AID 215920.pdf', kind: 'pdf', size: '640 KB' }],
+      base: 'D-273', diet: 'D-502', start: d(-3), end: d(11), state: 'approved', applied: true,
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(-5, '16:30') }, { kind: 'approved', by: 'u-hydar', at: at(-4, '08:50'), note: 'Morning shift will do the mashing.' }] },
     { id: 'REQ38-00516', kind: 'skip', sp: 161818, level: 'section', ref: 904, by: 'u-kiran', prio: 'normal', reason: 'Transfer',
       title: 'Skip morning feed in Primate House', text: 'The group moves to the new night enclosures. Skip the morning feed so they travel on an empty stomach.', note: '', files: [],
       date: d(-2), feeds: [2], state: 'cancelled',
@@ -254,6 +252,19 @@ function SEED_REQUESTS(t) {
       title: 'End Soft Recovery Coypu Diet early', text: 'The stitches are out and he eats normally. Back to the usual diet after Wednesday.', note: '', files: [],
       ends: ['AS-5'], stop: d(2), state: 'pending',
       events: [{ kind: 'raised', by: 'u-kiran', at: at(0, '09:40') }] },
+    /* Diet requests in words (owner, 19 Nov 2026): anybody raises them, the Dietician approves, the kitchen gets them. Raised by a Biologist, a Kitchen Operator and the Kitchen Head */
+    { id: 'REQ38-00525', kind: 'medicine', sp: 135332, level: 'animal', ref: 215920, by: 'u-kiran', prio: 'high', reason: '',
+      title: 'Medicine with food for AID 215920', text: 'Meloxicam 0.2 ml once a day for 5 days. Mix it into a spoon of mashed sweet potato so he eats all of it.', note: '', files: [{ name: 'Vet prescription AID 215920.pdf', kind: 'pdf', size: '210 KB' }],
+      f: { from: 0, feed: [2], days: 5, rows: [['From', `Today · ${fmtDay(d(0))}`], ['Feed', bandText(FEEDS.find(x => x.id === 2))], ['For', '5 days']] }, state: 'pending',
+      events: [{ kind: 'raised', by: 'u-kiran', at: at(0, '10:05') }] },
+    { id: 'REQ38-00526', kind: 'quality', sp: 150254, level: 'enclosure', ref: 19990, by: 'u-manoj', prio: 'normal', reason: '',
+      title: 'Food quality issue · Paddock A', text: 'The papaya for the morning feed came in soft and brown inside. We served half. Please check the batch from the Fruit Store.', note: '', files: [{ name: 'Papaya batch.jpg', kind: 'image', size: '1.1 MB' }],
+      f: { day: 0, feed: [2], rows: [['Which day', `Today · ${fmtDay(d(0))}`], ['Feed', bandText(FEEDS.find(x => x.id === 2))]] }, state: 'pending',
+      events: [{ kind: 'raised', by: 'u-manoj', at: at(0, '09:55') }] },
+    { id: 'REQ38-00527', kind: 'extra', sp: 360599, level: 'enclosure', ref: 19981, by: 'u-suresh', prio: 'normal', reason: '',
+      title: 'Extra feed for Ril enclosure', text: 'Watermelon slices after the shell checks, about 200 g for each tortoise, as a treat.', note: '', files: [],
+      f: { when: 1, feed: [4], rows: [['When', `Tomorrow · ${fmtDay(d(1))}`], ['Feed', bandText(FEEDS.find(x => x.id === 4))]] }, state: 'approved',
+      events: [{ kind: 'raised', by: 'u-suresh', at: at(-1, '16:20') }, { kind: 'approved', by: 'u-hydar', at: at(0, '08:15'), note: '' }] },
   ];
 }
 
@@ -344,7 +355,7 @@ function SEED(t) {
   const siteOfPlace = r => { const a = r.level === 'animal' ? animals.find(x => x.id === r.ref) : null, enc = a ? a.enc : r.level === 'enclosure' ? r.ref : null;
     if (enc) return secOf[encOf[enc].section].site; if (r.level === 'section') return secOf[r.ref].site; if (r.level === 'site') return r.ref;
     return secOf[encOf[animals.find(x => x.sp === r.sp).enc].section].site; };
-  const requests = SEED_REQUESTS(t).map(r => ({ ...r, dept: 'diet', approver: APPROVER, site: siteOfPlace(r), ...(['skip', 'end'].includes(r.kind) || r.how ? {} : { how: r.end ? 'once' : 'always' }) })).concat(GENERIC_REQUESTS(t)), dietOf = Object.fromEntries(diets.map(x => [x.id, x]));
+  const requests = SEED_REQUESTS(t).map(r => ({ ...r, dept: 'diet', approver: APPROVER, site: siteOfPlace(r), ...(['skip', 'end', 'extra', 'medicine', 'quality', 'other', 'ask'].includes(r.kind) || r.how ? {} : { how: r.end ? 'once' : 'always' }) })).concat(GENERIC_REQUESTS(t)), dietOf = Object.fromEntries(diets.map(x => [x.id, x]));
   requests.forEach(r => (r.changes || []).forEach(c => {
     if (c.op === 'add') Object.assign(c, { prep: '', cut: '', days: WK.daily, ...c });
     if (c.op === 'change') { const was = dietOf[r.base].meals.find(m => m.feed === c.feed).items.find(i => i.item === c.item); Object.assign(c, { to: was.item, qty: was.qty, unit: was.unit, prep: was.prep, cut: was.cut, days: was.days, ...c }); }

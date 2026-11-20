@@ -19,7 +19,7 @@ function changeView(h) {
   const req = h.req ? by('requests', h.req) : null;
   const rows = [
     d ? r('restaurant', 'Diet', `<b>${esc(d.name)}</b>${a && !ended(a) ? `<a class="lnk" href="#/diets/${a.sp}/${a.id}">Open diet${I('chevron_right', 18)}</a>` : ''}`) : '',
-    r('person', h.req ? 'Asked by' : 'Changed by', `<b>${youName(h.by)} · ${esc(user(h.by).title)}</b>`),
+    r('person', h.req ? 'Asked By' : 'Changed By', `<b>${youName(h.by)} · ${esc(user(h.by).title)}</b>`),
     req ? r('assignment', 'From Help Desk request', `${visibleTo(req, me()) ? `<a class="lnk" href="#/requests/${req.id}">${req.id} · ${esc(req.title)}</a>` : `<b>${req.id}</b>`}<p>Approved by ${youName(h.approvedBy)}${h.doneBy ? ` · Updated in the kitchen by ${youName(h.doneBy)}` : ''}</p>`) : '',
     h.reason ? r('label', 'Reason', `<b>${esc(h.reason)}</b>`) : '',
     h.remarks ? r('notes', 'Remarks', `<p>${esc(h.remarks)}</p>`) : '',
@@ -27,14 +27,14 @@ function changeView(h) {
   let what = '';
   if (h.lines && h.lines.length) {
     const groups = [...new Set(h.lines.map(l => l.feed))].sort((x, y) => x - y).map(f => ({ feed: f, rows: h.lines.filter(l => l.feed === f).map(l => lineRow(l.was, histChange(l))) }));
-    what = `<p class="secttl">What changed</p>${h.from ? `<p class="sub">From ${esc(diet(h.from).name)}</p>` : ''}${linesView(groups)}`;
-  } else if (h.follows) what = `<p class="secttl">What changes for these animals</p>${diet(h.from) ? `<p class="sub">Was ${esc(diet(h.from).name)}</p>` : ''}${linesView(dietDiffGroups(diet(h.from), diet(h.follows)))}`;
-  else if (h.created && d) what = `<p class="secttl">The diet as set</p>${linesView(dietGroups(d))}`;
-  else if (h.shared) what = `<p class="secttl">Now also fed to</p><div class="list list--8">${h.shared.map(s => speciesRow(species(s), { href: `#/diets/${s}`, sub: species(s).cls, end: I('chevron_right', 20) })).join('')}</div>`;
-  else if (h.fields) what = `<p class="secttl">What changed</p><div class="rsec">${h.fields.map(([k, x, y]) => r('event', k, `<b>${esc(y)}</b><span>was ${esc(x)}</span>`)).join('')}</div>`;
+    what = `<p class="secttl">What Changed</p>${h.from ? `<p class="sub">From ${esc(diet(h.from).name)}</p>` : ''}${linesView(groups)}`;
+  } else if (h.follows) what = `<p class="secttl">What Changes For These Animals</p>${diet(h.from) ? `<p class="sub">Was ${esc(diet(h.from).name)}</p>` : ''}${linesView(dietDiffGroups(diet(h.from), diet(h.follows)))}`;
+  else if (h.created && d) what = `<p class="secttl">The Diet As Set</p>${linesView(dietGroups(d))}`;
+  else if (h.shared) what = `<p class="secttl">Now Also Fed To</p><div class="list list--8">${h.shared.map(s => speciesRow(species(s), { href: `#/diets/${s}`, sub: species(s).cls, end: I('chevron_right', 20) })).join('')}</div>`;
+  else if (h.fields) what = `<p class="secttl">What Changed</p><div class="rsec">${h.fields.map(([k, x, y]) => r('event', k, `<b>${esc(y)}</b><span>was ${esc(x)}</span>`)).join('')}</div>`;
   else if (h.skip) {
     const w = h.diet ? diet(h.diet) : null, all = h.skip.feeds === 'all';
-    what = `<p class="secttl">Feeds on ${wday(h.skip.date)} ${fmtDay(h.skip.date)}</p><div class="rsec">${(w ? w.meals : []).map(m => r('schedule', bandText(feed(m.feed)), `<b>${all || h.skip.feeds.includes(m.feed) ? 'Not given' : 'Given'}</b><p>${esc(m.items.map(i => item(i.item).name).join(', '))}</p>`)).join('')}</div>`;
+    what = `<p class="secttl">Feeds On ${wday(h.skip.date)} ${fmtDay(h.skip.date)}</p><div class="rsec">${(w ? w.meals : []).map(m => r('schedule', bandText(feed(m.feed)), `<b>${all || h.skip.feeds.includes(m.feed) ? 'Not Given' : 'Given'}</b><p>${esc(m.items.map(i => item(i.item).name).join(', '))}</p>`)).join('')}</div>`;
   }
   return { head, body: `<div class="rsec">${rows}</div>${what}` };
 }
