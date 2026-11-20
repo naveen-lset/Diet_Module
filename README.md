@@ -65,7 +65,7 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
 │   ├── ui.js             State, top bar, sheets, diet tables, cards, in-place redraw (morph)
 │   ├── diets.js          Diet module screens
 │   ├── history.js        A diet's change history
-│   ├── helpdesk.js       Help Desk list, request facts, request page A, status bar, Activity
+│   ├── helpdesk.js       Help Desk list, request facts, the request page (boxes), status bar, Activity
 │   ├── form.js           New Request (and Edit): the departments' forms and the diet request types
 │   ├── suggest.js        Diet change: Suggest a change (anybody), Review request, Save it as; the species (scope picker), diet and reason search sheets
 │   ├── reqviews.js       The request page's diet parts: low stock, what changes, what approving does, the diet now, attachment tiles
@@ -113,11 +113,18 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
 - **The diet request form** is the Figma Help Desk form (Request Module, 15 Jul 2025), in sections:
   - Request Details: Requesting To, plus Request Type, which opens Select Request Type;
   - For: the Figma Animal Card For Selection;
-  - the type's own sections (When, or What Changes · How Long · Why);
-  - Describe Your Request;
+  - the type's own sections: When, or What Changes · How Long · Why;
+  - Describe Your Request, for Diet Requests only (a Diet Change says why under Why, and its title is made for it);
   - Attachments If Any;
-  - **Priority**: the Figma's three icons, a section in every department's form;
-  - Approval: Requester and Approver.
+  - Approval: the Requester and the Approver. Each is a card that opens its people; the requester can be someone else (`raisedBy` keeps who raised it).
+- **Priority** sits on the form's header, as the Figma's Priority Selection (Request Module, 12 Aug 2025). The round icon opens Set Priority (`prioBtn` / `prioMenu` in `js/ui.js`). Every department's form has it.
+- **What Changes** edits the diet in the form itself (`foodEditor` in `js/form.js`): meal cards by feed time, one row per food. A tap opens the food's sheet (`lsHtml`), after the Figma's Quantity sheet: a big amount with − and +, ±25 / 50 %, then Food, Preparation, Cut Size and Days rows.
+- **How Long** is a segment (From Now On · For Some Days · Every Year), then the start, the days or the season, and the dates drawn as a line (`howBlock`). **Why** is reason chips, More Reasons (a search sheet) and a text box (`whySec2`).
+- **Sheets** (`drawOverlay` in `js/ui.js`):
+  - Rows have no outline: white on the sheet colour, and the picked one is a soft green.
+  - One sheet stays on screen while its content changes. A second step slides in, the height eases to the new content, and a sheet with search keeps one height.
+  - Select Species (`spPickHtml` in `js/suggest.js`): a species opens with Species · Site · Section · Enclosure · Animal as pinned tabs. Under them is a list with its own search, grouped under pinned headings.
+- **The request page** (`paneRequest` in `js/helpdesk.js`) follows the Hub's Incident record. A dark head shows the title, the site and the time, with the requester on a darker strip. Below it is one white box per subject. The boxes rise in one after another and the status bar slides up.
 - - **Diet home** opens with a stats card above the tabs (Species · Diets · Certified · Uncertified at the site picked), as the Lab and Mortality modules. Each number opens its list (`dietStats` in `js/diets.js`).
 
 ## Branches
