@@ -37,15 +37,15 @@ const DEPTS = [
 const DIET_APPROVERS = ['u-hydar', 'u-amruth', 'u-manoj'];
 /* each department asks its own questions in the New Request form (Diet has the diet sections) */
 const DEPT_FORMS = {
-  maintenance: { title: 'Maintenance details', fields: [
+  maintenance: { title: 'Maintenance Details', fields: [
     { k: 'issue', label: 'Issue', type: 'select', icon: 'handyman', opts: ['Electrical', 'Plumbing', 'Cooling', 'Carpentry', 'Civil', 'Other'], req: true },
     { k: 'where', label: 'Where exactly', type: 'text', icon: 'pin_drop', placeholder: 'Room, enclosure or equipment', req: true },
     { k: 'risk', label: 'Safety risk to people or animals', type: 'switch', icon: 'warning' } ] },
-  procurement: { title: 'Items needed', fields: [
+  procurement: { title: 'Items Needed', fields: [
     { k: 'items', label: 'Items', type: 'items', icon: 'inventory_2', req: true },
     { k: 'needBy', label: 'Needed by', type: 'date', icon: 'event', req: true },
     { k: 'cost', label: 'Estimated cost', type: 'money', icon: 'currency_rupee' } ] },
-  horticulture: { title: 'Horticulture details', fields: [
+  horticulture: { title: 'Horticulture Details', fields: [
     { k: 'work', label: 'Work', type: 'select', icon: 'park', opts: ['Browse supply', 'Pruning', 'Planting', 'Lawn care', 'Tree safety', 'Other'], req: true },
     { k: 'where', label: 'Where exactly', type: 'text', icon: 'pin_drop', placeholder: 'Section or enclosure', req: true },
     { k: 'needBy', label: 'Needed by', type: 'date', icon: 'event' } ] },

@@ -520,9 +520,11 @@ function deptSection(d) {
 /* attachments (sample files in the prototype) */
 const SAMPLE_FILES = [{ name: 'Vet note.pdf', kind: 'pdf', size: '320 KB' }, { name: 'Photo of the enclosure.jpg', kind: 'image', size: '1.4 MB' }, { name: 'Weight chart.xlsx', kind: 'doc', size: '42 KB' }];
 function addFile() { const d = S.draft, f = SAMPLE_FILES.find(x => !d.files.some(y => y.name === x.name)); if (f) d.files.push(f); render(); }
-const attachSec = d => section('attach_file', 'Attachments', `${d.files.length ? `<div class="files">${d.files.map((f, i) => `<span class="file">${I(f.kind === 'image' ? 'image' : f.kind === 'pdf' ? 'picture_as_pdf' : 'description', 20)}${esc(f.name)}<button class="az-iconbtn" style="width:28px;height:28px" onclick="S.draft.files.splice(${i},1);render()" aria-label="Remove ${esc(f.name)}">${I('close', 18)}</button></span>`).join('')}</div>` : ''}
-  <button class="az-upload" onclick="addFile()"><i class="az-i" aria-hidden="true">add_photo_alternate</i><b>Add Photos Or Files</b><span>PDF, images or documents</span></button>`);
-/* priority sits at the top right, as the Help Desk app: the Antz flag */
+const attachSec = d => section('attach_file', 'Attachments If Any', d.files.length ? `<div class="ftiles">${d.files.map((f, i) => `<span class="ftile ftile--${f.kind}"><span class="ftile__p">${I(f.kind === 'image' ? 'image' : f.kind === 'pdf' ? 'picture_as_pdf' : 'description', 32)}</span><b>${esc(f.name)}</b><small>${esc(f.size || '')}</small><button class="ftile__x" onclick="S.draft.files.splice(${i},1);render()" aria-label="Remove ${esc(f.name)}">${I('cancel', 22, true)}</button></span>`).join('')}</div><button class="lnk att-more" onclick="addFile()">${I('add_circle', 20)}Add More</button>`
+  : `<button class="az-upload" onclick="addFile()"><i class="az-i" aria-hidden="true">add_photo_alternate</i><b>Upload Files</b><span>Supported: JPEG, PNG, PDF, MP4 (Max 50 MB)</span></button>`);
+/* Priority as the Figma Help Desk form (Request Module, Priority Section): Normal · High · Emergency, one tap */
+const prioSec = d => section('error', 'Priority', `<div class="prio-opts" role="radiogroup" aria-label="Priority">${Object.entries(PRIO).map(([k, [g, l]]) => `<button class="prio-opt${d.prio === k ? ' on' : ''}" role="radio" aria-checked="${d.prio === k}" onclick="S.draft.prio='${k}';render()" title="${esc(PRI_TEXT[k])}"><span class="prio-opt__c prio-opt__c--${k}">${k === 'emergency' ? I('local_fire_department', 20, true) : g}</span>${l}</button>`).join('')}</div>`);
+/* (the top-right priority pill: kept for the sheet, the form now has the Priority section) */
 function prioSheet() { optionSheet('Priority', Object.entries(PRIO).map(([k, [, l]]) => [k, l, PRI_TEXT[k]]), S.draft.prio, 'pickFormPrio'); }
 function pickFormPrio(v) { S.draft.prio = v; closeAll(); render(); }
 /* Your request: what will be sent, said once before sending (design system: Review before sending). The title writes itself until the
@@ -616,12 +618,11 @@ function paneForm(q) {
   if (d.blocked) return pane('pane--fill', topbar({ back: close, title: 'Edit Request' }), empty1('This request can no longer be edited'));
   if (d.pick) return whoPage(d.pick, 'S.draft.pick', { back: 'S.draft.pick=null;render()', done: 'dfWhoDone()' });
   if (d.ent) return paneEntity(d);
-  const prio = `<button class="prio-pick" onclick="prioSheet()" aria-label="Priority: ${PRIO[d.prio][1]}"><span class="prio prio--${d.prio}">${d.prio === 'emergency' ? I('local_fire_department', 16, true) : PRIO[d.prio][0]}</span>${PRIO[d.prio][1]}${I('keyboard_arrow_down', 20)}</button>`;
-  const top = topbar({ close: `go('${close}')`, title: d.edit ? 'Edit Request' : 'New Request', actions: prio }), foot = `<div id="form-foot">${formFoot(d)}</div>`;
+  const top = topbar({ close: `go('${close}')`, title: d.edit ? 'Edit Request' : 'New Request' }), foot = `<div id="form-foot">${formFoot(d)}</div>`;
   if (d.dept === 'diet') return pane('pane--fill form-page', top, `<div class="body">${dietForm(d)}</div>`, foot, `form-${d.key}`);
   const secs = [requestDetails(d)];
   if (DEPT_FORMS[d.dept]) secs.push(deptSection(d));
-  secs.push(attachSec(d));
+  secs.push(attachSec(d), prioSec(d));
   return pane('pane--fill form-page', top, `<div class="body">${secs.join('')}</div>`, foot, `form-${d.key}`);
 }
 const DIET_KEYS = ['targets', 'group', 'date', 'feeds', 'slot', 'base', 'start', 'end', 'changes', 'rules', 'diet', 'ends', 'stop', 'how', 'name', 'forAll'];
@@ -765,62 +766,74 @@ function dfErr(d) {
   return '';
 }
 /* the changed foods, as Item requests' review: Food | Was | Now, the old value struck through */
-const dfFoods = (d, label) => d.changes.length ? `<div class="sg-sum df-sum"><div class="sg-sum__h"><span class="sg-cap">${esc(diet(d.base).name)} · ${plural(d.changes.length, 'change')}</span><button class="lnk" onclick="dfEditFood()">Edit</button></div>${diffTable(d.changes, diet(d.base))}</div>`
+const dfFoods = (d, label) => d.changes.length ? `<div class="dfh">${I('restaurant', 20)}<span class="grow"><b>${esc(diet(d.base).name)}</b><small>${plural(d.changes.length, 'change')}</small></span><button class="lnk" onclick="dfEditFood()">Edit Foods</button></div>${diffTable(d.changes, diet(d.base))}`
   : `<button class="az-btn az-btn--outline df-edit" id="f-name" onclick="dfEditFood()">${I('edit_note')}${label}</button>`;
 /* the type's own questions */
 function dtypeFields(d) {
-  /* Why (owner, 19 Nov: no endless forms): one field; the reasons open in a sheet with search, the usual ones first */
-  const k = d.dtype, out = [], why = list => { DF_WHY = [...new Set([...list.filter(t => SG_REASONS.includes(t)), ...list])]; return select('Why', d.reason || '', 'dfWhySheet()', { req: true, placeholder: 'Choose a reason', id: 'f-reason' }); };
-  const how = () => dfield('How Long', `${howTiles(d.how, v => `S.draft.how='${v}';render()`)}
-    ${d.how === 'once' ? dchips([[3, '3 days'], [7, '7 days'], [14, '14 days'], [30, '30 days']], v => d.days === v, v => `S.draft.days=${v};render()`) : ''}
+  /* each part of the request is a section of the Help Desk form (owner, 20 Nov 2026: Iteration A of the form mockup); Why is one field that opens the reasons with search */
+  const k = d.dtype, why = list => { DF_WHY = [...new Set([...list.filter(t => SG_REASONS.includes(t)), ...list])]; return section('label', 'Why', select('', d.reason || '', 'dfWhySheet()', { placeholder: 'Choose a reason', id: 'f-reason', icon: 'search' }), true); };
+  const how = () => section('event', 'How Long', `${howTiles(d.how, v => `S.draft.how='${v}';render()`)}
+    ${d.how === 'once' ? dchips([[3, '3 Days'], [7, '7 Days'], [14, '14 Days'], [30, '30 Days']], v => d.days === v, v => `S.draft.days=${v};render()`) : ''}
     ${d.how === 'yearly' ? dchips(SG_SEASONS.map(([s, a, b]) => [s, `${s} · ${mdText(a)} – ${mdText(b)}`]), v => d.season === v, v => `S.draft.season='${v}';render()`) : ''}
-    ${d.how && d.how !== 'yearly' ? dchips([[0, 'From today'], [1, 'From tomorrow']], v => d.from === v, v => `S.draft.from=${v};render()`) : ''}`, true);
-  const feedChips = (cur, js, all = true) => dchips([...(all ? [['all', 'Whole day', 'All feeds']] : []), ...dfFeeds(d).map(f => [f, bandText(feed(f))])], v => v === 'all' ? cur === 'all' : cur !== 'all' && (cur || []).includes(v), js, 'schedule');
+    ${d.how && d.how !== 'yearly' ? dchips([[0, 'From Today'], [1, 'From Tomorrow']], v => d.from === v, v => `S.draft.from=${v};render()`) : ''}`, true);
+  const feedChips = (cur, js, all = true) => dchips([...(all ? [['all', 'Whole Day', 'All feeds']] : []), ...dfFeeds(d).map(f => [f, bandText(feed(f))])], v => v === 'all' ? cur === 'all' : cur !== 'all' && (cur || []).includes(v), js, 'schedule');
   const oneFeed = (label, key = 'feed') => dfield(label, feedChips(d.f[key], v => `S.draft.f.${key}=[${v}];render()`, false));
-  /* ---- a Diet request: when, which feed; what is asked goes in the request's own words below ---- */
-  if (k === 'skip') out.push(dfield('Day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow')], v => d.date === addDays(TODAY, v), v => `S.draft.date='${addDays(TODAY, v)}';render()`), true),
+  const when = (...fs) => section('event', 'When', fs.join(''));
+  /* ---- a Diet request: when, which feed; what is asked goes in Describe Your Request ---- */
+  if (k === 'skip') return when(dfield('Day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow')], v => d.date === addDays(TODAY, v), v => `S.draft.date='${addDays(TODAY, v)}';render()`), true),
     dfield('Feeds', feedChips(d.feeds, v => v === 'all' ? `S.draft.feeds='all';render()` : `dfToggleFeed(${v})`), true));
-  if (k === 'extra') out.push(dfield('When', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), [7, 'Every day this week']], v => (d.f.when ?? 1) === v, v => `S.draft.f.when=${v};render()`)), oneFeed('With which feed'));
-  if (k === 'medicine') out.push(dfield('From', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow')], v => (d.f.from ?? 0) === v, v => `S.draft.f.from=${v};render()`)), oneFeed('Mix into'),
-    dfield('For how many days', dchips([[3, '3 days'], [5, '5 days'], [7, '7 days'], [14, '14 days']], v => (d.f.days ?? 5) === v, v => `S.draft.f.days=${v};render()`)));
-  if (k === 'quality') out.push(dfield('Which day', dchips([dayOpt(0, 'Today'), dayOpt(-1, 'Yesterday')], v => (d.f.day ?? 0) === v, v => `S.draft.f.day=${v};render()`)), oneFeed('Which feed'));
+  if (k === 'extra') return when(dfield('When', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), [7, 'Every Day This Week']], v => (d.f.when ?? 1) === v, v => `S.draft.f.when=${v};render()`)), oneFeed('With Which Feed'));
+  if (k === 'medicine') return when(dfield('From', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow')], v => (d.f.from ?? 0) === v, v => `S.draft.f.from=${v};render()`)), oneFeed('Mix Into'),
+    dfield('For How Many Days', dchips([[3, '3 Days'], [5, '5 Days'], [7, '7 Days'], [14, '14 Days']], v => (d.f.days ?? 5) === v, v => `S.draft.f.days=${v};render()`)));
+  if (k === 'quality') return when(dfield('Which Day', dchips([dayOpt(0, 'Today'), dayOpt(-1, 'Yesterday')], v => (d.f.day ?? 0) === v, v => `S.draft.f.day=${v};render()`)), oneFeed('Which Feed'));
   /* ---- a Diet change: the diet's configuration ---- */
-  if (k === 'change') {
-    out.push(dfield('Foods', !d.base ? '<p class="sg-none">No diet here yet. Choose New diet instead.</p>' : dfFoods(d, `Change the foods in ${esc(diet(d.base).name)}`), true));
-    if (d.changes.length) out.push(how(), why(REASONS.items));
-  }
-  if (k === 'newdiet') {
-    out.push(select('Start From', d.base ? diet(d.base).name : 'Nothing · the dietician builds it', 'dfStartSheet()', { id: 'f-from', icon: 'search' }));
-    if (d.base) out.push(`<label class="az-field"><span class="az-label">Diet Name</span><span class="az-input az-input--text"><input id="df-name" placeholder="${esc(dfNewName(d) || 'Name the diet')}" value="${esc(d.name || '')}" oninput="S.draft.name=this.value;redrawFoot()"></span></label>`,
-      dfield('Foods', dfFoods(d, `Set the foods, from ${esc(diet(d.base).name)}`)), how(), why(REASONS.items));
-    else out.push(dfield('Needed from', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(7, 'Next week')], v => (d.f.from ?? 1) === v, v => `S.draft.f.from=${v};render()`)), why(REASONS.items));
-  }
+  if (k === 'change') return section('swap_horiz', 'What Changes', !d.base ? '<p class="sg-none">No diet here yet. Choose New Diet instead.</p>' : dfFoods(d, `Change the foods in ${esc(diet(d.base).name)}`), true)
+    + (d.changes.length ? how() + why(REASONS.items) : '');
+  if (k === 'newdiet') return section('add_circle', 'New Diet', select('Start From', d.base ? diet(d.base).name : 'Nothing · the dietician builds it', 'dfStartSheet()', { id: 'f-from', icon: 'search' })
+      + (d.base ? `<label class="az-field"><span class="az-label">Diet Name</span><span class="az-input az-input--text"><input id="df-name" placeholder="${esc(dfNewName(d) || 'Name the diet')}" value="${esc(d.name || '')}" oninput="S.draft.name=this.value;redrawFoot()"></span></label>${dfield('Foods', dfFoods(d, `Set the foods, from ${esc(diet(d.base).name)}`))}`
+        : dfield('Needed From', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(7, 'Next Week')], v => (d.f.from ?? 1) === v, v => `S.draft.f.from=${v};render()`))), true)
+    + (d.base ? how() : '') + why(REASONS.items);
   if (k === 'move') { const opts = dfMoveOpts(d);
-    out.push(opts.length ? select('Move To', d.diet ? diet(d.diet).name : '', 'dfMoveSheet()', { req: true, placeholder: 'Search and choose a diet', id: 'f-move', icon: 'search' }) : dfield('Move to', '<p class="sg-none">No other diet for this species</p>', true), how(), why(REASONS.items)); }
+    return section('restaurant', 'Move To', opts.length ? select('', d.diet ? diet(d.diet).name : '', 'dfMoveSheet()', { placeholder: 'Search and choose a diet', id: 'f-move', icon: 'search' }) : '<p class="sg-none">No other diet for this species</p>', true) + how() + why(REASONS.items); }
   if (k === 'end') { const es = endable(d);
-    out.push(es.length ? select('Diet To End', d.ends[0] ? diet(by('assigns', d.ends[0]).diet).name : '', 'dfEndSheet()', { req: true, placeholder: 'Search and choose a diet', id: 'f-end', icon: 'search' }) : dfield('Diet To End', '<p class="sg-none">No diet here ends early: only Seasonal, Time-bound or place diets do</p>', true),
-      dfield('Last Day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(2, 'In 2 days')], v => d.stop === addDays(TODAY, v), v => `S.draft.stop='${addDays(TODAY, v)}';render()`), true), why(REASONS.items)); }
-  return out.join('');
+    return section('event_busy', 'Diet To End', (es.length ? select('', d.ends[0] ? diet(by('assigns', d.ends[0]).diet).name : '', 'dfEndSheet()', { placeholder: 'Search and choose a diet', id: 'f-end', icon: 'search' }) : '<p class="sg-none">No diet here ends early: only Seasonal, Time-bound or place diets do</p>')
+      + dfield('Last Day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(2, 'In 2 Days')], v => d.stop === addDays(TODAY, v), v => `S.draft.stop='${addDays(TODAY, v)}';render()`), true), true) + why(REASONS.items); }
+  return '';
 }
 function dfToggleFeed(f) { const d = S.draft; let l = d.feeds === 'all' ? [] : [...d.feeds]; l = l.includes(f) ? l.filter(x => x !== f) : [...l, f]; d.feeds = l.length === dfFeeds(d).length ? 'all' : l; render(); }
-/* the form: the app's Request Details card. Under Requesting To: Request (Diet request | Diet change), its Type as chips, For */
+/* the form, as the Help Desk form in the Figma (Request Module, 15 Jul 2025; owner, 20 Nov 2026: "Iteration A · The Help Desk Form"):
+   Request Details (Requesting To, Request Type that opens Select Request Type) · For (the Figma Animal Card For Selection) · the type's own
+   sections · Describe Your Request · Attachments If Any · Priority · Approval (Requester and Approver) */
 function dietForm(d) {
-  const t = d.targets[0], dt = d.dtype && dtOf(d.dtype), g = d.dgroup && dgOf(d.dgroup), ap = d.approver && user(d.approver), words = d.dgroup === 'request', needText = words || (dt && dfKind(d) === 'ask');
-  const kindRows = d.edit && dt ? `<div class="az-field"><span class="az-label">Request</span><div class="az-picked">${pkIc(dt[4])}<span class="grow"><span class="az-who__name">${esc(dt[2])}</span><span class="az-who__sub">${esc(g[1])}</span></span></div></div>`
-    : dfield('Request', pkList(DGROUPS.map(([k, l, h, ic]) => pkRow(`dfGroup('${k}')`, pkIc(ic), l, h, undefined, d.dgroup === k)).join('')), true, 'f-dgroup')
-      + (g ? dfield('Type', dchips(DTYPES.filter(x => x[5] === d.dgroup).map(x => [x[0], x[2]]), v => d.dtype === v, v => `dfType('${v}')`), true, 'f-dtype') : '');
-  return section('category', 'Request Details', [
-    select('Requesting To', 'Diet', 'deptSheet()', { disabled: !!d.edit }),
-    kindRows,
-    dt ? select('For', t ? (t.level === 'species' ? `${sgName(t)} · ${sgWhere(t)}` : `${species(t.sp).name} · ${sgName(t)}`) : '', 'dfWho()', { req: true, placeholder: 'Choose the species, a place or an animal', id: 'f-sp' }) : '',
-    dt && t ? dtypeFields(d) : '',
-    dt ? `<span class="az-label">${words ? 'Your Request' : 'What are you requesting?'}</span>
-      <label class="az-input az-input--text"><input id="f-title" placeholder="Title" value="${esc(dfTitle(d))}" oninput="S.draft.title=this.value;S.draft.titleEdited=true;redrawFoot()" aria-label="Title"></label>
-      <label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="${words ? 4 : 3}" placeholder="${esc(needText ? `${DT_HINT[d.dtype] || 'Details'} *` : 'Description / Justification')}" oninput="S.draft.text=this.value;redrawFoot()" aria-label="${needText ? 'Details' : 'Description Or Justification'}">${esc(d.text)}</textarea></label>
-      <div class="az-field"><span class="az-label">Requested By</span>${personCard(d.edit ? by('requests', d.edit).by : S.user)}</div>
-      ${d.site ? `<div class="az-field"><span class="az-label">Requesting Site</span><div class="az-site az-site--picked"><span class="az-site__thumb" style="display:grid;place-items:center;color:var(--Outline)">${I('location_on', 20)}</span><span class="grow"><span class="az-site__name">${esc(by('sites', d.site).name)}</span></span></div></div>` : ''}
-      <div class="az-field"><span class="az-label">To Be Approved By <span class="az-req">*</span></span><button class="az-picked dfappr" onclick="optionSheet('To Be Approved By',DIET_APPROVERS.filter(id=>id!==S.user).map(id=>[id,user(id).name,user(id).title]),S.draft.approver,'pickApprover')">${avatar(ap.name)}<span class="grow"><span class="az-who__name">${esc(ap.name)}</span><span class="az-who__sub">${esc(ap.title)}</span></span>${I('keyboard_arrow_down')}</button></div>` : ''].join(''), true)
-    + (dt ? attachSec(d) : '');
+  const t = d.targets[0], dt = d.dtype && dtOf(d.dtype), g = dt && dgOf(dt[5]), words = d.dgroup === 'request', needText = words || (dt && dfKind(d) === 'ask');
+  const typeIn = dt ? `<span class="dtsel__ic">${I(dt[4])}</span><span class="grow"><b>${esc(dt[2])}</b><small>${esc(g[1])}</small></span>` : '<span class="grow">What do you need?</span>';
+  const type = `<div class="az-field" id="f-dtype"><span class="az-label">Request Type <span class="az-req">*</span></span>${d.edit && dt ? `<div class="az-input az-input--select dtsel" aria-disabled="true">${typeIn}</div>`
+    : `<button class="az-input az-input--select dtsel${dt ? '' : ' az-input--placeholder'}" onclick="dtypeSheet()" aria-haspopup="dialog">${typeIn}${I('keyboard_arrow_down')}</button>`}</div>`;
+  const out = [section('category', 'Request Details', select('Requesting To', 'Diet', 'deptSheet()', { disabled: !!d.edit }) + type, true)];
+  if (!dt) return out.join('');
+  out.push(section('pets', 'For', t ? forPick(d) : select('', '', 'dfWho()', { placeholder: 'Choose an animal, a place or the species', id: 'f-sp', icon: 'search' }), true));
+  if (t) out.push(dtypeFields(d));
+  out.push(section('edit_note', 'Describe Your Request', `<label class="az-input az-input--text"><input id="f-title" placeholder="Title" value="${esc(dfTitle(d))}" oninput="S.draft.title=this.value;S.draft.titleEdited=true;redrawFoot()" aria-label="Title"></label>
+      <label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="${words ? 4 : 3}" placeholder="${esc(needText ? `${DT_HINT[d.dtype] || 'Details'} *` : 'Description / Justification')}" oninput="S.draft.text=this.value;redrawFoot()" aria-label="${needText ? 'Details' : 'Description Or Justification'}">${esc(d.text)}</textarea></label>`, true));
+  out.push(attachSec(d), prioSec(d), approvalSec(d));
+  return out.join('');
+}
+/* who or where it is for, as the Figma Animal Card For Selection (Animal Card Redesign): tap it to choose again, the red mark to clear it */
+const forPick = d => `<div class="forpick"><button class="forpick__b" onclick="dfWho()" aria-label="Change who it is for">${forCard(d)}</button>${d.edit ? '' : `<button class="az-iconbtn forpick__x" onclick="S.draft.targets=[];S.draft.base=null;S.draft.changes=[];render()" aria-label="Remove">${I('cancel')}</button>`}</div>`;
+/* Approval, as the Figma form: the Requester, and the Approver (a Dietician; tap to pick another) */
+function approvalSec(d) {
+  const ap = d.approver && user(d.approver), who = d.edit ? by('requests', d.edit).by : S.user;
+  return section('how_to_reg', 'Approval', `<div class="az-field"><span class="az-label">Requester</span>${personCard(who)}</div>
+    <div class="az-field"><span class="az-label">Approver</span>${ap ? `<button class="az-picked dfappr" onclick="optionSheet('Approver',DIET_APPROVERS.filter(id=>id!==S.user).map(id=>[id,user(id).name,user(id).title]),S.draft.approver,'pickApprover')">${avatar(ap.name)}<span class="grow"><span class="az-who__name">${esc(ap.name)}</span><span class="az-who__sub">${esc(ap.title)}</span></span>${I('keyboard_arrow_down')}</button>` : ''}</div>`, true);
+}
+/* Select Request Type, as the Figma's Select Department sheet: search, then the two groups with their types */
+let DTQ = '';
+function dtypeSheet() { DTQ = ''; openSheet(dtypeHtml); }
+function dtypeHtml() {
+  const d = S.draft, q = DTQ.trim().toLowerCase();
+  const grp = g => { const xs = DTYPES.filter(x => x[5] === g[0] && (!q || `${x[2]} ${x[3]}`.toLowerCase().includes(q)));
+    return xs.length ? `<p class="az-label pk-h dt-h">${g[1]}<small>${g[0] === 'request' ? 'Said in words; the kitchen gets it' : 'Approving it changes the diet'}</small></p>${pkList(xs.map(x => pkRow(`dfType('${x[0]}')`, pkIc(x[4]), esc(x[2]), esc(x[3]), undefined, d.dtype === x[0])).join(''))}` : ''; };
+  return { title: 'Select Request Type', bottom: true, body: pkSearch('dt-q', DTQ, 'Search', 'DTQ=this.value;redrawSheet()') + (DGROUPS.map(grp).join('') || '<p class="sg-none">No type by that name</p>') };
 }
 /* Request: a Diet request or a Diet change; Type: one of its few kinds (chips) */
 function dfGroup(k) { const d = S.draft; if (d.dgroup === k) return; d.dgroup = k; if (d.dtype && dtOf(d.dtype)[5] !== k) dfType(null); else render(); }
