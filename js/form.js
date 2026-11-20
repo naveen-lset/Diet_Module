@@ -743,7 +743,7 @@ function dayStrip(cur, key, { past = false, days = 21, max = 365 } = {}) {
   return `<div class="dstrip" role="radiogroup" aria-label="Day">${span.map(cell).join('')}${out !== null ? cell(out) : ''}${cal}</div>`;
 }
 /* a strip keeps its picked day in view (a date picked from the calendar lands at its end) */
-function stripView() { document.querySelectorAll('.dstrip').forEach(row => { const c = row.querySelector('.on'); if (c && (c.offsetLeft < row.scrollLeft || c.offsetLeft + c.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollTo({ left: c.offsetLeft - 12, behavior: calm() ? 'auto' : 'smooth' }); }); }
+function stripView() { document.querySelectorAll('.dstrip, .hdpills').forEach(row => { const c = row.querySelector('.on, [aria-selected="true"]'); if (c && (c.offsetLeft < row.scrollLeft || c.offsetLeft + c.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollTo({ left: c.offsetLeft - 12, behavior: calm() ? 'auto' : 'smooth' }); }); }
 /* Days (owner, 20 Nov 2026, again: "only one date could be chosen; I want a particular week or different dates; Every Day For A Week in its
    proper place; give the container some space"). First how many, as the design system's segment, then:
    - One Day: the strip, one tap;
