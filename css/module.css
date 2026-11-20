@@ -2067,3 +2067,28 @@ button.step{cursor:pointer}
 /* Request Type is a field like Requesting To: the same fill, the same right edge, so both chevrons sit on one line */
 .az-input.dtsel{background:var(--Surface);padding-right:16px}
 .az-input.dtsel > .az-i:last-child{margin-left:auto}
+
+/* ---- When, third pass (owner, 20 Nov 2026: "a particular week or different dates; Every Day For A Week in its proper place; some space") ---- */
+.az-section--when{padding:16px 16px 20px;gap:22px}
+.az-section--when > .wf + .wf,.az-section--when > .wf + .wf--row,.az-section--when > .wf--row{padding-top:20px;border-top:1px solid var(--neutral05)}
+.az-section--when .dstrip,.az-section--when .wcards{margin:0 -16px;padding:2px 16px;scroll-padding:0 16px}
+.wd{gap:14px}
+.wd-seg{display:flex;width:100%}
+.wd-pick{display:flex;flex-direction:column;gap:12px;min-width:0}
+/* a small gap before each Monday, so the strip reads in weeks */
+.dstrip__d.mon{margin-left:8px}
+.dstrip__d{height:72px}
+/* the weeks as cards */
+.wcards{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity}
+.wcards::-webkit-scrollbar{display:none}
+.wcard{flex:none;min-width:132px;height:80px;padding:0 14px;border-radius:12px;background:var(--Background);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;text-align:left;scroll-snap-align:start;cursor:pointer;transition:background-color .2s,transform .14s var(--ease-sheet)}
+.wcard:active{transform:scale(.96)}
+.wcard small{font:500 12px/16px var(--font);color:var(--neutralSecondary);transition:color .2s}
+.wcard b{font:600 16px/22px var(--font);color:var(--OnSurfaceVariant);white-space:nowrap;transition:color .2s}
+.wcard.on{background:var(--OnPrimaryContainer)}
+.wcard.on small,.wcard.on b{color:var(--white)}
+.wcards .dstrip__cal.wcard{width:auto;min-width:100px;height:80px;align-items:center;color:var(--OnPrimaryContainer)}
+@media (hover:hover){.wcard:not(.on):hover{background:var(--displaybgSecondary)}}
+/* the days picked, in words */
+.wd-sum{display:flex;align-items:flex-start;gap:8px;margin:0 2px;font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant)}
+.wd-sum .az-i{color:var(--OnPrimaryContainer);margin-top:1px}

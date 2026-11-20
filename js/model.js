@@ -230,9 +230,21 @@ function changeText(c, base) {
 }
 const dayText = s => { const n = daysBetween(TODAY, s); return n === 0 ? 'today' : n === 1 ? 'tomorrow' : `${wday(s)} ${fmtDay(s)}`; };
 const onDay = s => { const t = dayText(s); return t === 'today' || t === 'tomorrow' ? t : 'on ' + t; };
+/* a request's days (owner, 20 Nov 2026: "one day, a particular week or different dates"): r.dates, or the one r.date of older requests */
+const reqDates = r => (r.dates && r.dates.length ? [...r.dates] : r.date ? [r.date] : []).sort();
+const runOf = ds => ds.length > 1 && ds.every((x, i) => !i || daysBetween(ds[i - 1], x) === 1);
+/* days in words: one day ("tomorrow", "Mon 23 Nov"), a run ("Mon 23 – Sun 29 Nov"), or a list ("21, 23 and 25 Nov") */
+function datesText(ds) {
+  ds = [...ds].sort(); if (!ds.length) return ''; if (ds.length === 1) return dayText(ds[0]);
+  const a = ds[0], b = ds[ds.length - 1], same = a.slice(5, 7) === b.slice(5, 7);
+  if (runOf(ds)) return `${wday(a)} ${same ? +a.slice(8) : fmtDay(a)} – ${wday(b)} ${fmtDay(b)}`;
+  const parts = []; ds.forEach(x => { const m = MON[+x.slice(5, 7) - 1], last = parts[parts.length - 1]; last && last.m === m ? last.d.push(+x.slice(8)) : parts.push({ m, d: [+x.slice(8)] }); });
+  return parts.map(p => p.d.length > 1 ? `${p.d.slice(0, -1).join(', ')} and ${p.d[p.d.length - 1]} ${p.m}` : `${p.d[0]} ${p.m}`).join(', ');
+}
+const onDays = r => { const ds = reqDates(r); return ds.length > 1 ? `on ${datesText(ds)}` : onDay(ds[0]); };
 function autoTitle(r) {
   if (r.kind === 'skip') {
-    const when = r.date === TODAY ? 'today' : `on ${relDay(r.date).replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) /, '')}`;
+    const ds = reqDates(r), when = ds.length > 1 ? `on ${datesText(ds)}` : r.date === TODAY ? 'today' : `on ${relDay(r.date).replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) /, '')}`;
     return r.feeds === 'all' ? `No diet ${when}` : `Skip the ${r.feeds.map(f => feed(f).from).join(' and ')} feed ${when}`;
   }
   const ts = targetsOf(r), for1 = ts.length === 1 ? (ts[0].level === 'species' ? (ts[0].group ? ` for ${GROUP_WORD(ts[0].group).toLowerCase()}` : '') : ` for ${targetName(ts[0])}`) : ` for ${placesText(ts)}`;
@@ -247,14 +259,14 @@ function autoTitle(r) {
   return `${changeText(cs[0], base)} + ${cs.length - 1} more changes`;
 }
 function phaseOf(r) {
-  if (r.kind === 'skip') return r.date > TODAY ? 'next' : r.date === TODAY ? 'live' : 'past';
+  if (r.kind === 'skip') { const ds = reqDates(r); return ds[0] > TODAY ? 'next' : ds[ds.length - 1] < TODAY ? 'past' : 'live'; }
   if (r.kind === 'end') return r.stop < TODAY ? 'past' : 'next';
   if (r.how === 'always' || r.how === 'yearly') return 'live';
   return r.start > TODAY ? 'next' : r.end && r.end < TODAY ? 'past' : 'live';
 }
 function approvedWhen(r) {
   const p = phaseOf(r);
-  if (r.kind === 'skip') return p === 'past' ? `done ${fmtDay(r.date)}` : `no diet ${onDay(r.date)}`;
+  if (r.kind === 'skip') return p === 'past' ? `done ${fmtDay(reqDates(r).pop())}` : `no diet ${onDays(r)}`;
   if (r.kind === 'end') return p === 'past' ? `ended ${fmtDay(r.stop)}` : `last day ${fmtDay(r.stop)}`;
   if (r.how === 'yearly') return `every year, ${mdText(r.start)} – ${mdText(r.end)}`;
   if (r.how === 'always') return 'in force';
