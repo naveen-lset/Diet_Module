@@ -76,18 +76,18 @@ function markedGroups(d, h, day, click) {
 const dietTabs = cur => `<div class="az-tabs" role="tablist">${thumb(true)}${[['species', 'Species Wise'], ['diets', 'Diet Wise']].map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${cur === k}" onclick="homeTab('${k}')">${l}</button>`).join('')}</div>`;
 /* switching tabs keeps them pinned if they were, and shows the new list from its start */
 function homeTab(k) {
-  const b = document.querySelector('.pane--home .pane__body'), r = b && b.querySelector('.reqsum');
+  const b = document.querySelector('.pane--home .pane__body'), r = b && b.querySelector('.reqsum, .dstats');
   if (b) b.scrollTop = Math.min(b.scrollTop, r ? r.offsetHeight : 0);
   S.land = k; go('#/diets'); swapFx('.pane--home .list');
 }
 /* one diet in the Diet wise list: a diet avatar, its name, its kind, how many species get it, and its ID */
 function dietRow(a, current) {
   const d = diet(a.diet), n = new Set(usesOf(d.id).map(u => u.sp)).size;
-  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotKind(a))}</span><span class="dfoot"><span class="dfoot__n">${n} species</span><span class="did">${esc(d.id)}</span></span></span></a>`;
+  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(tcase(slotKind(a)))}</span><span class="dfoot"><span class="dfoot__n">${n} species</span><span class="did">${esc(d.id)}</span></span></span></a>`;
 }
 /* the filters, in one sheet (the design system's Search and filter): Diet wise = kind + certification; Species wise = class + diet status */
 const FILTERS = {
-  diets: [['dKind', 'Kind', () => [['all', 'All Kinds'], ...KINDS.map(k => [k, k])], v => dietsFor(v, S.dCert).length],
+  diets: [['dKind', 'Kind', () => [['all', 'All Kinds'], ...KINDS.map(k => [k, tcase(k)])], v => dietsFor(v, S.dCert).length],
     ['dCert', 'Certification', () => [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']], v => dietsFor(S.dKind, v).length]],
   species: [['spCls', 'Class', () => [['all', 'All Classes'], ...CLASSES.map(c => [c, c]), ['Other', 'Other']], v => speciesFor(S.spTab, v).length],
     ['spTab', 'Diet Status', () => [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified'], ['without', 'No Diet']], v => speciesFor(v, S.spCls).length]],
@@ -105,15 +105,24 @@ function listHead(tab, n) {
 }
 /* the list's own toggle, at the top of the list and as wide as its cards: certification (and, for species, no diet); it scrolls with the list */
 const listToggle = (key, opts) => `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Certification">${thumb()}${opts.map(([k, l]) => `<button role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l}</button>`).join('')}</div></div>`;
-/* the page scrolls as one: the requests row, search and chips go up with the list; Diet wise | Species wise stays pinned under the top bar */
+/* the stats card above the tabs (owner, 20 Nov 2026: option B of the Figma mockup), as Lab and Mortality open in the Antz Figma:
+   species with animals here, diets in use here, and how many of those are certified. Each number opens its list */
+function dietStats() {
+  const sps = D.species.filter(s => spAnimals(s.id, S.site).length).length;
+  const ids = [...new Set(D.assigns.filter(a => !ended(a) && atSite(a, S.site) && spAnimals(a.sp, S.site).length).map(a => a.diet))], cert = ids.filter(id => diet(id).cert).length;
+  const cell = (n, l, cls, js) => `<button class="dstats__c" onclick="${js}"><b class="${cls}">${n}</b><span>${l}</span></button>`;
+  const dw = c => `S.dCert='${c}';S.dKind='all';homeTab('diets')`;
+  return `<div class="dstats" role="group" aria-label="Diets at ${esc(siteName())}">${cell(sps, 'Species', 'c1', "S.spTab='all';S.spCls='all';homeTab('species')")}${cell(ids.length, ids.length === 1 ? 'Diet' : 'Diets', '', dw('all'))}${cell(cert, 'Certified', 'c2', dw('cert'))}${cell(ids.length - cert, 'Uncertified', 'c3', dw('uncert'))}</div>`;
+}
+/* the page scrolls as one: the stats card, search and chips go up with the list; Diet Wise | Species Wise stays pinned under the top bar */
 function paneDietHome({ cls = '', cur = null } = {}) {
-  const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true, end: whoBtn() }), head = dietTabs(tab);   /* owner, 18 Nov: no request rows above the tabs; requests live in Help Desk */
+  const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true, end: whoBtn() }), head = dietStats() + dietTabs(tab);   /* owner, 18 Nov: no request rows above the tabs (requests live in Help Desk); 20 Nov: the stats card goes there */
   const chips = (key, opts, count) => `<div class="az-chips" role="tablist">${opts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l} - ${count(k)}</button>`).join('')}</div>`;
   if (tab === 'diets') {
     const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species, place or ID" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label></div>`;
     const list = dietsFor(S.dKind), on = (by('assigns', cur) || {}).diet, rows = list.map(a => dietRow(a, !!cur && on === a.diet)).join('');
     const none = S.dQ.trim() && !dietsFor(S.dKind, 'all').length;
-    return pane(`${cls} pane--home`, top, head + search + chips('dKind', [['all', 'All'], ...KINDS.map(k => [k, k])], k => dietsFor(k).length)
+    return pane(`${cls} pane--home`, top, head + search + chips('dKind', [['all', 'All'], ...KINDS.map(k => [k, tcase(k)])], k => dietsFor(k).length)
       + `<div class="body">${none ? '' : listToggle('dCert', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']])}<div class="list list--8">${rows || (none ? noMatch(S.dQ, "S.dQ=''") : empty1('No diet here'))}</div></div>`, '', 'home');
   }
   const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="sp-q" placeholder="Search species or taxonomy ID" value="${esc(S.spQ)}" oninput="S.spQ=this.value;render()" aria-label="Search species"></label></div>`;
