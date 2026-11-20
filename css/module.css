@@ -2017,3 +2017,7 @@ button.step{cursor:pointer}
 .az-sheet .itemchips button.warn,.side .itemchips button.warn{background:var(--notes)}
 /* iPad landscape: one column of boxes as the Hub's Incident record on tablet (two columns left gaps between uneven boxes) */
 .req-wide .rboxes{display:flex;flex-direction:column;align-items:stretch}
+/* Pick Date: a chip with the date picker laid over it (a tap opens the phone's own picker) */
+.dcal{position:relative;cursor:pointer}
+.dcal input{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer;-webkit-appearance:none;appearance:none}
+.dcal small{display:block}

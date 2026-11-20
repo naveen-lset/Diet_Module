@@ -115,8 +115,8 @@ function reqFacts(r) {
     add('for', 'pets', 'For', forCard(r), goLnk('See Animals', `animalsSheet('${r.id}')`));
     const open = s && !ended(s) && base ? `<a class="lnk" href="#/diets/${s.sp}/${s.id}">Open Diet${I('chevron_right', 18)}</a>` : '';
     /* what changes, as the review showed it before sending: Food | Was | Now, the old value struck through */
-    if (r.kind === 'items' && base && (r.changes || []).length) add('chg', 'swap_horiz', 'What Changes', `<span class="sub">${esc(base.name)}${s ? ` · Set for ${esc(whereSet(s))}` : ''}</span>${diffTable(r.changes, base)}`, open);
-    if (r.kind === 'items' && r.base === 'many') add('chg', 'swap_horiz', 'What Changes', `<b>All their diets, changed by item</b>${(r.rules || []).map(u => `<p>${esc(ruleText(u))}</p>`).join('')}`);
+    if (r.kind === 'items' && base && (r.changes || []).length) add('chg', 'tune', 'What Changes', `<span class="sub">${esc(base.name)}${s ? ` · Set for ${esc(whereSet(s))}` : ''}</span>${diffTable(r.changes, base)}`, open);
+    if (r.kind === 'items' && r.base === 'many') add('chg', 'tune', 'What Changes', `<b>All their diets, changed by item</b>${(r.rules || []).map(u => `<p>${esc(ruleText(u))}</p>`).join('')}`);
     if (r.kind === 'new') add('diet', 'add_circle', 'New Diet', `<b>${esc(r.name || (planOf(r).ops.find(o => o.type === 'new') || {}).name || 'New diet')}</b><span class="sub">${r.base && diet(r.base) ? `From ${esc(diet(r.base).name)}` : 'Made from empty'}</span>`);
     if (r.kind === 'diet' && base) add('diet', 'restaurant', 'Instead Of', `<b>${esc(base.name)}</b>`);
     if (r.kind === 'end') add('diet', 'restaurant', 'Diet To End', (r.ends || []).map(id => { const a = by('assigns', id); return `<b>${esc(diet(a.diet).name)}</b><span class="sub">Set for ${esc(whereSet(a))}</span>`; }).join(''));
