@@ -2,7 +2,7 @@
 // Kitchen updated it after approval). The requester suggests the change on the diet itself (Google Docs "Suggesting", Maps "Suggest an edit"): who it is for →
 // what they eat today, with − and + on every food → a bar that counts the changes (a cart) → one short sheet (how long, why, proof) → Send.
 // The request then shows a tracker that fills in (Sent · Dietician · Kitchen · Live). The kitchen rules (a new diet or an edit, who gets it)
-// are the Dietician's: "Save it as" on the request. Routes: #/suggest (?asg= a diet's place, ?sp= a species, ?edit= an open request).
+// are the Dietician's: "Save It As" on the request. Routes: #/suggest (?asg= a diet's place, ?sp= a species, ?edit= an open request).
 
 const SG_REASONS = ['Weight management', 'Health', 'Post-op recovery', 'Breeding', 'Behavioral', 'Seasonal change', 'Senior', 'Recovery'];
 const SG_SEASONS = [['Summer', '03-01', '05-31'], ['Monsoon', '06-15', '09-30'], ['Winter', '12-01', '02-28']];
@@ -124,13 +124,13 @@ function sgRow(f, l, off, held) {
   return `<div class="sg-row${held ? ' sg-row--held' : ''}${stop ? ' sg-row--stop' : ''}${c ? ' sg-row--c' : ''}"><button class="sg-row__m" onclick="sgLineSheet(${f},${l.item})"${stop || off ? ' disabled' : ''}><b>${esc(x.name)}</b><span>${esc(sgSub(cur))}</span>${was}</button>${right}</div>`;
 }
 const sgAddRow = (c, off) => `<div class="sg-row sg-row--c"><button class="sg-row__m" onclick="sgAddSheet(${c.feed},${c.to})"${off ? ' disabled' : ''}><b>${esc(item(c.to).name)}</b><span>${esc(sgSub(c))}</span><span class="sg-was2 sg-was2--new">New</span></button>${off ? `<b class="sg-q">${qtyText(c.qty, c.unit)}</b>` : sgStepper(`sgStepAdd(${c.feed},${c.to},-1)`, `sgStepAdd(${c.feed},${c.to},1)`, qtyText(c.qty, c.unit), item(c.to).name)}</div>`;
-const SG_QUICK = [['more', 'add', 'More food'], ['less', 'remove', 'Less food'], ['soft', 'blender', 'Soft food'], ['skip', 'no_meals', 'Skip a feed']];
+const SG_QUICK = [['more', 'add', 'More Food'], ['less', 'remove', 'Less Food'], ['soft', 'blender', 'Soft Food'], ['skip', 'no_meals', 'Skip a feed']];
 function sgEditor() {
   const t = SG.t, ls = sgEat(), d = sgDiet(), many = ls.length > 1 && !SG.edit;
   const chg = SG.edit || SG.form ? '' : `<button class="lnk" onclick="sgWho()">Change</button>`;
   const who = `<div class="az-field"><span class="az-label">For</span><div class="az-picked sg-pk">${spThumb(species(t.sp))}<span class="grow"><b>${esc(sgName(t))}</b><span>${esc(t.level === 'species' ? sgWhere(t) : `${species(t.sp).name} · ${sgWhere(t)}`)}</span></span>${chg}</div></div>`;
   if (!d) return `<section class="az-section">${who}<p class="sg-none">No diet here yet. Ask ${esc(first(user(dept('diet').head).name))}, the dietician, to add one.</p></section>`;
-  const dietF = `<div class="az-field"><span class="az-label">${SG.kind === 'new' ? 'A new diet from' : many ? 'Diet to change' : 'Diet'}</span><div class="az-picked sg-pk"><span class="davatar davatar--s">${I('restaurant', 20)}</span><span class="grow"><b>${esc(d.name)}</b><span>${esc([KINDTYPE[d.type], many ? `They eat ${ls.length} diets` : ''].filter(Boolean).join(' · '))}</span></span>${many ? `<button class="lnk" onclick="sgDietSheet()">Switch</button>` : ''}</div></div>`;
+  const dietF = `<div class="az-field"><span class="az-label">${SG.kind === 'new' ? 'A new diet from' : many ? 'Diet To Change' : 'Diet'}</span><div class="az-picked sg-pk"><span class="davatar davatar--s">${I('restaurant', 20)}</span><span class="grow"><b>${esc(d.name)}</b><span>${esc([KINDTYPE[d.type], many ? `They eat ${ls.length} diets` : ''].filter(Boolean).join(' · '))}</span></span>${many ? `<button class="lnk" onclick="sgDietSheet()">Switch</button>` : ''}</div></div>`;
   const off = !!SG.skip, skipped = f => off && (SG.skip.feeds === 'all' || SG.skip.feeds.includes(f));
   const quick = off ? '' : `<div class="sg-quick2">${SG_QUICK.filter(q => !(SG.form && q[0] === 'skip')).map(([k, ic, l]) => `<button class="az-btn az-btn--outline az-btn--compact" onclick="sgQuick('${k}')">${I(ic, 20)}${l}</button>`).join('')}</div>`;
   const skip = off ? `<div class="az-warnline">${I('no_meals', 18)}<span class="grow"><b>${esc(sgSkipText())}.</b> The diet stays as it is.</span><button class="lnk" onclick="sgUnskip()">Undo</button></div>` : '';
@@ -140,7 +140,7 @@ function sgEditor() {
     ${off ? '' : `<button class="lnk sg-add2" onclick="sgAddSheet(${m.feed})">${I('add', 20)}Add food</button>`}</section>`; }).join('');
   return `<section class="az-section">${who}${dietF}</section>` + quick + skip + feeds;
 }
-function sgDietSheet() { dietPickSheet({ title: 'Diet to change', sub: esc(sgName(SG.t)), list: sgEat().map(e => ({ id: e.diet.id, d: e.diet, sub: dietWhere(e.diet.id, SG.t.sp) })), cur: SG.base, cb: 'sgPickDiet' }); }
+function sgDietSheet() { dietPickSheet({ title: 'Diet To Change', sub: esc(sgName(SG.t)), list: sgEat().map(e => ({ id: e.diet.id, d: e.diet, sub: dietWhere(e.diet.id, SG.t.sp) })), cur: SG.base, cb: 'sgPickDiet' }); }
 function sgPickDiet(v) { sgBaseTo(v); }
 const sgSkipText = () => { const s = SG.skip; return `No feed ${s.date === TODAY ? 'today' : 'tomorrow'}: ${s.feeds === 'all' ? 'all feeds' : s.feeds.map(f => bandText(feed(f))).join(', ')}`; };
 
@@ -154,7 +154,7 @@ function sgLineSheet(f, it) {
         ${toBase(cur.qty, cur.unit) !== toBase(w.qty, w.unit) ? `<p class="sg-was">was ${qtyText(w.qty, w.unit)} a feed, per animal</p>` : '<p class="sg-was sg-was--plain">a feed, per animal</p>'}
         <div class="sg-chips">${[-25, -10, 10, 25].map(p => `<button class="az-chip" onclick="sgPct(${f},${it},${p})">${p > 0 ? '+' : '−'}${Math.abs(p)}%</button>`).join('')}</div>
         <p class="sg-cap">Preparation</p><div class="sg-chips">${[...new Set([...SG_PREPS, cur.prep].filter(Boolean))].map(p => `<button class="az-chip" aria-selected="${cur.prep === p}" onclick="sgPrep(${f},${it},'${p}')">${p}</button>`).join('')}</div>
-        ${swaps.length ? `<p class="sg-cap">Swap for</p><div class="sg-chips">${swaps.map(i => `<button class="az-chip" onclick="sgSwap(${f},${it},${i.id})">${I('swap_horiz', 18)}${esc(i.name)}</button>`).join('')}</div>` : ''}`,
+        ${swaps.length ? `<p class="sg-cap">Swap For</p><div class="sg-chips">${swaps.map(i => `<button class="az-chip" onclick="sgSwap(${f},${it},${i.id})">${I('swap_horiz', 18)}${esc(i.name)}</button>`).join('')}</div>` : ''}`,
       foot: `<button class="az-btn az-btn--outline sg-stopbtn" onclick="sgStop(${f},${it})">${I('do_not_disturb_on')}Stop giving it</button><button class="az-btn" onclick="closeSheet()">Done</button>` };
   });
 }
@@ -163,11 +163,11 @@ function sgAddSheet(f, to = null) {
     return { title: esc(item(to).name), sub: `${bandText(feed(f))} · new`, bottom: true, form: true,
       body: `<div class="sg-big"><button onclick="sgStepAdd(${f},${to},-1)" aria-label="Less">${I('remove')}</button><b>${qtyText(c.qty, c.unit)}</b><button onclick="sgStepAdd(${f},${to},1)" aria-label="More">${I('add')}</button></div><p class="sg-was sg-was--plain">a feed, per animal</p>
         <p class="sg-cap">Preparation</p><div class="sg-chips">${[...new Set([...SG_PREPS, c.prep].filter(Boolean))].map(p => `<button class="az-chip" aria-selected="${c.prep === p}" onclick="sgPrep(${f},${to},'${p}',true)">${p}</button>`).join('')}</div>`,
-      foot: `<button class="az-btn az-btn--outline sg-stopbtn" onclick="sgDrop(${f},${to})">${I('delete')}Take it out</button><button class="az-btn" onclick="closeSheet()">Done</button>` }; });
+      foot: `<button class="az-btn az-btn--outline sg-stopbtn" onclick="sgDrop(${f},${to})">${I('delete')}Take It Out</button><button class="az-btn" onclick="closeSheet()">Done</button>` }; });
   SG.aq = '';
   openSheet(() => {
     const q = SG.aq.trim().toLowerCase(), list = D.items.filter(i => !i.mix && !sgInFeed(f, i.id) && (!q || i.name.toLowerCase().includes(q))).slice(0, 12);
-    return { title: 'Add food', sub: bandText(feed(f)), bottom: true,
+    return { title: 'Add Food', sub: bandText(feed(f)), bottom: true,
       body: `<label class="az-input az-input--text sg-search">${I('search')}<input id="sg-aq" type="search" placeholder="Search food" value="${esc(SG.aq)}" oninput="SG.aq=this.value;redrawSheet()" autocomplete="off" aria-label="Search food"></label>
         <div class="sg-list">${list.map(i => `<button class="sg-opt" onclick="sgAddItem(${f},${i.id})"><span class="grow"><b>${esc(i.name)}</b><span>${i.stock > 0 ? `In store · ${esc(stockText(i))}` : 'Out of stock'}</span></span><span class="sg-plus">${I('add', 20)}</span></button>`).join('') || '<p class="sg-none">No food by that name</p>'}</div>` };
   });
@@ -217,10 +217,10 @@ function diffLine(c, d) {
   return R(esc(item(c.item).name), `${f} feed`, part(w, false), `<b>${part(c, true)}</b>`);
 }
 const diffTable = (cs, d) => `<div class="dtab"><div class="dtab__h"><span>Food</span><span>Was</span><span>Now</span></div>${cs.map(c => diffLine(c, d)).join('')}</div>`;
-const SG_HOW = [['always', 'From now on'], ['once', 'Some days'], ['yearly', 'Every year']];
+const SG_HOW = [['always', 'From Now On'], ['once', 'Some Days'], ['yearly', 'Every Year']];
 /* how long: the design system's segment (the New Request form uses it too) */
 const howTiles = (cur, set) => `<div class="az-segment rv-seg" role="tablist" aria-label="How long">${SG_HOW.map(([k, l]) => `<button role="tab" aria-selected="${cur === k}" onclick="${set(k)}">${l}</button>`).join('')}</div>`;
-/* (owner, 19 Nov 2026: "Send to Hydar … just Request, that's all") the review: the changes, how long, why, proof, who it goes to; the button says Send request.
+/* (owner, 19 Nov 2026: "Send to Hydar … just Request, that's all") the review: the changes, how long, why, proof, who it goes to; the button says Send Request.
    In the design system's parts, as the Hub's Help Desk and Item requests forms: labels over fields, chips, the upload box, a picked card */
 function sgReviewHtml() {
   if (!SG) return { title: '', body: '' };
@@ -228,25 +228,25 @@ function sgReviewHtml() {
   const edit = `<button class="lnk" onclick="closeSheet()">Edit</button>`;
   const chg = r.kind === 'skip' ? F('Skip a feed', `<div class="az-picked">${I('no_meals')}<span class="grow"><span class="az-who__name">${esc(sgSkipText())}</span><span class="az-who__sub">The diet stays as it is</span></span></div>`, false, edit)
     : F(`Changes · ${SG.changes.length}`, `<p class="rv-for">${esc(sgName(SG.t))} · ${esc(d.name)}</p>${diffTable(SG.changes, d)}`, false, edit);
-  const how = r.kind === 'skip' ? '' : F('How long', `${howTiles(SG.how, k => `SG.how='${k}';redrawSheet()`)}
+  const how = r.kind === 'skip' ? '' : F('How Long', `${howTiles(SG.how, k => `SG.how='${k}';redrawSheet()`)}
     ${SG.how === 'once' ? `<div class="sg-chips">${[3, 7, 14, 30].map(k => `<button class="az-chip" aria-selected="${SG.days === k}" onclick="SG.days=${k};SG.dSet=true;redrawSheet()">${k} days</button>`).join('')}</div>` : ''}
     ${SG.how === 'yearly' ? `<div class="sg-chips">${SG_SEASONS.map(([k, a, b]) => `<button class="az-chip" aria-selected="${SG.season === k}" onclick="SG.season='${k}';redrawSheet()">${k} · ${mdText(a)} – ${mdText(b)}</button>`).join('')}</div>` : ''}
     ${SG.how && SG.how !== 'yearly' ? `<div class="sg-chips">${[[0, 'From today'], [1, 'From tomorrow']].map(([k, l]) => `<button class="az-chip" aria-selected="${SG.from === k}" onclick="SG.from=${k};redrawSheet()">${l}</button>`).join('')}</div>` : ''}
     ${SG.how ? `<p class="rv-when2">${esc(SG.how === 'always' ? `From ${dayText(r.start)}, until someone changes it` : SG.how === 'once' ? `${fmtDay(r.start)} – ${fmtDayY(r.end)}, then back to their diet` : `${mdText(r.start)} – ${mdText(r.end)}, every year`)}</p>` : ''}`, true);
   const all = r.kind === 'skip' ? REASONS.skip : REASONS.items, shown = SG.more ? all : (r.kind === 'skip' ? all : SG_REASONS);
-  const why = F('Why', `<div class="sg-chips">${shown.map(t => `<button class="az-chip" aria-selected="${SG.reason === t}" onclick="SG.reason=${JSON.stringify(t).replace(/"/g, '&quot;')};redrawSheet()">${esc(t)}</button>`).join('')}${r.kind === 'skip' || SG.more ? '' : `<button class="az-chip sg-more" onclick="SG.more=true;redrawSheet()">More reasons</button>`}</div>`, true);
+  const why = F('Why', `<div class="sg-chips">${shown.map(t => `<button class="az-chip" aria-selected="${SG.reason === t}" onclick="SG.reason=${JSON.stringify(t).replace(/"/g, '&quot;')};redrawSheet()">${esc(t)}</button>`).join('')}${r.kind === 'skip' || SG.more ? '' : `<button class="az-chip sg-more" onclick="SG.more=true;redrawSheet()">More Reasons</button>`}</div>`, true);
   const has = k => SG.files.some(f => f.kind === k);
   const proof = F('Proof (optional)', `${SG.files.length ? `<div class="files">${SG.files.map(f => `<span class="file">${I(f.kind === 'image' ? 'image' : 'mic', 20)}${esc(f.name)}<button class="az-iconbtn" style="width:28px;height:28px" onclick="sgFile('${f.kind}')" aria-label="Remove ${esc(f.name)}">${I('close', 18)}</button></span>`).join('')}</div>` : ''}
-    <div class="rv-up">${has('image') ? '' : `<button class="az-upload" onclick="sgFile('image')"><i class="az-i" aria-hidden="true">add_photo_alternate</i><b>Add a photo</b><span>JPEG or PNG</span></button>`}${has('audio') ? '' : `<button class="az-upload" onclick="sgFile('audio')"><i class="az-i" aria-hidden="true">mic</i><b>Voice note</b><span>Up to 1 minute</span></button>`}</div>
+    <div class="rv-up">${has('image') ? '' : `<button class="az-upload" onclick="sgFile('image')"><i class="az-i" aria-hidden="true">add_photo_alternate</i><b>Add A Photo</b><span>JPEG or PNG</span></button>`}${has('audio') ? '' : `<button class="az-upload" onclick="sgFile('audio')"><i class="az-i" aria-hidden="true">mic</i><b>Voice Note</b><span>Up to 1 minute</span></button>`}</div>
     ${SG.note ? `<label class="az-input az-input--text az-textarea"><textarea id="sg-text" rows="2" placeholder="What the dietician should know" oninput="SG.text=this.value" aria-label="Note">${esc(SG.text)}</textarea></label>` : `<button class="lnk rv-note" onclick="SG.note=true;redrawSheet()">${I('add', 18)}Add a note</button>`}`);
   /* who approves (owner, 18 Nov 2026): a Dietician or the Kitchen Operator; the Diet department's head unless changed */
-  const goes = F('Goes to', SG.apOpen ? DIET_APPROVERS.filter(id => id !== S.user).map(id => { const x = user(id), on = r.approver === id;
+  const goes = F('Goes To', SG.apOpen ? DIET_APPROVERS.filter(id => id !== S.user).map(id => { const x = user(id), on = r.approver === id;
       return `<button class="az-pickrow" role="radio" aria-checked="${on}" onclick="SG.approver='${id}';SG.apOpen=false;redrawSheet()">${avatar(x.name)}<span class="az-pickrow__t"><b>${esc(x.name)}</b><span>${esc(x.title)}</span></span>${I(on ? 'radio_button_checked' : 'radio_button_unchecked', 24, on)}</button>`; }).join('')
     : `<div class="az-picked">${avatar(ap.name)}<span class="grow"><span class="az-who__name">${esc(ap.name)}</span><span class="az-who__sub">${esc(ap.title)}</span></span><button class="lnk" onclick="SG.apOpen=true;redrawSheet()">Change</button></div>`);
   const urgent = `<button class="az-checkrow swrow" role="switch" aria-checked="${SG.prio !== 'normal'}" onclick="SG.prio=SG.prio==='normal'?'high':'normal';redrawSheet()"><span class="grow">Urgent<small class="sg-small">The dietician sees it first</small></span><span class="az-switch" aria-checked="${SG.prio !== 'normal'}"></span></button>`;
-  return { title: SG.edit ? 'Update request' : 'Review request', sub: esc(sgName(SG.t)), bottom: true, form: true,
+  return { title: SG.edit ? 'Update request' : 'Review Request', sub: esc(sgName(SG.t)), bottom: true, form: true,
     body: `${chg}${how}${why}${proof}${goes}${urgent}${p && p.block ? `<div class="az-warnline">${I('warning', 18)}<span class="grow">${esc(p.block)}</span></div>` : ''}`,
-    foot: `<div class="rv-foot">${e ? `<p class="rv-need">${esc(e)} to send</p>` : ''}<button class="az-btn${e ? ' az-btn--disabled' : ''}" aria-disabled="${!!e}" onclick="sgSend()">${I('send')}${SG.edit ? 'Update request' : 'Send request'}</button></div>` };
+    foot: `<div class="rv-foot">${e ? `<p class="rv-need">${esc(e)} to send</p>` : ''}<button class="az-btn${e ? ' az-btn--disabled' : ''}" aria-disabled="${!!e}" onclick="sgSend()">${I('send')}${SG.edit ? 'Update request' : 'Send Request'}</button></div>` };
 }
 const SG_FILES = { image: { name: 'Photo of the animals.jpg', kind: 'image', size: '1.6 MB' }, audio: { name: 'Voice note 0:12.m4a', kind: 'audio', size: '96 KB' } };
 function sgFile(k) { const has = SG.files.some(f => f.kind === k); SG.files = has ? SG.files.filter(f => f.kind !== k) : [...SG.files, SG_FILES[k]]; redrawSheet(); }
@@ -267,13 +267,13 @@ function sgSite(r) { const a = r.level === 'animal' ? by('animals', r.ref) : tAn
 
 /* ---------- the page ---------- */
 function paneSuggest(q) {
-  /* New Request with Diet, and Edit Request, are the Help Desk form (form.js); this screen keeps Suggest a change, Change food from that form, and the new-diet requests' editor */
+  /* New Request with Diet, and Edit Request, are the Help Desk form (form.js); this screen keeps Suggest A Change, Change food from that form, and the new-diet requests' editor */
   { const e = q.get('edit') && by('requests', q.get('edit')); if ((q.get('dept') === 'diet' && !q.get('form')) || (e && isDiet(e))) return paneForm(q); }
-  const d = sgInit(q), top = topbar({ close: d.form ? 'sgFormBack(false)' : 'sgClose()', title: d.form ? (d.kind === 'new' ? 'New diet' : 'Change item values') : d.edit ? 'Edit Request' : 'Suggest a change', actions: d.t && sgCount() ? iconBtn('restart_alt', 'Start again', 'sgClear()') : '' });
+  const d = sgInit(q), top = topbar({ close: d.form ? 'sgFormBack(false)' : 'sgClose()', title: d.form ? (d.kind === 'new' ? 'New diet' : 'Change item values') : d.edit ? 'Edit Request' : 'Suggest A Change', actions: d.t && sgCount() ? iconBtn('restart_alt', 'Start Again', 'sgClear()') : '' });
   if (!canRaise(me()) && !d.edit) return pane('pane--fill', top, `${empty1(`Biologists suggest diet changes. ${esc(me().title)}s see them in Help Desk.`)}<div class="who-cta"><button class="az-btn az-btn--outline" onclick="asBiologist('#/suggest')">${avatar(user('u-kiran').name, '24')}View as ${esc(user('u-kiran').name)}, Biologist</button></div>`, '', 'sg-no');
   /* nobody chosen yet: one field to choose who, and the species sheet opens by itself the first time (owner, 19 Nov: a bottom sheet, not a page) */
   if (!d.t) { if (!d.askedWho) { d.askedWho = true; setTimeout(() => { if (SG && !SG.t && !SH.length) sgWho(); }, 120); }
-    return pane('pane--fill sg-page', top, `<div class="body sg-body"><section class="az-section">${select('For', '', 'sgWho()', { req: true, placeholder: 'Select species, enclosure or animal', id: 'sg-for' })}</section></div>`, '', 'sg-who'); }
+    return pane('pane--fill sg-page', top, `<div class="body sg-body"><section class="az-section">${select('For', '', 'sgWho()', { req: true, placeholder: 'Select Species, enclosure or animal', id: 'sg-for' })}</section></div>`, '', 'sg-who'); }
   /* the bottom bar (owner, 19 Nov: "use a proper button"), as the Hub's Item requests: what you have changed on the left, the design system's
      green button on the right (Review, or Done from the New Request form); before any change the same button, disabled, and a hint */
   const n = sgCount(), foods = new Set(d.changes.map(c => c.op === 'add' ? 'a' + c.to : c.item)).size;
@@ -283,7 +283,7 @@ function paneSuggest(q) {
   return pane('pane--fill sg-page', top, `<div class="body sg-body">${sgEditor()}</div>`, foot, d.t ? 'sg-edit' : 'sg-who');
 }
 
-/* ---------- on the request: a tracker (Sent · Dietician · Kitchen · Live), "Save it as" for the dietician, and the kitchen's "Diet updated" ---------- */
+/* ---------- on the request: a tracker (Sent · Dietician · Kitchen · Live), "Save It As" for the dietician, and the kitchen's "Diet updated" ---------- */
 function dietTrack(r) {
   const st = r.state, ap = user(r.approver), done = st === 'completed', live = done && (r.kind === 'skip' ? r.date <= TODAY : phaseOf(r) !== 'next');
   const head = st === 'pending' ? (r.approver === S.user ? 'Waiting for your approval' : `${first(ap.name)} is checking it`)
@@ -301,7 +301,7 @@ function saveAsSec(r) {
   if (!all.length || (all.length === asked.length && all.every(t => asked.some(x => samePlace(x, t))))) return '';
   const on = (ts => (eatNow(ts).list.find(e => e.diet.id === r.base) || { animals: [] }).animals.length), k = r.scope === 'all' ? 'all' : 'here';
   const opt = (key, b, s) => `<button class="sg-radio" aria-pressed="${k === key}" onclick="sgScope('${r.id}','${key}')"><span class="r"></span><span class="grow"><b>${esc(b)}</b><span>${esc(s)}</span></span></button>`;
-  return `<p class="secttl">Save it as</p><div class="sg-scope">${opt('here', `Only ${placesText(asked)}`, `${plural(on(asked), 'animal')} · as ${first(user(r.by).name)} asked`)}${opt('all', `Everyone on ${diet(r.base).name}`, `${plural(on(all), 'animal')} in ${plural(uses.length, 'place')}`)}</div>`;
+  return `<p class="secttl">Save It As</p><div class="sg-scope">${opt('here', `Only ${placesText(asked)}`, `${plural(on(asked), 'animal')} · as ${first(user(r.by).name)} asked`)}${opt('all', `Everyone on ${diet(r.base).name}`, `${plural(on(all), 'animal')} in ${plural(uses.length, 'place')}`)}</div>`;
 }
 function sgScope(id, k) {
   const r = by('requests', id); if (!r.asked) r.asked = targetsOf(r).map(t => ({ ...t }));
@@ -322,28 +322,28 @@ const dietTrackLine = r => `<div class="sg-sum__r">${I('pets', 18)}<span>${esc(r
 /* ---------- Diet home: the Biologist starts here; the Kitchen sees what it must update ---------- */
 function sgStartRow() {
   if (!canRaise(me())) return '';
-  return `<button class="sg-start" onclick="SG=null;go('#/suggest')"><span class="sg-start__ic">${I('edit_note')}</span><span class="grow"><b>Suggest a diet change</b><span>Scan or pick the animals, then change their food</span></span>${I('chevron_right', 20)}</button>`;
+  return `<button class="sg-start" onclick="SG=null;go('#/suggest')"><span class="sg-start__ic">${I('edit_note')}</span><span class="grow"><b>Suggest A Diet Change</b><span>Scan or pick the animals, then change their food</span></span>${I('chevron_right', 20)}</button>`;
 }
 function kitchenRow() {
   const team = (dept('diet').team || []); if (!team.includes(S.user)) return '';
   const todo = D.requests.filter(r => isDiet(r) && ['approved', 'in_progress'].includes(r.state));
-  return `<a class="reqsum" href="#/requests" onclick="S.rTab='approved';S.rSub='all';S.rDept='diet'"><span class="reqsum__ic">${I('soup_kitchen')}</span><span class="grow"><b>Diet updates</b><span class="sub">${todo.length ? `${todo.length} approved, to update` : 'Nothing to update'}</span></span><span class="cnt">${todo.length}</span>${I('chevron_right', 20)}</a>`;
+  return `<a class="reqsum" href="#/requests" onclick="S.rTab='approved';S.rSub='all';S.rDept='diet'"><span class="reqsum__ic">${I('soup_kitchen')}</span><span class="grow"><b>Diet Updates</b><span class="sub">${todo.length ? `${todo.length} approved, to update` : 'Nothing to update'}</span></span><span class="cnt">${todo.length}</span>${I('chevron_right', 20)}</a>`;
 }
 
 /* ---------- When approved (owner, 18 Nov: "needs work"): the plan said in the record's own rows — the diet, who gets it, when ----------
    One container, a label over a bold value, as the rest of the request; the long sentences of planOf's lines become short values */
-const EFF = { add: ['New diet', b => b.replace(/^New diet: /, '')], edit: ['Diet changed', b => b.replace(/ is changed$/, '')], swap_horiz: ['Moves to', b => b.replace(/^Move to /, '')],
-  event_busy: ['Diet ends', b => b.replace(/ ends$/, '')], edit_note: ['Diets that change', b => b], more_horiz: ['', b => b], no_meals: ['Feeds', b => b] };
+const EFF = { add: ['New Diet', b => b.replace(/^New diet: /, '')], edit: ['Diet Changed', b => b.replace(/ is changed$/, '')], swap_horiz: ['Moves To', b => b.replace(/^Move to /, '')],
+  event_busy: ['Diet Ends', b => b.replace(/ ends$/, '')], edit_note: ['Diets That Change', b => b], more_horiz: ['', b => b], no_meals: ['Feeds', b => b] };
 function effectView(r, p, o = {}) {
   const open = !r.outcome, pick = ic => p.lines.filter(l => l.icon === ic)[0], num = l => l ? parseInt(l.b, 10) || 0 : 0, rows = [];
   const R = (icon, k, v) => `<div class="rsec__r">${I(icon)}<span class="t"><span>${k}</span>${v}</span></div>`;
   const link = (view, text) => open ? `<button class="lnk" onclick="reachSheet('${view}','${r.id}')">${esc(text)}${I('chevron_right', 18)}</button>` : '';
   p.lines.filter(l => EFF[l.icon]).forEach(l => rows.push(R(l.icon === 'no_meals' ? 'no_meals' : l.icon === 'event_busy' ? 'event_busy' : 'restaurant', EFF[l.icon][0],
-    `<b>${esc(EFF[l.icon][1](l.b))}${l.tag ? ' ' + ktag(l.tag) : ''}</b>${[l.small, l.x].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('')}${l.view === 'ops' ? link('ops', 'See the diets') : ''}`)));
+    `<b>${esc(EFF[l.icon][1](l.b))}${l.tag ? ' ' + ktag(l.tag) : ''}</b>${[l.small, l.x].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('')}${l.view === 'ops' ? link('ops', 'See The Diets') : ''}`)));
   const g = pick('groups'), k = pick('do_not_disturb_on'), mv = pick('move_down'), back = pick('undo'), yr = pick('event_repeat');
   if (g) { const n = num(g), all = n + num(k);
-    rows.push(R('groups', 'Who gets it', `<b>${all > n ? `${n} of ${plural(all, 'animal')}` : plural(n, 'animal')}</b>${all > n ? `<span class="effbar" role="img" aria-label="${n} of ${all}"><i style="width:${Math.round(n / all * 100)}%"></i></span>` : ''}<span>${esc(g.small)}</span>
-      <span class="efflinks">${link('get', 'See who')}${k ? link('keep', `${num(k)} keep their own diet`) : ''}${mv ? link('moved', mv.b) : ''}</span>`)); }
+    rows.push(R('groups', 'Who Gets It', `<b>${all > n ? `${n} of ${plural(all, 'animal')}` : plural(n, 'animal')}</b>${all > n ? `<span class="effbar" role="img" aria-label="${n} of ${all}"><i style="width:${Math.round(n / all * 100)}%"></i></span>` : ''}<span>${esc(g.small)}</span>
+      <span class="efflinks">${link('get', 'See Who')}${k ? link('keep', `${num(k)} keep their own diet`) : ''}${mv ? link('moved', mv.b) : ''}</span>`)); }
   const lc = s => s ? s.charAt(0).toLowerCase() + s.slice(1) : '';
   const when = r.kind === 'skip' ? [`${dayText(r.date).charAt(0).toUpperCase() + dayText(r.date).slice(1)}, ${fmtDayY(r.date)}`, '']
     : r.kind === 'end' ? [`Last day ${fmtDayY(r.stop)}`, back ? `Then ${num(back) ? back.b.replace(/^\d+ \w+ /, '') : lc(back.b)} ${back.small}` : '']
@@ -351,14 +351,14 @@ function effectView(r, p, o = {}) {
     : r.how === 'yearly' ? [`Every year, ${mdText(r.start)} – ${mdText(r.end)}`, yr ? yr.small : '']
     : [`From ${r.start && r.start > TODAY ? dayText(r.start) : 'today'}, no end date`, ''];
   rows.push(R('event', 'When', `<b>${esc(when[0])}</b>${when[1] ? `<span>${esc(when[1])}</span>` : ''}`));
-  const title = r.outcome ? 'What changed' : isOpen(r) ? 'When approved' : 'When the kitchen updates it', html = `<div class="rsec effect2">${rows.join('')}</div>${p.block ? `<div class="az-warnline az-warnline--bad">${I('error', 18)}<span>${esc(p.block)}</span></div>` : ''}`;
+  const title = r.outcome ? 'What Changed' : isOpen(r) ? 'When Approved' : 'When The Kitchen Updates It', html = `<div class="rsec effect2">${rows.join('')}</div>${p.block ? `<div class="az-warnline az-warnline--bad">${I('error', 18)}<span>${esc(p.block)}</span></div>` : ''}`;
   return o.bare ? { title, html } : `<p class="secttl">${title}</p>${html}`;
 }
 
 /* ---------- Select Species (owner, 18 Nov: "Select Species page needs more work"): who a request is for, as a page in two steps ----------
    1 · search (with the QR scan), Recent places, every species with its photo, scientific name and animal count;
    2 · inside a species: Whole species · Enclosures (by section; a section can be picked whole) · Animals (search, number, sex, age),
-   and Done saying what was picked. Used by New Request (form.js, S.draft.pick) and by Suggest a change (SG.pick) */
+   and Done saying what was picked. Used by New Request (form.js, S.draft.pick) and by Suggest A Change (SG.pick) */
 const whoNew = t => ({ sp: t ? t.sp : null, q: '', aq: '', tab: !t || t.level === 'species' ? 'all' : t.level === 'animal' ? 'ani' : 'enc', sel: t ? { sp: t.sp, level: t.level, ref: t.ref ?? null } : null });
 const whoJs = o => JSON.stringify(o).replace(/"/g, '&quot;');
 const ageText = m => m == null ? '' : m >= 24 ? `${Math.floor(m / 12)} y` : `${m} m`;
@@ -378,7 +378,7 @@ function whoPage(P, ref, { back, done, title = 'Select Species' }) {
     const q = P.q.trim().toLowerCase(), sps = D.species.filter(s => !q || s.name.toLowerCase().includes(q) || s.sci.toLowerCase().includes(q) || String(s.id).includes(q)), places = q ? sgFind(P.q).filter(t => t.level !== 'species') : [];
     body = search('who-q', P.q, 'Search species, enclosure or animal', `${ref}.q=this.value;render()`, true)
       + (q ? '' : `<p class="who-h">Recent</p><div class="who-recent">${sgRecent().map(t => `<button class="who-rc" onclick="${ref}.sp=${t.sp};${ref}.tab='${whoNew(t).tab}';${ref}.sel=${whoJs(t)};render()">${spThumb(species(t.sp))}<span><b>${esc(sgName(t))}</b><small>${esc(sgWhere(t))}</small></span></button>`).join('')}</div>`)
-      + (places.length ? `<p class="who-h">Enclosures and animals</p><div class="who-list">${places.map(t => `<button class="who-row" onclick="${ref}.sp=${t.sp};${ref}.tab='${whoNew(t).tab}';${ref}.sel=${whoJs(t)};render()"><span class="who-av">${I(t.level === 'animal' ? 'pets' : t.level === 'section' ? 'grid_view' : 'fence', 22)}</span><span class="grow"><b>${esc(sgName(t))}</b><span class="who-cc">${cnt(sgWhere(t), '')}${cnt('Animals', tAnimals(t).length)}</span></span>${I('chevron_right', 20)}</button>`).join('')}</div>` : '')
+      + (places.length ? `<p class="who-h">Enclosures And Animals</p><div class="who-list">${places.map(t => `<button class="who-row" onclick="${ref}.sp=${t.sp};${ref}.tab='${whoNew(t).tab}';${ref}.sel=${whoJs(t)};render()"><span class="who-av">${I(t.level === 'animal' ? 'pets' : t.level === 'section' ? 'grid_view' : 'fence', 22)}</span><span class="grow"><b>${esc(sgName(t))}</b><span class="who-cc">${cnt(sgWhere(t), '')}${cnt('Animals', tAnimals(t).length)}</span></span>${I('chevron_right', 20)}</button>`).join('')}</div>` : '')
       + `<p class="who-h">Species · ${sps.length}</p>${sps.map(s => { const as = spAnimals(s.id);
         return `<button class="who-spc" onclick="${ref}.sp=${s.id};${ref}.tab='all';${ref}.sel=${whoJs({ sp: s.id, level: 'species', ref: null })};render()">${spThumb(s)}<span class="grow"><b>${esc(s.name)}</b><i>${esc(s.sci)}</i>${sexChips(as)}</span><span class="who-big">${as.length}</span></button>`; }).join('') || `<p class="sg-none">No species by that name</p>`}`;
   } else {
@@ -417,7 +417,7 @@ const pkList = rows => `<div class="pk-list">${rows}</div>`;
 const pkFocus = id => setTimeout(() => { const i = document.getElementById(id); if (i && !isPhone()) i.focus({ preventScroll: true }); }, 60);
 const pkIc = ic => `<span class="pk-ic">${I(ic, 22)}</span>`;
 
-/* Select species: search (a species, or an enclosure or animal by name or number) with the QR scan, Recent, every species (photo, name, scientific
+/* Select Species: search (a species, or an enclosure or animal by name or number) with the QR scan, Recent, every species (photo, name, scientific
    name: Kitchen & Diet's SpeciesSearchSelect). A species opens in the same sheet as Kitchen & Diet's scope picker (ScopePickerPanel, owner 19 Nov 2026:
    "check Species Selection from the codebase"): Species-wide · Site-wide · Section-wide · Enclosure-wide · Animal-wide, each with how many diets are set
    there; the open one lists its places with their path and diets (LocationScopePicker), animals with search. A tap picks and closes. cb(sp, level, ref) */
@@ -436,9 +436,9 @@ function spPickHtml() {
     const qr = `<button class="who-qr" onclick="event.preventDefault();${go1(rc)};toast('Scanned the QR on ${esc(sgName(rc))}')" aria-label="Scan the enclosure QR">${I('qr_code_scanner')}</button>`;
     const body = pkSearch('pk-q', PK.q, 'Species, enclosure or animal', 'PK.q=this.value;redrawSheet()', qr)
       + (q ? '' : `<p class="az-label pk-h">Recent</p>${pkList(sgRecent().slice(0, 3).map(t => pkRow(go1(t), spThumb(species(t.sp)), esc(sgName(t)), esc(`${species(t.sp).name} · ${sgWhere(t)}`), undefined, isOn(t))).join(''))}`)
-      + (places.length ? `<p class="az-label pk-h">Enclosures and animals</p>${pkList(places.map(t => pkRow(go1(t), pkIc(t.level === 'animal' ? 'pets' : t.level === 'section' ? 'grid_view' : 'fence'), esc(sgName(t)), esc(`${species(t.sp).name} · ${sgWhere(t)}`), undefined, isOn(t))).join(''))}` : '')
-      + `<p class="az-label pk-h">Species</p>${sps.length ? pkList(sps.map(s => pkRow(`pkSpOpen(${s.id})`, spThumb(s), esc(s.name), `<i>${esc(s.sci)}</i>`, I('chevron_right', 24), PK.cur && PK.cur.sp === s.id)).join('')) : '<p class="sg-none">No species by that name</p>'}`;
-    return { title: 'Select species', bottom: true, body };
+      + (places.length ? `<p class="az-label pk-h">Enclosures And Animals</p>${pkList(places.map(t => pkRow(go1(t), pkIc(t.level === 'animal' ? 'pets' : t.level === 'section' ? 'grid_view' : 'fence'), esc(sgName(t)), esc(`${species(t.sp).name} · ${sgWhere(t)}`), undefined, isOn(t))).join(''))}` : '')
+      + `<p class="az-label pk-h">Species</p>${sps.length ? `<div class="pk-list pk-list--sp">${sps.map(s => pkRow(`pkSpOpen(${s.id})`, spThumb(s), esc(s.name), `<i>${esc(s.sci)}</i>`, I('chevron_right', 24), PK.cur && PK.cur.sp === s.id)).join('')}</div>` : '<p class="sg-none">No species by that name</p>'}`;
+    return { title: 'Select Species', bottom: true, body };
   }
   const s = species(PK.sp), all = spAnimals(s.id), ids = k => [...new Set(all.map(a => pathOfAnimal(a)[k]))];
   const siteN = id => by('sites', id).name, secN = id => by('sections', id).name;
@@ -475,6 +475,6 @@ function dietPickHtml() {
 /* where a diet is set for a species, in words */
 const dietWhere = (dietId, sp) => { const a = D.assigns.find(x => x.diet === dietId && x.sp === sp && !ended(x)); return a ? `Set for ${whereSet(a)}` : ''; };
 
-/* Suggest a change: who (the sheet), and which of their diets */
+/* Suggest A Change: who (the sheet), and which of their diets */
 function sgWho() { spPickSheet('sgPickT', SG && SG.t); }
 function sgPickT(sp, level, ref) { sgPick(sp, level, ref); }

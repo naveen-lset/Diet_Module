@@ -5,7 +5,7 @@ const S = {
   user: 'u-hydar', frame: 'phone', site: 'all',
   land: 'species', spTab: 'all', spCls: 'all', dCert: 'all', fold: {}, spQ: '', dKind: 'all', dQ: '', lvl: {}, animAll: false, spView: 'diets', spHLvl: 'all', anim: 'with', aQ: '', day: null, dTab: 'items',
   hView: 'date', hWeek: 0, hDay: null, hType: 'all', hLvl: 'all', hBack: '#/history',
-  rTab: 'pending', rSub: 'all', rDept: 'all', rSort: 'newest', rPrio: 'all', rSearch: false, rQ: '', back: '#/requests', draft: null,
+  rTab: 'pending', rSub: 'all', rDept: 'all', rMine: false, rSort: 'newest', rPrio: 'all', rSearch: false, rQ: '', back: '#/requests', draft: null,
 };
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -15,12 +15,16 @@ const isTab = () => !isPhone();
 const isLand = () => S.frame === 'tab-l';
 const go = h => { if (location.hash === h) render(); else location.hash = h; };
 const first = n => n.split(' ')[0];
+/* Antz Labeling Guidelines (Figma "UI Labeling Guidelines"): labels, tabs, headers, buttons and statuses have every word's first letter in CAPS,
+   small words too, as the Figma ("Attachments If Any", "Move To In-Progress"); sentences and hints keep only the first word in CAPS */
+const tcase = s => String(s ?? '').replace(/(^|[\s(\-–·/])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+const cap = s => { s = String(s ?? ''); return s.charAt(0).toUpperCase() + s.slice(1); };
 const initials = n => n.split(/[\s-]+/).filter(w => /^[A-Za-z0-9#]/.test(w)).slice(0, 2).map(w => w[0].toUpperCase()).join('');
 const I = (name, size = 24, fill = false) => `<span class="az-i${size === 24 ? '' : ' az-i--' + size}${fill ? ' az-i--fill' : ''}" aria-hidden="true">${name}</span>`;
 const pill = (tone, text) => `<span class="az-pill az-pill--${tone}">${esc(text)}</span>`;
 const avatar = (name, sz = '') => `<span class="az-avatar${sz ? ' az-avatar--' + sz : ''}" aria-hidden="true">${initials(name)}</span>`;
 function toast(msg) { const t = $('#toast'); t.innerHTML = `${I('check_circle', 24, true)}<span class="az-toast__msg">${esc(msg)}</span>`; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); }
-const siteName = () => S.site === 'all' ? 'All sites' : by('sites', S.site).name;
+const siteName = () => S.site === 'all' ? 'All Sites' : by('sites', S.site).name;
 const youName = id => `${esc(user(id).name)}${id === S.user ? ' (You)' : ''}`;
 
 /* ---------- top bar: back, close or none · title (and a line) · actions · the site switch ---------- */
@@ -113,7 +117,7 @@ function siteSheet() {
   const count = id => { const as = D.animals.filter(a => id === 'all' || pathOfAnimal(a).site === id); return `${plural(new Set(as.map(a => a.sp)).size, 'species', 'species')} · ${plural(as.length, 'animal')}`; };
   const row = (id, name) => { const on = String(S.site) === String(id);
     return `<button class="az-site" role="radio" aria-checked="${on}" onclick="pickSiteFilter(${id === 'all' ? "'all'" : id})"><span class="az-site__thumb">${I(id === 'all' ? 'apartment' : 'location_on', 24)}</span><span class="grow"><span class="az-site__name">${esc(name)}</span><span class="az-site__sub">${count(id)}</span></span>${I(on ? 'radio_button_checked' : 'radio_button_unchecked', 24, on)}</button>`; };
-  openSheet(() => ({ title: 'Site', pick: true, body: row('all', 'All sites') + D.sites.map(s => row(s.id, s.name)).join('') }));
+  openSheet(() => ({ title: 'Site', pick: true, body: row('all', 'All Sites') + D.sites.map(s => row(s.id, s.name)).join('') }));
 }
 function pickSiteFilter(v) { S.site = v; closeAll(); storeSave(); render(); toast(`Showing ${siteName()}`); }
 
@@ -172,7 +176,7 @@ function mealTable(groups, wide = false, showDays = true, { act = false, add = n
     const more = add ? `<tr class="mtab__add"><td colspan="${cols - (wide ? 1 : 0)}"><button onclick="${add(g.feed)}">${I('add', 20)}Add item</button></td></tr>` : '';
     return (wide ? '' : `<tr class="mtab__band"><td colspan="${cols}"><span>${I('schedule', 18)}${bandText(feed(g.feed))}</span></td></tr>`) + rows + more;
   }).join('');
-  return `<div class="mtab-wrap"><table class="mtab${wide ? ' mtab--wide' : ''}"><thead><tr>${wide ? '<th>Time</th>' : ''}${showDays ? '<th>Day</th>' : ''}<th>Item</th><th>Daily amt</th>${act ? '<th></th>' : ''}</tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="mtab-wrap"><table class="mtab${wide ? ' mtab--wide' : ''}"><thead><tr>${wide ? '<th>Time</th>' : ''}${showDays ? '<th>Day</th>' : ''}<th>Item</th><th>Daily Amt</th>${act ? '<th></th>' : ''}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 /* a mix's parts as the Kitchen table's chips: the item and its share, then its preparation and cut */
 const ingrChips = (x, per = null) => `<span class="ingr">${x.mix.map(p => `<span><b>${esc(item(p.item).name)} · ${per ? qtyText(per * p.pct / 100, 'g') : p.pct + '%'}</b><small>${esc([p.prep, p.cut].filter(Boolean).join(' · '))}</small></span>`).join('')}</span>`;
@@ -198,20 +202,21 @@ function dietDiffGroups(A, B) {
 /* species photos: assets/species/<taxonomy id>.jpg (see SOURCES.txt) */
 const spPhoto = id => `assets/species/${id}.jpg`;
 const spThumb = sp => `<span class="thumb"><img src="${spPhoto(sp.id)}" alt="" loading="lazy"></span>`;
-function speciesRow(sp, { end = '', href, current = false, sub = '' } = {}) {
-  return `<a class="sprow pick" href="${href}"${current ? ' aria-current="true"' : ''}>${spThumb(sp)}<span class="sprow__t"><b>${esc(sp.name)}</b><span class="sub sci">${esc(sp.sci)}</span>${sub ? `<span class="meta">${sub}</span>` : ''}</span>${end}</a>`;
+/* big: the species card used across the app since Aug 2025 (Figma Collection, Species List with Images): the photo fills the card's left edge */
+function speciesRow(sp, { end = '', href, current = false, sub = '', big = false } = {}) {
+  return `<a class="sprow${big ? ' sprow--big' : ''} pick" href="${href}"${current ? ' aria-current="true"' : ''}>${spThumb(sp)}<span class="sprow__t"><b>${esc(sp.name)}</b><span class="sub sci">${esc(sp.sci)}</span>${sub ? `<span class="meta">${sub}</span>` : ''}</span>${end}</a>`;
 }
 /* a diet's state today: fed now, not fed by anyone now, starting later, or ended */
 function dietStatus(a) {
   if (ended(a)) return ['neutral', 'Ended'];
-  if (isNow(a)) return ['positive', 'Currently active'];
-  if (inForce(a, TODAY)) return ['neutral', 'Not in use now'];
+  if (isNow(a)) return ['positive', 'Currently Active'];
+  if (inForce(a, TODAY)) return ['neutral', 'Not In Use Now'];
   return ['neutral', `Starts ${fmtDay(slotDay(a))}`];
 }
 /* a diet in a species' list: the Diet wise row (avatar, name, kind and when) with its state and its animals (audit, 2 Nov: one diet card) */
 function dietCard(a, { current = false } = {}) {
   const d = diet(a.diet), [tone, label] = dietStatus(a);
-  return `<a class="sprow dietrow pick${ended(a) ? ' dietrow--ended' : ''}" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotText(a))}</span><span class="dfoot"><span class="dfoot__tags">${pill(tone, label)}${!d.cert ? pill('negative', 'Not certified') : ''}</span></span></span></a>`;
+  return `<a class="sprow dietrow pick${ended(a) ? ' dietrow--ended' : ''}" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotText(a))}</span><span class="dfoot"><span class="dfoot__tags">${pill(tone, label)}${!d.cert ? pill('negative', 'Not Certified') : ''}</span></span></span></a>`;
 }
 /* one diet set at a place, as a row of its card */
 function placeDietRow(a, current) {
@@ -226,5 +231,5 @@ function placeCard(p, cur) {
 const SEXT = { M: 'M', F: 'F', U: 'UD' };
 function animalCard(a, extra = '') {
   const e = by('enclosures', a.enc), sp = species(a.sp), t = SEXT[a.sex] || 'UD';
-  return `<div class="acard"><div class="az-animal"><span class="az-photo"><img src="${spPhoto(a.sp)}" alt="" loading="lazy"><span class="az-photo__sex az-photo__sex--${t}">${t}</span></span><span class="az-animal__d">${a.name ? `<span class="az-animal__tag">Name: ${esc(a.name)}</span>` : ''}<span>AID: ${a.id}</span><span>${esc(sp.name)}</span><span class="az-animal__sci">${esc(sp.sci)}</span><span>Encl: ${esc(e.name)}</span></span></div>${extra}</div>`;
+  return `<div class="acard"><div class="az-animal"><span class="az-photo"><img src="${spPhoto(a.sp)}" alt="" loading="lazy"><span class="az-photo__sex az-photo__sex--${t}">${t}</span></span><span class="az-animal__d"><span class="az-animal__tag">AID: ${a.id}</span><span>${esc(a.name ? `${a.name} · ${sp.name}` : sp.name)}</span><span class="az-animal__sci">${esc(sp.sci)}</span><span>Encl: ${esc(e.name)}</span></span></div>${extra}</div>`;
 }

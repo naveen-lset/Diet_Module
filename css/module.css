@@ -1449,7 +1449,6 @@ button.step{cursor:pointer}
 .sb-avs,.avs{display:flex;flex:none}
 .sb-avs .az-avatar,.avs .az-avatar{box-shadow:0 0 0 2px var(--white)}
 .sb-avs .az-avatar + .az-avatar,.avs .az-avatar + .az-avatar{margin-left:-6px}
-.avs .az-avatar{width:32px;height:32px;font:500 12px/1 var(--font)}
 .act__box{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:var(--r-8);background:var(--Background)}
 .act__box > small{font:500 12px/1 var(--font);color:var(--neutralSecondary)}
 .act__box--note{background:var(--notes)}
@@ -1476,132 +1475,21 @@ button.step{cursor:pointer}
 .req-a .rhead--dark{padding-top:4px}
 
 /* ---------- B · Item requests: white hero, Details | Activity, trays with a white card, approval rows flat ---------- */
-.rvh{background:var(--white);display:flex;gap:14px;align-items:flex-start;padding:4px 16px 20px;flex:none}
 .tab .rvh{padding:4px 20px 22px}
-.rvh__ic{width:56px;height:56px;border-radius:50%;background:var(--displaybgPrimary);color:var(--OnPrimaryContainer);display:grid;place-items:center;flex:none}
-.rvh__t{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
-.rvh__cat{display:flex;align-items:center;gap:8px;font:500 13px/1 var(--font);color:var(--neutralSecondary)}
-.rvh__prio{display:inline-flex;align-items:center;gap:2px;font:600 12px/1 var(--font);color:var(--Tertiary)}
-.rvh__prio--emergency{color:var(--Error)}
-.rvh__t > b{font:600 21px/1.3 var(--font);color:var(--OnSecondaryContainer)}
-.rvh__meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:4px;font:var(--t-body-regular);color:var(--neutralSecondary)}
-.rvpill{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:13px;font:600 12px/1 var(--font);white-space:nowrap}
-.rvpill i{width:6px;height:6px;border-radius:50%;background:currentColor}
-.rvpill--wait{background:rgba(255,232,110,.38);color:#6B4C00}
-.rvpill--ok{background:var(--OnBackground);color:var(--OnSurface)}
-.rvpill--bad{background:rgba(255,211,211,.7);color:var(--Error)}
-.rvpill--off{background:var(--neutral05);color:var(--OnSurfaceVariant)}
-.rvtabs{display:flex;margin:16px 16px 0;padding:3px;border-radius:12px;background:rgba(255,255,255,.55)}
-.rvtabs button{flex:1;height:42px;border-radius:9px;font:500 14px/1 var(--font);color:var(--OnSurfaceVariant)}
-.rvtabs button[aria-selected="true"]{background:var(--white);color:var(--OnSecondaryContainer);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1),0 0 0 1px rgba(0,0,0,.05)}
-.rvtabs em{font-style:normal;font-weight:500;color:var(--neutralSecondary);margin-left:4px}
-.rvbody{gap:16px}
-.rvp{background:var(--Background);border-radius:14px;padding:6px}
-.rvp__h{display:flex;align-items:center;gap:8px;padding:10px 10px 12px;min-height:44px}
-.rvp__h > .az-i{color:var(--Outline)}
-.rvp__h b{flex:1;font:600 15px/1.2 var(--font);color:var(--OnSecondaryContainer)}
-.rvp__b{background:var(--white);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px}
-.rvp__b .rv-lines{padding:0}
-.rvp__b > .rsec{background:none}
-.rvp__b > .rsec .rsec__r{padding-left:0;padding-right:0}
-.rvp__b .sg-scope{margin:0}
-.rvq{padding-bottom:14px;border-bottom:1px solid var(--neutral05);display:flex;flex-direction:column;gap:6px}
-.rvq small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
-.rvq p{font:500 15px/1.45 var(--font);color:var(--OnSecondaryContainer)}
-.rvfacts{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 .tab-l .rvfacts{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 20px}
-.rvf{display:flex;gap:12px;align-items:flex-start;min-width:0}
-.rvf--wide{grid-column:1/-1}
-.rvf__ic{width:40px;height:40px;border-radius:10px;background:var(--displaybgPrimary);color:var(--OnPrimaryContainer);display:grid;place-items:center;flex:none}
-.rvf__ic--av{background:none;width:auto;height:auto}
-.rvf__t{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;padding-top:1px}
-.rvf__t > small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
-.rvf__t > b{font:600 14px/1.35 var(--font);color:var(--neutralPrimary)}
-.rvf__t > span{font:var(--t-subtext-regular);color:var(--neutralSecondary);line-height:1.35}
-.rvf__t > p{font:var(--t-body-regular);line-height:1.45}
-.rvf__t > .lnk,.rvf__t > .ktag{align-self:flex-start}
-.rvf__acts{display:flex;gap:6px;flex:none}
-.rvf__acts .az-iconbtn,.rcd__acts .az-iconbtn{width:36px;height:36px;background:var(--displaybgPrimary);color:var(--OnPrimaryContainer)}
-.rva__h{display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--neutral05);font:var(--t-body-regular);color:var(--neutralSecondary)}
-.rva__h b{font:600 15px/1.2 var(--font);color:var(--OnSecondaryContainer)}
-.rva__h--wait > .az-i{color:var(--moderateSecondary)}
-.rva__h--ok > .az-i{color:var(--Primary)}
-.rva__h--bad > .az-i{color:var(--Error)}
-.rva__h--off > .az-i{color:var(--Outline)}
-.rva__r{display:flex;align-items:center;gap:12px;padding:6px 0}
-.rva__r .grow{display:flex;flex-direction:column;gap:3px;min-width:0}
-.rva__r b{font:600 14px/1.3 var(--font);color:var(--neutralPrimary)}
-.rva__r .grow > span{font:var(--t-subtext-regular);color:var(--neutralSecondary);line-height:1.35}
-.rva__r q{font:italic 400 13px/1.4 var(--font);color:var(--Error)}
-.rva__r--todo b{color:var(--OnSurfaceVariant)}
-.rva__r--todo .avs{opacity:.6}
-.rva__ic{width:32px;height:32px;border-radius:50%;background:var(--displaybgPrimary);color:var(--OnPrimaryContainer);display:grid;place-items:center;flex:none}
-.rva__m{flex:none;display:grid;place-items:center}
-.rva__m--done{color:var(--Primary)}
-.rva__m--now{color:var(--moderateSecondary)}
-.rva__m--todo{color:var(--OutlineVariant)}
-.rva__m--bad{color:var(--Error)}
-.rva__m--stop{color:var(--Outline)}
 
 /* ---------- C · Summary first: the doodle hero (where it stands, what it asks, for whom), a white body rising over it, Progress as the stepper ---------- */
-.rch{position:relative;overflow:hidden;flex:none;padding:6px 16px 44px}
 .tab .rch{padding:6px 20px 46px}
-.rch__in{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:12px}
-.rch__st{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px;border-radius:14px;background:rgba(255,255,255,.14);font:600 13px/1 var(--font);color:var(--white)}
-.rch__st i{width:8px;height:8px;border-radius:50%;background:var(--OutlineVariant)}
-.rch__st--wait i{background:var(--moderatePrimary);animation:rcPulse 1.8s ease-out infinite}
-.rch__st--ok i{background:#5BE08E}
-.rch__st--bad i{background:#FF8A9B}
 @keyframes rcPulse{0%{box-shadow:0 0 0 0 rgba(255,232,110,.6)}100%{box-shadow:0 0 0 9px rgba(255,232,110,0)}}
-.rch__prio{position:absolute;top:0;right:0;display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 10px;border-radius:14px;background:var(--Tertiary);font:600 12px/1 var(--font);color:var(--white)}
-.rch__t{font:600 22px/1.3 var(--font);color:var(--white)}
-.rch__for{display:flex;align-items:center;gap:12px;width:100%;padding:10px 10px 10px 12px;border-radius:14px;background:rgba(255,255,255,.1)}
-.rch__for .thumb{width:40px;height:40px;border-radius:50%}
-.rch__for .grow{display:flex;flex-direction:column;gap:4px;min-width:0}
-.rch__for b{font:600 15px/1.2 var(--font);color:var(--white)}
-.rch__for .grow span{font:400 13px/1.3 var(--font);color:rgba(255,255,255,.82)}
-.rch__dept{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.16);display:grid;place-items:center;flex:none}
-.rch__n{display:inline-flex;align-items:center;gap:2px;height:32px;padding:0 6px 0 12px;border-radius:16px;background:var(--white);color:var(--OnPrimaryContainer);font:600 13px/1 var(--font);flex:none}
-.rch__chips{display:flex;flex-wrap:wrap;gap:8px}
-.rch__chips > span{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:15px;border:1px solid rgba(255,255,255,.3);font:500 13px/1 var(--font);color:var(--white);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rcbody{position:relative;z-index:1;margin-top:-24px;border-radius:24px 24px 0 0;background:var(--displaybgSecondary);padding-top:20px}
-.rcc{background:var(--white);border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(31,81,91,.06),0 4px 14px rgba(31,81,91,.05)}
-.rcc h2{display:flex;align-items:center;gap:8px;margin:0 0 14px;font:600 15px/1.2 var(--font);color:var(--OnSecondaryContainer)}
-.rcc h2 > .az-i{color:var(--Outline)}
-.rcc h2 small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
-.rcc h2 .lnk{margin-left:auto}
-.rcc .steps{padding:0;background:none}
-.rcc .rv-lines{padding:0}
-.rcc > .rsec{background:none}
-.rcc > .rsec .rsec__r{padding-left:0;padding-right:0}
-.rc-who{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
-.rc-who .avs .az-avatar{width:24px;height:24px;font:600 10px/1 var(--font)}
-.rc-q{font:italic 400 13px/1.4 var(--font);color:var(--Error)}
-.rcc .step__t > .lnk{align-self:flex-start;margin-top:2px}
-.rcw{font:500 12px/22px var(--font)!important;color:#7A5600!important}
 .step__m--bad{background:var(--Error);color:var(--white)}
-.rcd{display:grid;grid-template-columns:116px minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--neutral05)}
-.rcd:first-of-type{border-top:0;padding-top:0}
-.rcd__k{font:var(--t-body-regular);color:var(--neutralSecondary);line-height:20px}
-.rcd__v{display:flex;flex-direction:column;gap:4px;min-width:0}
-.rcd__v > b{font:600 14px/20px var(--font);color:var(--neutralPrimary)}
-.rcd__v > span{font:var(--t-subtext-regular);color:var(--neutralSecondary);line-height:1.35}
-.rcd__v > p{font:var(--t-body-regular);line-height:1.45}
-.rcd__v > .lnk,.rcd__v > .ktag{align-self:flex-start}
-.rcd__v--who{flex-direction:row;align-items:center;flex-wrap:wrap;gap:8px}
-.rcd__v--who > b{font:600 14px/1 var(--font)}
-.rcd__acts{margin-left:auto;display:flex;gap:6px}
 @media (prefers-reduced-motion:reduce){.rch__st--wait i{animation:none}}
 
 .ktag--ot{background:var(--neutral05);color:var(--OnSurfaceVariant)}
 
-.rvtabs button{display:flex;align-items:center;justify-content:center;text-align:center}
-.rvq p,.rvf__t > p,.rcd__v > p{margin:0}
 /* an icon inside a line of text keeps its icon font and size, whatever text style the line gives its spans (19 Nov: "ar", "ch" showed instead of arrows) */
 .rv-ln__t .az-i,.step__t .az-i,.rch__chips .az-i,.rvf__t .az-i,.rcd__v .az-i,.rva__r .az-i{font-family:var(--icon-font);font-weight:400;font-style:normal;line-height:1;letter-spacing:normal;width:1em;height:1em;padding:0;border:0;background:none;color:inherit}
 .rv-ln__t .az-i--16,.rch__chips .az-i--16{font-size:16px}
 .step__t .lnk .az-i,.rvf__t .lnk .az-i,.rcd__v .lnk .az-i{font-size:18px}
-.rch__chips span.az-i{height:1em;padding:0;border:0;border-radius:0}
 .rv-ln__t b .az-i{color:var(--Outline)}
 /* phone: the step's date goes under its text, so the people keep one line */
 .phone .rcc .step{grid-template-columns:24px minmax(0,1fr)}
@@ -1724,3 +1612,96 @@ button.step{cursor:pointer}
 .df-sum .sg-sum__h{padding:10px 12px}
 .df-sum .dtab__h{border-top:1px solid var(--OutlineVariant)}
 .df-sum .dtab{border:0;border-radius:0;box-shadow:none;margin:0}
+
+/* ---------- Figma alignment (owner, 20 Nov 2026: the mockup approved): Antz Mobile Handoff — Request Module 25 Sep 2025, Collection species list Aug 2025, Hospital iPad Sep 2026 ---------- */
+/* Help Desk card: no line under the head, a bigger title, three lines of words, one fact (When / Estimate) with the file count, the last comment as a quote */
+.hdcard__top{border-bottom:0;padding:16px 0 0 16px}
+.hdcard__body{gap:8px;padding:10px 16px 14px}
+.hdcard__t{font:500 18px/24px var(--font)}
+.hdcard__d{-webkit-line-clamp:3}
+.hdcard__facts{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-top:2px}
+.hdcard__facts > span:first-child{display:flex;flex-direction:column;gap:4px;min-width:0}
+.hdcard__facts small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.hdcard__facts b{font:var(--t-body-title);color:var(--OnSurfaceVariant)}
+.hdcard__facts .hdcard__files{margin-left:0}
+.hdcard__cmt{padding:12px 16px 14px}
+/* My Approvals | All, on the page under the tabs (phone) or beside sort and filter (iPad) */
+.hdscope{display:flex;gap:8px;flex-wrap:wrap}
+.hdscope .az-chip:not([aria-selected="true"]){background:rgba(31,81,91,.10)}
+.hdscope-row{display:flex}
+.hdscope-line{justify-content:space-between}
+.hdstat .az-chip:not([aria-selected="true"]){background:var(--displaybgSecondary)}
+/* the request: low stock under the header, then one white row per fact with its icon */
+.rhead__who .az-who__name{font:var(--t-body-medium);color:var(--white)}
+.rhead__who .rperson__acts{margin-left:4px}
+.rlow{background:var(--notes)}
+.rlow .az-warnline{background:none;border-radius:0;margin:0;padding:12px 16px;align-items:flex-start}
+.rlow .az-warnline + .az-warnline{border-top:1px solid rgba(0,0,0,.05)}
+.rrows{background:var(--white)}
+.rrow{display:flex;gap:12px;padding:16px;border-top:1px solid var(--neutral05)}
+.rrow:first-child{border-top:0}
+.rrow > .az-i{color:var(--OnSurfaceVariant);margin-top:-1px}
+.rrow__b{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.rrow__h{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:20px;font:var(--t-body-title);color:var(--OnSurfaceVariant)}
+.rrow__h .lnk,.rcard__h .lnk,.rkv__l .lnk{font:var(--t-body-title);color:var(--Primary);min-height:0}
+.rrow__b > b{font:500 16px/22px var(--font);color:var(--OnSurfaceVariant)}
+.rrow--req .rrow__b > b{font-weight:600}
+.rrow__b > p,.rrow__b > .v{margin:0;font:400 16px/22px var(--font);color:var(--OnSurfaceVariant)}
+.rrow__b .sub,.rcard .sub,.rkv__c .sub{font:400 14px/20px var(--font);color:var(--neutralSecondary)}
+.rrow__b > .ktag{align-self:flex-start}
+.forcard{align-items:center}
+.forcard .az-photo{width:72px;height:72px}
+.rperson{display:flex;align-items:center;gap:10px;min-width:0}
+.rperson .grow{display:flex;flex-direction:column;gap:4px;min-width:0}
+.rperson b{font:var(--t-minor-medium);color:var(--OnSurfaceVariant)}
+.rperson .grow > span{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.rperson__acts{display:flex;gap:8px;flex:none;margin-left:auto}
+.rperson__acts .az-iconbtn{width:36px;height:36px;background:var(--displaybgPrimary);color:var(--OnPrimaryContainer)}
+.rhead--dark .rperson__acts .az-iconbtn{width:32px;height:32px;background:rgba(255,255,255,.14);color:var(--white);margin-left:0}
+.rhead--dark .rperson__acts{margin-left:4px}
+.rkv3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.rkv3 b{line-height:18px}
+.rextra{padding-top:12px;padding-bottom:0}
+/* Activity: full width on white, Show All with its filter, an attach button beside the comment box */
+.actsec{background:var(--white);margin-top:12px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.act-head b{display:flex;align-items:center;gap:8px;font:var(--t-medium);color:var(--OnSurfaceVariant)}
+.act-fbtn{display:inline-flex;align-items:center;gap:4px;font:var(--t-body-title);color:var(--OnPrimaryContainer);min-height:36px}
+.act-comp{display:flex;align-items:center;gap:10px}
+.act-attach{width:44px;height:44px;border-radius:50%;background:var(--displaybgPrimary);color:var(--OnPrimaryContainer);display:grid;place-items:center;flex:none}
+.act-comp .az-composer{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:44px;border-radius:22px;background:var(--displaybgPrimary);padding:0 4px 0 10px;margin:0}
+.act-comp .az-composer input{background:none;padding:0;height:44px;border-radius:0}
+.act-comp .send{width:36px;height:36px}
+.actsec .acts .act:first-child,.rcard .acts .act:first-child{border-top:0}
+/* iPad landscape: the same facts as white section cards in two columns, and the status bar in one line (Hospital iPad, 22 Sep 2026) */
+.req-wide .rgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+.rcard{background:var(--white);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.rcard--span{grid-column:1 / -1}
+.rcard__h{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.rcard__h b{font:var(--t-minor-title);color:var(--OnSurfaceVariant)}
+.rcard--req > b{font:600 16px/22px var(--font);color:var(--OnSurfaceVariant)}
+.rcard--req > p{margin:0;font:400 15px/22px var(--font);color:var(--OnSurfaceVariant)}
+.rkv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.rkv__c{display:flex;flex-direction:column;gap:6px;min-width:0}
+.rkv__k{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.rkv__c > b,.rkv__c > .v{font:var(--t-body-medium);line-height:20px;color:var(--OnSurfaceVariant)}
+.rkv__c > p{margin:0;font:var(--t-body-regular);line-height:20px}
+.rkv__c .rperson b{font:var(--t-body-medium)}
+.rkv__c--for,.rkv__c--when{grid-column:1 / -1}
+.rkv__l{display:flex}
+.rextra.rcard--span{display:flex;flex-direction:column;gap:12px;padding:0}
+.req-wide .az-statusbar{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,46%);column-gap:20px;align-items:center}
+.req-wide .az-statusbar > *{grid-column:1}
+.req-wide .az-statusbar > .az-statusbar__actions{grid-column:2;grid-row:1 / span 3;margin-top:0}
+/* the species card used across the app since Aug 2025: the photo fills the card's left edge; the Diets tile stays */
+.sprow--big{padding:0;min-height:84px;align-items:stretch;overflow:hidden}
+.sprow--big > .thumb{width:84px;height:auto;min-height:84px;border-radius:0;align-self:stretch}
+.sprow--big .sprow__t{padding:12px 0;justify-content:center}
+.sprow--big .sprow__t b{font:var(--t-minor-title);line-height:20px}
+.sprow--big .sprow__n{margin:10px 10px 10px 0}
+.pk-list--sp .az-pickrow{padding:0 12px 0 0;min-height:72px;overflow:hidden;align-items:stretch}
+.pk-list--sp .az-pickrow > .thumb{width:72px;height:auto;min-height:72px;border-radius:0;align-self:stretch}
+.pk-list--sp .az-pickrow > .az-i{align-self:center}
+.pk-list--sp .az-pickrow__t{justify-content:center;padding:10px 0}
+.sprow--big > .thumb,.pk-list--sp .az-pickrow > .thumb{position:relative}
+.sprow--big > .thumb img,.pk-list--sp .az-pickrow > .thumb img{position:absolute;inset:0}
+.rkv{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
