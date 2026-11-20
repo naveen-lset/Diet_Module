@@ -712,7 +712,7 @@ function dfRows(d) {
   const f = d.f || {}, feeds = l => l === 'all' || !(l || []).length ? 'Whole day' : l.map(x => bandText(feed(x))).join(', '), day = n => `${DAY_WORD(n)} · ${fmtDay(addDays(TODAY, n))}`;
   switch (d.dtype) {
     case 'newdiet': return [['Needed from', day(f.from ?? 1)]];
-    case 'extra': { const n = typeof f.when === 'number' ? f.when : 1; return [['When', f.week || f.when === 'week' ? `Every day for a week from ${day(n)}` : day(n)], ['Feed', feeds(f.feed)]]; }
+    case 'extra': { const ds = extraDays(f); return [['When', ds.length > 1 ? `${cap(datesText(ds))} · ${ds.length} days` : day(daysBetween(TODAY, ds[0]))], ['Feed', feeds(f.feed)]]; }
     case 'medicine': return [['From', day(f.from ?? 0)], ['Feed', feeds(f.feed)], ['For', `${f.days ?? 5} days`]];
     case 'quality': return [['Which day', day(f.day ?? 0)], ['Feed', feeds(f.feed)]];
     default: return [];
@@ -744,6 +744,45 @@ function dayStrip(cur, key, { past = false, days = 21, max = 365 } = {}) {
 }
 /* a strip keeps its picked day in view (a date picked from the calendar lands at its end) */
 function stripView() { document.querySelectorAll('.dstrip').forEach(row => { const c = row.querySelector('.on'); if (c && (c.offsetLeft < row.scrollLeft || c.offsetLeft + c.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollTo({ left: c.offsetLeft - 12, behavior: calm() ? 'auto' : 'smooth' }); }); }
+/* Days (owner, 20 Nov 2026, again: "only one date could be chosen; I want a particular week or different dates; Every Day For A Week in its
+   proper place; give the container some space"). First how many, as the design system's segment, then:
+   - One Day: the strip, one tap;
+   - Several Days: the same strip, each tap adds or takes away a day;
+   - A Week: the weeks as cards (This Week, Next Week, the ones after; the calendar card picks the week of any date).
+   A skip keeps its days on the draft (d.dates), an extra feed in its answers (d.f.dates) */
+const DMODES = [['one', 'One Day'], ['some', 'Several Days'], ['week', 'A Week']];
+const dstate = k => k === 'skip' ? S.draft : S.draft.f;
+const skipDays = d => (d.dates && d.dates.length ? d.dates : d.dates ? [] : [d.date]).filter(Boolean);
+/* an extra feed's days; older drafts kept an offset (f.when) and a week switch */
+function extraDays(f) { if (f.dates) return f.dates; const n = typeof f.when === 'number' ? f.when : 1, a = addDays(TODAY, n); return f.week || f.when === 'week' ? Array.from({ length: 7 }, (_, i) => addDays(a, i)) : [a]; }
+/* the week (Monday to Sunday) a day is in, from today on */
+const weekOf = iso => { const mon = addDays(iso, -((new Date(iso + 'T00:00:00').getDay() + 6) % 7)); return Array.from({ length: 7 }, (_, i) => addDays(mon, i)).filter(x => x >= TODAY); };
+const isWeek = ds => ds.length > 1 && JSON.stringify(weekOf(ds[0])) === JSON.stringify([...ds].sort());
+const dmodeOf = ds => ds.length <= 1 ? 'one' : isWeek(ds) ? 'week' : 'some';
+function dfSetDates(k, ds, m) { const o = dstate(k); o.dates = [...new Set(ds)].sort(); if (m) o.dmode = m; if (k === 'skip' && o.dates[0]) S.draft.date = o.dates[0]; render(); }
+function dfDmode(k, m) { const o = dstate(k), ds = o.dates || [], first = ds[0] || addDays(TODAY, 1); if ((o.dmode || 'one') === m) return; dfSetDates(k, m === 'week' ? weekOf(first) : [first], m); playFx($(`#wd-${k} [data-fx]`), 'sh-swap'); }
+function dfTapDay(k, iso) { const o = dstate(k), ds = o.dates || [], m = o.dmode || 'one';
+  if (m === 'one') dfSetDates(k, [iso]); else if (m === 'some') dfSetDates(k, ds.includes(iso) ? ds.filter(x => x !== iso) : [...ds, iso]); else dfSetDates(k, weekOf(iso)); }
+function daysField(k, label, req) {
+  const o = dstate(k), m = o.dmode || 'one', ds = (k === 'skip' ? skipDays(o) : extraDays(o)).slice().sort(), n = ds.length;
+  const answer = m === 'one' ? (n ? dayLong(daysBetween(TODAY, ds[0])) : 'Choose a day') : n ? plural(n, 'Day') : 'Tap the days';
+  const seg = `<div class="az-segment rv-seg wd-seg" role="tablist" aria-label="How many days">${thumb()}${DMODES.map(([v, l]) => `<button role="tab" aria-selected="${m === v}" onclick="dfDmode('${k}','${v}')">${l}</button>`).join('')}</div>`;
+  /* the days: four weeks from today, a small gap before each Monday, the calendar cell for any other date */
+  const span = Array.from({ length: 28 }, (_, i) => addDays(TODAY, i)), extra = ds.filter(x => !span.includes(x));
+  const cell = iso => { const on = ds.includes(iso), t = iso === TODAY, mon = (new Date(iso + 'T00:00:00').getDay()) === 1 && iso !== TODAY;
+    return `<button class="dstrip__d${on ? ' on' : ''}${t ? ' today' : ''}${mon ? ' mon' : ''}" role="${m === 'some' ? 'checkbox' : 'radio'}" aria-checked="${on}" aria-label="${dayLong(daysBetween(TODAY, iso))}" onclick="dfTapDay('${k}','${iso}')"><small>${t ? 'Today' : wday(iso)}</small><b>${+iso.slice(8)}</b><small>${MON[+iso.slice(5, 7) - 1]}</small></button>`; };
+  const cal = (cls, lab) => `<label class="dstrip__d dstrip__cal${cls}" title="Pick another date">${I('calendar_month', 22)}<small>${lab}</small><input type="date" min="${TODAY}" max="${addDays(TODAY, 365)}" onclick="try{this.showPicker()}catch(e){}" onchange="if(this.value){dfTapDay('${k}',this.value);this.value=''}" aria-label="Pick another date"></label>`;
+  const strip = `<div class="dstrip" role="${m === 'some' ? 'group' : 'radiogroup'}" aria-label="Days">${span.map(cell).join('')}${extra.map(cell).join('')}${cal('', 'Other')}</div>`;
+  /* the weeks as cards: This Week (what is left of it), Next Week, then the weeks after */
+  const weeks = Array.from({ length: 6 }, (_, i) => weekOf(addDays(TODAY, i * 7))).filter(w => w.length);
+  const picked = m === 'week' && n ? JSON.stringify(ds) : '';
+  const card = (w, i) => { const on = JSON.stringify(w) === picked, a = w[0], b = w[w.length - 1];
+    return `<button class="wcard${on ? ' on' : ''}" role="radio" aria-checked="${on}" onclick="dfSetDates('${k}',${JSON.stringify(w).replace(/"/g, "'")})"><small>${i === 0 ? 'This Week' : i === 1 ? 'Next Week' : `Week Of ${fmtDay(addDays(b, -6))}`}</small><b>${a.slice(5, 7) === b.slice(5, 7) ? +a.slice(8) : fmtDay(a)} – ${fmtDay(b)}</b><small>${w.length === 7 ? 'Mon – Sun' : `${wday(a)} – Sun · ${w.length} days`}</small></button>`; };
+  const other = picked && !weeks.some(w => JSON.stringify(w) === picked) ? card(ds, 9) : '';
+  const wcards = `<div class="wcards" role="radiogroup" aria-label="Week">${weeks.map(card).join('')}${other}${cal(' wcard', 'Other Week')}</div>`;
+  const sum = m === 'some' && n ? `<p class="wd-sum">${I('event', 18)}<span>${cap(datesText(ds))}</span></p>` : '';
+  return `<div class="wf wd" id="wd-${k}">${`<div class="wf__h"><span>${label}${req ? ' <span class="az-req">*</span>' : ''}</span><b${n ? '' : ' class="ph"'}>${answer}</b></div>`}${seg}<div class="wd-pick" data-fx>${m === 'week' ? wcards : strip}${sum}</div></div>`;
+}
 /* the kitchen's feed times as tiles; on(f) says if one is picked, js(f) what a tap does */
 const feedTiles = (on, js) => `<div class="feedts" role="group" aria-label="Feeds">${dfFeeds().map(f => { const x = feed(f), y = on(f);
   return `<button class="feedt${y ? ' on' : ''}" role="checkbox" aria-checked="${y}" onclick="${js(f)}"><b>${x.from}</b><small>to ${x.to}</small></button>`; }).join('')}</div>`;
@@ -763,7 +802,7 @@ function dfReq(d) {
   if (kind === 'new') Object.assign(r, { base: d.base, changes: d.changes.map(c => ({ ...c })), how: d.how || 'always', name: (d.name || '').trim(), ...dfDates(d) });
   if (kind === 'diet') Object.assign(r, { base: x ? x.diet.id : null, diet: d.diet, how: d.how || 'always', ...dfDates(d) });
   if (kind === 'end') Object.assign(r, { ends: [...d.ends], stop: d.stop });
-  if (kind === 'skip') Object.assign(r, { date: d.date, feeds: d.feeds === 'all' ? 'all' : [...d.feeds] });
+  if (kind === 'skip') { const ds = skipDays(d); Object.assign(r, { date: ds[0] || d.date, ...(ds.length > 1 ? { dates: ds } : {}), feeds: d.feeds === 'all' ? 'all' : [...d.feeds] }); }
   if (JOB_KINDS.includes(kind)) r.f = JSON.parse(JSON.stringify(d.f || {}));
   return r;
 }
@@ -777,7 +816,8 @@ function dfAuto(d) {
     case 'newdiet': return d.base && ((d.name || '').trim() || dfNewName(d)) ? `New diet: ${(d.name || '').trim() || dfNewName(d)}` : `New diet for ${p}`;
     case 'move': return d.diet ? `Move ${p} to ${diet(d.diet).name}` : '';
     case 'end': return d.ends.length ? `End ${diet(by('assigns', d.ends[0]).diet).name} early` : '';
-    case 'skip': return d.feeds === 'all' ? `No feed ${dayText(d.date)} · ${p}` : d.feeds.length ? `Skip the ${d.feeds.map(f => feed(f).from).join(' and ')} feed ${dayText(d.date)} · ${p}` : '';
+    case 'skip': { const ds = skipDays(d), on = ds.length > 1 ? `on ${datesText(ds)}` : dayText(ds[0] || d.date);
+      return d.feeds === 'all' ? `No feed ${on} · ${p}` : d.feeds.length ? `Skip the ${d.feeds.map(f => feed(f).from).join(' and ')} feed ${on} · ${p}` : ''; }
     case 'extra': return `Extra feed for ${p}`;
     case 'medicine': return `Medicine with food for ${p}`;
     case 'quality': return `Food quality issue · ${p}`;
@@ -794,6 +834,8 @@ function dfErr(d) {
   if (k === 'newdiet' && d.base && !d.how) return 'Choose how long';
   if (k === 'move') { if (!d.diet) return 'Choose the diet to move to'; if (!d.how) return 'Choose how long'; }
   if (k === 'end' && !d.ends.length) return 'Choose the diet to end';
+  if (k === 'skip' && !skipDays(d).length) return 'Choose the days';
+  if (k === 'extra' && !extraDays(d.f).length) return 'Choose the days';
   if (k === 'skip' && d.feeds !== 'all' && !d.feeds.length) return 'Choose the feeds to skip';
   if (!words && !d.reason) return 'Choose why';
   if (!dfTitle(d).trim()) return 'Add a title';
@@ -856,16 +898,14 @@ function dtypeFields(d) {
   const feedChips = (cur, js, all = true) => dchips([...(all ? [['all', 'Whole Day', 'All feeds']] : []), ...dfFeeds(d).map(f => [f, bandText(feed(f))])], v => v === 'all' ? cur === 'all' : cur !== 'all' && (cur || []).includes(v), js, 'schedule');
   /* one or more feed times */
   const feedsOf = (label, key = 'feed') => wfield(label, feedsText(d.f[key]), feedTiles(f => (d.f[key] || []).includes(f), f => `dfToggleF('${key}',${f})`), { ph: !(d.f[key] || []).length });
-  const when = (...fs) => section('calendar_month', 'When', fs.join(''));
+  const when = (...fs) => section('calendar_month', 'When', fs.join('')).replace('<section class="az-section">', '<section class="az-section az-section--when">');
   /* ---- a Diet request: when, which feed; what is asked goes in Describe Your Request ---- */
-  if (k === 'skip') { const n = daysBetween(TODAY, d.date), all = d.feeds === 'all';
-    return when(wfield('Day', dayLong(n), dayStrip(n, 'date'), { req: true }),
+  if (k === 'skip') { const all = d.feeds === 'all';
+    return when(daysField('skip', 'Days', true),
       /* every feed is picked to start with (the whole day); a tap leaves one out */
       wfield('Feeds', all ? 'Whole Day' : feedsText(d.feeds), feedTiles(f => all || d.feeds.includes(f), f => `dfToggleFeed(${f})`) + `<p class="wf__hint">${all ? 'Tap a feed to skip only some' : `<button class="lnk" onclick="S.draft.feeds='all';render()">Skip The Whole Day</button>`}</p>`, { req: true, ph: !all && !d.feeds.length })); }
-  if (k === 'extra') { const n = typeof d.f.when === 'number' ? d.f.when : 1, wk = !!d.f.week || d.f.when === 'week';
-    return when(wfield(wk ? 'From' : 'Day', wk ? `${dayLong(n)} · 7 days` : dayLong(n), dayStrip(n, 'f.when')),
-      `<button class="az-checkrow swrow wf-sw" role="switch" aria-checked="${wk}" onclick="S.draft.f.week=!(S.draft.f.week||S.draft.f.when==='week');if(S.draft.f.when==='week')S.draft.f.when=1;render()"><span class="grow">Every Day For A Week</span><span class="az-switch" aria-checked="${wk}"></span></button>`,
-      feedsOf('With Which Feeds')); }
+  if (k === 'extra') { if (!d.f.dates) { d.f.dates = extraDays(d.f); d.f.dmode = dmodeOf(d.f.dates); }
+    return when(daysField('extra', 'Days', true), feedsOf('With Which Feeds')); }
   if (k === 'medicine') { const n = d.f.from ?? 0, dd = d.f.days ?? 5;
     return when(wfield('From', dayLong(n), dayStrip(n, 'f.from')), feedsOf('Mix Into'),
       `<div class="wf wf--row"><span class="wf__l">For</span><div class="mstep"><button class="how-step" onclick="S.draft.f.days=Math.max(1,${dd}-1);render()" aria-label="One day less"${dd <= 1 ? ' disabled' : ''}>${I('remove')}</button><b>${plural(dd, 'Day')}</b><button class="how-step" onclick="S.draft.f.days=Math.min(60,${dd}+1);render()" aria-label="One day more">${I('add')}</button></div></div>`); }
@@ -932,7 +972,7 @@ function dtypeHtml() {
 function dfGroup(k) { const d = S.draft; if (d.dgroup === k) return; d.dgroup = k; if (d.dtype && dtOf(d.dtype)[5] !== k) dfType(null); else render(); }
 function dfType(k) {
   const d = S.draft;
-  if (d.dtype !== k) Object.assign(d, { dtype: k, changes: [], diet: null, ends: [], f: {}, reason: null, titleEdited: false, title: '', name: '', how: k === 'move' ? 'once' : null, feeds: 'all', date: addDays(TODAY, 1), stop: addDays(TODAY, 1) });
+  if (d.dtype !== k) Object.assign(d, { dtype: k, changes: [], diet: null, ends: [], f: {}, reason: null, titleEdited: false, title: '', name: '', how: k === 'move' ? 'once' : null, feeds: 'all', date: addDays(TODAY, 1), dates: [addDays(TODAY, 1)], dmode: 'one', stop: addDays(TODAY, 1) });
   if (k) d.dgroup = dtOf(k)[5];
   if (d.targets[0]) { const e = dfEat(d)[0]; d.base = e ? e.diet.id : null; }
   /* the type sheet moves on to Select Species in the same sheet (a step forward), rather than closing and opening another */
@@ -965,7 +1005,7 @@ function dfEditFood() {
 function dfLoad(d, r) {
   const t = targetsOf(r)[0], dt = dtOfKind(r.kind) || DTYPES[5];
   Object.assign(d, { dgroup: dt[5], dtype: dt[0], name: r.name || '', targets: [{ sp: t.sp, level: t.level, ref: t.ref ?? null }], base: r.base || null, changes: (r.changes || []).map(c => ({ ...c })), diet: r.diet || null, ends: [...(r.ends || [])], stop: r.stop || addDays(TODAY, 1),
-    date: r.date || addDays(TODAY, 1), feeds: r.feeds === 'all' || !r.feeds ? 'all' : [...r.feeds], reason: r.reason || null, f: JSON.parse(JSON.stringify(r.f || {})), how: r.how || null, days: 14, from: 1, season: 'Winter' });
+    date: r.date || addDays(TODAY, 1), dates: reqDates(r).length ? reqDates(r) : [addDays(TODAY, 1)], dmode: dmodeOf(reqDates(r)), feeds: r.feeds === 'all' || !r.feeds ? 'all' : [...r.feeds], reason: r.reason || null, f: JSON.parse(JSON.stringify(r.f || {})), how: r.how || null, days: 14, from: 1, season: 'Winter' });
   if (r.how === 'once' && r.start) { d.from = Math.max(0, daysBetween(TODAY, r.start)); d.days = Math.max(1, daysBetween(r.start, r.end) + 1); }
   if (r.how === 'yearly') d.season = (SG_SEASONS.find(s => s[1] === r.start) || SG_SEASONS[2])[0];
 }

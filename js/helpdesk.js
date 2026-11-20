@@ -19,7 +19,7 @@ const flag = p => `<span class="az-flag${p === 'high' ? ' az-flag--high' : p ===
 function whatOf(r) {
   if (!isDiet(r) || JOB_KINDS.includes(r.kind)) return r.text;
   const base = diet(r.base);
-  if (r.kind === 'skip') return `No diet ${onDay(r.date)} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ') + ' only'}`;
+  if (r.kind === 'skip') return `No diet ${onDays(r)} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ') + ' only'}`;
   if (r.kind === 'end') return `${(r.ends || []).map(id => diet(by('assigns', id).diet).name).join(', ')} · last day ${fmtDay(r.stop)}`;
   if (r.kind === 'new') return `${r.name || 'New diet'} · ${howText(r)}`;
   if (r.kind === 'items' && r.base === 'many') return (r.rules || []).map(ruleText).join(', ');
@@ -41,7 +41,7 @@ const stripTime = r => isOpen(r) || r.state === 'in_progress' ? `Since ${ago(las
 const JOB_WHEN = ['From', 'Which day', 'Needed from', 'When'], JOB_LONG = ['For'];
 function cardFact(r) {
   if (!isDiet(r)) return r.f && r.f.cost ? ['Estimate', `₹ ${(+r.f.cost).toLocaleString('en-IN')}`] : null;
-  if (r.kind === 'skip') return ['Which Day', `${cap(dayText(r.date))} · ${r.feeds === 'all' ? 'All Feeds' : r.feeds.map(f => bandText(feed(f))).join(', ')}`];
+  if (r.kind === 'skip') return [reqDates(r).length > 1 ? 'Which Days' : 'Which Day', `${cap(datesText(reqDates(r)))} · ${r.feeds === 'all' ? 'All Feeds' : r.feeds.map(f => bandText(feed(f))).join(', ')}`];
   if (r.kind === 'end') return ['Last Day', fmtDayY(r.stop)];
   if (JOB_KINDS.includes(r.kind)) { const rows = (r.f && r.f.rows) || [], w = rows.find(([k]) => JOB_WHEN.includes(k)), l = rows.find(([k]) => JOB_LONG.includes(k));
     return w ? [w[0] === 'Which day' ? 'Which Day' : 'When', [w[1].split(' · ')[0], l ? tcase(l[1]) : ''].filter(Boolean).join(' · ')] : null; }
@@ -125,7 +125,7 @@ function reqFacts(r) {
       const rows = (r.f && r.f.rows) || [], when = rows.filter(([k]) => JOB_WHENISH.includes(k)), rest = rows.filter(x => !when.includes(x));
       if (when.length) add('when', 'calendar_month', 'When', `<div class="az-kvgrid rkv3">${when.map(([k, v]) => `<div><span>${esc(tcase(k))}</span><b>${esc(v)}</b></div>`).join('')}</div>`);
       rest.forEach(([k, v]) => add('job', REQ_JI[k] || 'info', tcase(k), `<b>${esc(v)}</b>`));
-    } else add('when', 'calendar_month', r.kind === 'end' ? 'Last Day' : 'When', `<b>${r.kind === 'skip' ? `${wday(r.date)} ${fmtDayY(r.date)} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ')}` : r.kind === 'end' ? `${wday(r.stop)} ${fmtDayY(r.stop)}` : howText(r)}</b>${r.how && r.kind !== 'skip' ? ktag(HOW_KIND[r.how]) : ''}`);
+    } else add('when', 'calendar_month', r.kind === 'end' ? 'Last Day' : 'When', `<b>${r.kind === 'skip' ? `${reqDates(r).length > 1 ? `${cap(datesText(reqDates(r)))} · ${plural(reqDates(r).length, 'day')}` : `${wday(r.date)} ${fmtDayY(r.date)}`} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ')}` : r.kind === 'end' ? `${wday(r.stop)} ${fmtDayY(r.stop)}` : howText(r)}</b>${r.how && r.kind !== 'skip' ? ktag(HOW_KIND[r.how]) : ''}`);
   }
   /* the work after approval: who is in charge (the team can change it while in progress), and what the team wrote when completing */
   if (['in_progress', 'completed'].includes(r.state)) {
