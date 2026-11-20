@@ -365,7 +365,7 @@ const ageText = m => m == null ? '' : m >= 24 ? `${Math.floor(m / 12)} y` : `${m
 const SEX = { M: ['male', 'Male'], F: ['female', 'Female'] };
 /* as the Antz app (18 Nov): species cards as SpeciesCustomCard (round photo, scientific name, M / F / UD chips, the count big on the right);
    sections and enclosures as MedicalEnclosureCard (round icon, count chips, a tint and a tick when picked); animals as NewAnimalCustomCard
-   (photo with the sex badge, AAID, name, enclosure and age); the QR scan inside the search bar */
+   (photo with the sex badge, AID, name, enclosure and age); the QR scan inside the search bar */
 const sexChips = list => { const n = k => list.filter(a => (a.sex || 'U') === k).length; return `<span class="who-sx">${[['M', 'm'], ['F', 'f'], ['U', 'u']].filter(([k]) => n(k)).map(([k, c]) => `<em class="${c}">${k === 'U' ? 'UD' : k} - ${n(k)}</em>`).join('')}</span>`; };
 const cnt = (l, n) => `<em>${l} ${n}</em>`;
 function whoPage(P, ref, { back, done, title = 'Select Species' }) {
@@ -396,7 +396,7 @@ function whoPage(P, ref, { back, done, title = 'Select Species' }) {
       const q = P.aq.trim().toLowerCase(), list = all.filter(a => !q || animalName(a).toLowerCase().includes(q) || String(a.id).includes(q) || by('enclosures', a.enc).name.toLowerCase().includes(q));
       body += search('who-aq', P.aq, 'Search Animal', `${ref}.aq=this.value;render()`, false)
         + `<div class="who-anl">${list.slice(0, 60).map(a => { const t = { sp: s.id, level: 'animal', ref: a.id }, sx = a.sex === 'M' ? 'm' : a.sex === 'F' ? 'f' : 'u';
-          return `<button class="who-an${on(t) ? ' on' : ''}" onclick="${pickJs(t)}"><span class="who-an__img">${spThumb(s)}<em class="who-sxb ${sx}">${a.sex === 'M' ? 'M' : a.sex === 'F' ? 'F' : 'UD'}</em></span><span class="grow"><b>AAID: ${a.id}</b>${a.name ? `<span class="nm">${esc(a.name)}</span>` : ''}<span>${esc([by('enclosures', a.enc).name, ageText(a.ageM)].filter(Boolean).join(' · '))}</span></span><span class="who-radio${on(t) ? ' on' : ''}" aria-hidden="true"></span></button>`; }).join('') || '<p class="sg-none">No animal by that number or name</p>'}</div>`;
+          return `<button class="who-an${on(t) ? ' on' : ''}" onclick="${pickJs(t)}"><span class="who-an__img">${spThumb(s)}<em class="who-sxb ${sx}">${a.sex === 'M' ? 'M' : a.sex === 'F' ? 'F' : 'UD'}</em></span><span class="grow"><b>AID: ${a.id}</b>${a.name ? `<span class="nm">${esc(a.name)}</span>` : ''}<span>${esc([by('enclosures', a.enc).name, ageText(a.ageM)].filter(Boolean).join(' · '))}</span></span><span class="who-radio${on(t) ? ' on' : ''}" aria-hidden="true"></span></button>`; }).join('') || '<p class="sg-none">No animal by that number or name</p>'}</div>`;
     }
   }
   const sel = P.sel, foot = `<button class="az-btn" ${sel ? `onclick="${done}"` : 'disabled'}>${sel ? `Done · ${esc(sgName(sel))} · ${plural(tAnimals(sel).length, 'animal')}` : 'Choose who it is for'}</button>`;
@@ -415,6 +415,8 @@ const pkSearch = (id, val, ph, js, qr = '') => `<label class="az-input az-input-
 const pkRow = (js, lead, title, sub, end = null, on = false) => `<button class="az-pickrow pk-r" role="radio" aria-checked="${on}" onclick="${js}">${lead}<span class="az-pickrow__t"><b>${title}</b>${sub ? `<span>${sub}</span>` : ''}</span>${end !== null ? end : I(on ? 'radio_button_checked' : 'radio_button_unchecked', 24, on)}</button>`;
 const pkList = rows => `<div class="pk-list">${rows}</div>`;
 const pkFocus = id => setTimeout(() => { const i = document.getElementById(id); if (i && !isPhone()) i.focus({ preventScroll: true }); }, 60);
+/* an animal to pick, as the Figma Animal Card For Selection (Animal Card Redesign): photo with the sex badge, AID, species, enclosure */
+const selCard = (js, a, s, on) => { const sx = SEXT[a.sex] || 'UD'; return `<button class="selcard${on ? ' selcard--on' : ''}" role="radio" aria-checked="${on}" onclick="${js}"><span class="az-photo"><img src="${spPhoto(s.id)}" alt="" loading="lazy"><span class="az-photo__sex az-photo__sex--${sx}">${sx}</span></span><span class="az-animal__d"><span class="az-animal__tag">AID: ${a.id}</span><span>${esc(a.name ? `${a.name} · ${s.name}` : s.name)}</span><span class="az-animal__sci">${esc(s.sci)}</span><span>Encl: ${esc(by('enclosures', a.enc).name)}</span></span>${I(on ? 'check_circle' : 'radio_button_unchecked', 24, on)}</button>`; };
 const pkIc = ic => `<span class="pk-ic">${I(ic, 22)}</span>`;
 
 /* Select Species: search (a species, or an enclosure or animal by name or number) with the QR scan, Recent, every species (photo, name, scientific
@@ -444,8 +446,7 @@ function spPickHtml() {
   const siteN = id => by('sites', id).name, secN = id => by('sections', id).name;
   const rowsOf = lvl => {
     if (lvl === 'animal') { const q = PK.aq.trim().toLowerCase(), list = all.filter(a => !q || animalName(a).toLowerCase().includes(q) || String(a.id).includes(q) || by('enclosures', a.enc).name.toLowerCase().includes(q));
-      return pkSearch('pk-aq', PK.aq, 'Search name, number or enclosure', 'PK.aq=this.value;redrawSheet()') + (list.length ? pkList(list.slice(0, 40).map(a => { const t = { sp: s.id, level: 'animal', ref: a.id }, n = dietsSetAt(s.id, 'animal', a.id);
-        return pkRow(go1(t), spThumb(s), `${a.name ? esc(a.name) + ' · ' : ''}AAID ${a.id}`, esc([a.sex === 'M' ? 'Male' : a.sex === 'F' ? 'Female' : 'Undetermined', by('enclosures', a.enc).name, ageText(a.ageM), n ? plural(n, 'diet') : ''].filter(Boolean).join(' · ')), undefined, isOn(t)); }).join('')) : '<p class="sg-none">No animal by that name or number</p>'); }
+      return pkSearch('pk-aq', PK.aq, 'Search AID, name or enclosure', 'PK.aq=this.value;redrawSheet()') + (list.length ? `<div class="pk-list">${list.slice(0, 40).map(a => { const t = { sp: s.id, level: 'animal', ref: a.id }; return selCard(go1(t), a, s, isOn(t)); }).join('')}</div>` : '<p class="sg-none">No animal by that name or number</p>'); }
     return pkList(ids(lvl).map(id => { const t = { sp: s.id, level: lvl, ref: id }, p = pathOf(t), path = lvl === 'section' ? siteN(p.site) : lvl === 'enclosure' ? `${siteN(p.site)} › ${secN(p.section)}` : '';
       return pkRow(go1(t), pkIc(PK_SCOPES.find(x => x[0] === lvl)[2]), esc(placeOf(lvl, id).name), esc([path, dietsSetAt(s.id, lvl, id) ? plural(dietsSetAt(s.id, lvl, id), 'diet') : ''].filter(Boolean).join(' · ') || LEVEL[lvl]), undefined, isOn(t)); }).join(''));
   };
