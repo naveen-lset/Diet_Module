@@ -16,7 +16,7 @@ const whereSet = a => a.level === 'species' ? (a.group ? `${GROUP_WORD(a.group)}
 const HOW = [['always', 'From now on'], ['yearly', 'Every year'], ['once', 'Once']];
 const HOW_KIND = { always: 'Year-round', yearly: 'Seasonal', once: 'Time-bound' };
 const KTAG = { 'Year-round': 'yr', Seasonal: 'se', 'Time-bound': 'tb' };
-const ktag = k => `<span class="ktag ktag--${KTAG[k] || 'yr'}">${esc(k)}</span>`;
+const ktag = k => `<span class="ktag ktag--${KTAG[k] || 'yr'}">${esc(tcase(k))}</span>`;   /* a label: Title Case (Year-Round, Time-Bound) */
 const SEASONS = ['Winter', 'Summer', 'Monsoon', 'Dry season'];
 const PURPOSES = ['Breeding', 'Gestation', 'Lactation', 'Juvenile', 'Senior', 'Quarantine', 'Recovery', 'Weight management', 'Obesity management', 'Trial diet', 'Transition', ...SEASONS];
 

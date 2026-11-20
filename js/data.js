@@ -204,7 +204,7 @@ function SEED_REQUESTS(t) {
       events: [{ kind: 'raised', by: 'u-kiran', at: at(-8, '11:40') },
         { kind: 'rejected', by: 'u-hydar', at: at(-7, '14:10'), reason: 'Mealworm is out of stock and the supplier has no date yet. Raise it again with another protein.' }] },
     { id: 'REQ38-00515', kind: 'diet', sp: 135332, level: 'animal', ref: 215920, by: 'u-kiran', prio: 'high', reason: 'Post-op recovery',
-      title: 'Soft recovery diet for #215920', text: 'Jaw surgery on Friday. Soft, mashed food for two weeks while the stitches heal.', note: 'Mash fully. No whole pieces.', files: [{ name: 'Surgery notes #215920.pdf', kind: 'pdf', size: '640 KB' }],
+      title: 'Soft recovery diet for AID 215920', text: 'Jaw surgery on Friday. Soft, mashed food for two weeks while the stitches heal.', note: 'Mash fully. No whole pieces.', files: [{ name: 'Surgery notes AID 215920.pdf', kind: 'pdf', size: '640 KB' }],
       base: 'D-273', diet: 'D-502', start: d(-3), end: d(11), state: 'approved', applied: true,
       events: [{ kind: 'raised', by: 'u-kiran', at: at(-5, '16:30') }, { kind: 'approved', by: 'u-hydar', at: at(-4, '08:50'), note: 'Morning shift will do the mashing.' }] },
     { id: 'REQ38-00516', kind: 'skip', sp: 161818, level: 'section', ref: 904, by: 'u-kiran', prio: 'normal', reason: 'Transfer',
@@ -254,7 +254,7 @@ function SEED_REQUESTS(t) {
       events: [{ kind: 'raised', by: 'u-kiran', at: at(0, '09:40') }] },
     /* Diet requests in words (owner, 19 Nov 2026): anybody raises them, the Dietician approves, the kitchen gets them. Raised by a Biologist, a Kitchen Operator and the Kitchen Head */
     { id: 'REQ38-00525', kind: 'medicine', sp: 135332, level: 'animal', ref: 215920, by: 'u-kiran', prio: 'high', reason: '',
-      title: 'Medicine with food for #215920', text: 'Meloxicam 0.2 ml once a day for 5 days. Mix it into a spoon of mashed sweet potato so he eats all of it.', note: '', files: [{ name: 'Vet prescription #215920.pdf', kind: 'pdf', size: '210 KB' }],
+      title: 'Medicine with food for AID 215920', text: 'Meloxicam 0.2 ml once a day for 5 days. Mix it into a spoon of mashed sweet potato so he eats all of it.', note: '', files: [{ name: 'Vet prescription AID 215920.pdf', kind: 'pdf', size: '210 KB' }],
       f: { from: 0, feed: [2], days: 5, rows: [['From', `Today · ${fmtDay(d(0))}`], ['Feed', bandText(FEEDS.find(x => x.id === 2))], ['For', '5 days']] }, state: 'pending',
       events: [{ kind: 'raised', by: 'u-kiran', at: at(0, '10:05') }] },
     { id: 'REQ38-00526', kind: 'quality', sp: 150254, level: 'enclosure', ref: 19990, by: 'u-manoj', prio: 'normal', reason: '',

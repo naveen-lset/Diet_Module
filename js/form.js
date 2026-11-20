@@ -1,6 +1,6 @@
 // js/form.js — Help Desk › New Request (and Edit, by the person who raised it while it is open), as the Help Desk app:
 // Request Details (title, description, requested by, requesting to, site, approver) · Attachments · Submit Request, priority at the top right.
-// When "Requesting to" is Diet (anybody), Request is a Diet request (in words: skip a feed, extra feed, medicine with food …) or a Diet change
+// When "Requesting To" is Diet (anybody), Request is a Diet request (in words: skip a feed, extra feed, medicine with food …) or a Diet change
 // (the diet's configuration: change item values, another diet, a new diet); then For, the type's few questions, and the request's own words.
 // Full screen on the phone, a window on the iPad.
 
@@ -138,18 +138,18 @@ function pickReqSite(v) { S.draft.site = +v; closeAll(); render(); }
 function pickApprover(v) { S.draft.approver = v; closeAll(); render(); }
 const askFields = d => `<span class="az-label">What are you requesting?</span>
     <label class="az-input az-input--text"><input id="f-title" placeholder="Title" value="${esc(titleOf(d))}" oninput="S.draft.title=this.value;S.draft.titleEdited=true;redrawFoot()" aria-label="Title"></label>
-    <label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="4" placeholder="Description / Justification" oninput="S.draft.text=this.value;redrawFoot()" aria-label="Description or justification">${esc(d.text)}</textarea></label>`;
+    <label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="4" placeholder="Description / Justification" oninput="S.draft.text=this.value;redrawFoot()" aria-label="Description Or Justification">${esc(d.text)}</textarea></label>`;
 function requestDetails(d) {
-  const deptName = d.dept ? dept(d.dept).name : '', to = select('Requesting to', deptName, 'deptSheet()', { placeholder: 'Select department', disabled: !!d.edit });
+  const deptName = d.dept ? dept(d.dept).name : '', to = select('Requesting To', deptName, 'deptSheet()', { placeholder: 'Select Department', disabled: !!d.edit });
   /* a diet request: who sends it, from which site and who approves are fixed, so they move to Your request at the end (owner, 3 Nov: "think more") */
-  if (d.dept === 'diet') return d.fixed || d.edit ? '' : section('category', 'Requesting to', select('', deptName, 'deptSheet()'), true);
-  return section('category', 'Request details', `${to}
+  if (d.dept === 'diet') return d.fixed || d.edit ? '' : section('category', 'Requesting To', select('', deptName, 'deptSheet()'), true);
+  return section('category', 'Request Details', `${to}
     ${askFields(d)}
-    <div class="az-field"><span class="az-label">Requested by</span>${personCard(S.user)}</div>
-    ${d.site ? `<div class="az-field"><span class="az-label">Requesting site</span><div class="az-site az-site--picked"><span class="az-site__thumb" style="display:grid;place-items:center;color:var(--Outline)">${I('location_on', 20)}</span><span class="grow"><span class="az-site__name">${esc(by('sites', d.site).name)}</span></span>${d.dept === 'diet' && d.targets.length ? '' : `<button class="az-iconbtn" onclick="S.draft.site=null;render()" aria-label="Remove site">${I('cancel')}</button>`}</div></div>`
-      : select('Requesting site', '', `optionSheet('Requesting site',D.sites.map(s=>[s.id,s.name]),S.draft.site,'pickReqSite')`, { placeholder: 'Choose site', icon: 'add_circle' })}
-    ${d.approver ? `<div class="az-field"><span class="az-label">To be approved by</span>${personCard(d.approver, d.dept === 'diet' ? '' : 'S.draft.approver=null;render()')}</div>`
-      : select('To be approved by', '', `optionSheet('To be approved by',D.users.filter(u=>u.id!==S.user&&!VIEWERS.includes(u.id)||u.id==='u-suresh').map(u=>[u.id,u.name,u.title]),S.draft.approver,'pickApprover')`, { placeholder: 'Add approver', icon: 'add_circle' })}`, true);
+    <div class="az-field"><span class="az-label">Requested By</span>${personCard(S.user)}</div>
+    ${d.site ? `<div class="az-field"><span class="az-label">Requesting Site</span><div class="az-site az-site--picked"><span class="az-site__thumb" style="display:grid;place-items:center;color:var(--Outline)">${I('location_on', 20)}</span><span class="grow"><span class="az-site__name">${esc(by('sites', d.site).name)}</span></span>${d.dept === 'diet' && d.targets.length ? '' : `<button class="az-iconbtn" onclick="S.draft.site=null;render()" aria-label="Remove site">${I('cancel')}</button>`}</div></div>`
+      : select('Requesting Site', '', `optionSheet('Requesting Site',D.sites.map(s=>[s.id,s.name]),S.draft.site,'pickReqSite')`, { placeholder: 'Choose Site', icon: 'add_circle' })}
+    ${d.approver ? `<div class="az-field"><span class="az-label">To Be Approved By</span>${personCard(d.approver, d.dept === 'diet' ? '' : 'S.draft.approver=null;render()')}</div>`
+      : select('To Be Approved By', '', `optionSheet('To Be Approved By',D.users.filter(u=>u.id!==S.user&&!VIEWERS.includes(u.id)||u.id==='u-suresh').map(u=>[u.id,u.name,u.title]),S.draft.approver,'pickApprover')`, { placeholder: 'Add Approver', icon: 'add_circle' })}`, true);
 }
 /* What do you want to do: the design system's choice tiles. A species with no diet starts with a whole-species Year-round diet
    (Kitchen & Diet's base-first rule), so only New diet and Use another diet are open for it */
@@ -199,7 +199,7 @@ function targetsSheet() { openSheet(() => ({ title: 'For', sub: plural(S.draft.t
 function forSec(d) {
   if (!d.targets.length) return section('restaurant', 'For', select('Species', '', 'spMultiSheet()', { req: true, placeholder: 'Choose species', id: 'f-sp' }), true);
   const ts = d.targets, few = ts.length > 4 ? ts.slice(0, 3) : ts, none = noDiet(d);
-  const more = few.length < ts.length ? `<button class="forrow forrow--more" onclick="targetsSheet()"><span class="eav">${I('more_horiz', 22)}</span><span class="grow"><b>${ts.length - 3} more ${ts.slice(3).every(t => t.level === 'species') ? 'species' : ts.length === 4 ? 'place' : 'places'}</b><small>${esc(placesText(ts))} in all</small></span><span class="lnk">View all</span></button>` : '';
+  const more = few.length < ts.length ? `<button class="forrow forrow--more" onclick="targetsSheet()"><span class="eav">${I('more_horiz', 22)}</span><span class="grow"><b>${ts.length - 3} more ${ts.slice(3).every(t => t.level === 'species') ? 'species' : ts.length === 4 ? 'place' : 'places'}</b><small>${esc(placesText(ts))} in all</small></span><span class="lnk">View All</span></button>` : '';
   const add = `<div class="foradd"><button class="lnk" onclick="spMultiSheet()">${I('add', 20)}Species</button>${none ? '' : `<button class="lnk" onclick="addPlace()">${I('add', 20)}Place or animal</button>`}</div>`;
   const grp = d.kind === 'new' && !none && ts.some(t => t.level === 'species') ? groupRow(d) : '';
   return section('restaurant', 'For', `<div class="forcard">${few.map((t, i) => tRow(d, t, i)).join('')}${more}${add}${grp}${eatRow(d)}</div>${dupNote(d)}`, true);
@@ -211,7 +211,7 @@ const groupOf = (kind, min, max) => { const u = kind === 'age' ? 'months' : 'kg'
 function groupRow(d) {
   const g = d.group, v = !g ? 'all' : g.kind === 'sex' ? g.sex : g.kind, u = g && g.kind === 'age' ? 'months' : 'kg';
   const num = (lab, k, val) => `<label class="az-field"><span class="az-label">${lab} (${u})</span><span class="az-input az-input--text"><input id="g-${k}" type="number" min="0" inputmode="decimal" value="${val ?? ''}" onchange="setRange('${k}',this.value)" aria-label="${lab}"></span></label>`;
-  return `<div class="forrow forrow--pick">${select('Only for', GROUP_OPTS.find(o => o[0] === v)[1], `optionSheet('Only for',${JSON.stringify(GROUP_OPTS).replace(/"/g, '&quot;')},'${v}','pickGroup')`)}${g && g.kind !== 'sex' ? `<div class="az-two">${num('From', 'min', g.min)}${num('To, optional', 'max', g.max)}</div>` : ''}</div>`;
+  return `<div class="forrow forrow--pick">${select('Only For', GROUP_OPTS.find(o => o[0] === v)[1], `optionSheet('Only For',${JSON.stringify(GROUP_OPTS).replace(/"/g, '&quot;')},'${v}','pickGroup')`)}${g && g.kind !== 'sex' ? `<div class="az-two">${num('From', 'min', g.min)}${num('To, optional', 'max', g.max)}</div>` : ''}</div>`;
 }
 function pickGroup(v) { const d = S.draft; d.group = v === 'all' ? null : v === 'F' || v === 'M' ? { kind: 'sex', sex: v, label: v === 'F' ? 'Female' : 'Male' } : groupOf(v, v === 'age' ? 0 : 9, v === 'age' ? 12 : null); closeAll(); render(); }
 function setRange(k, v) { const g = S.draft.group; g[k] = v === '' ? null : +v; if (g.min == null) g.min = 0; Object.assign(g, groupOf(g.kind, g.min, g.max)); render(); }
@@ -333,7 +333,7 @@ function itemsSec(d) {
   const groups = feeds.map(f => { const m = base.meals.find(x => x.feed === f) || { items: [] };
     return { feed: f, rows: m.items.map(i => ({ ...lineRow(i, changeOf(d, f, i.item)), click: `lineSheet(${f},${i.item})` })).concat(addsAt(d, f).map(c => ({ ...lineRow(null, c), click: `addSheet(${f},${c.to})` }))) }; });
   const n = d.changes.length;
-  return `<section class="az-section"><h2 class="az-section__title">${I('edit_note', 20)}<span class="grow">What should change<span class="az-req">*</span></span>${n ? `<span class="chgcount">${plural(n, 'change')}</span>` : ''}</h2>${groups.length ? mealTable(groups, isTab(), true, { add: f => `addSheet(${f})` }) : ''}${groups.length ? '' : `<button class="az-btn az-btn--add az-btn--compact" onclick="addSheet()">${I('add')}Add item</button>`}${n ? kitchenNote(d) : ''}</section>`;
+  return `<section class="az-section"><h2 class="az-section__title">${I('edit_note', 20)}<span class="grow">What should change<span class="az-req">*</span></span>${n ? `<span class="chgcount">${plural(n, 'change')}</span>` : ''}</h2>${groups.length ? mealTable(groups, isTab(), true, { add: f => `addSheet(${f})` }) : ''}${groups.length ? '' : `<button class="az-btn az-btn--add az-btn--compact" onclick="addSheet()">${I('add')}Add Item</button>`}${n ? kitchenNote(d) : ''}</section>`;
 }
 function setChange(c) { const d = S.draft; d.changes = d.changes.filter(x => !(c.op !== 'add' && x.op !== 'add' && x.feed === c.feed && x.item === c.item) && !(c.op === 'add' && x.op === 'add' && x.feed === c.feed && x.to === c.to)); d.changes.push(c); d.changes.sort((a, b) => a.feed - b.feed); closeAll(); render(); }
 function undoChange(f, it) { const d = S.draft; d.changes = d.changes.filter(x => !(x.op !== 'add' && x.feed === f && x.item === it)); closeAll(); render(); }
@@ -362,20 +362,20 @@ function lsHtml() {
   const left = stopped ? `<button class="az-btn az-btn--outline" onclick="undoChange(${LS.feed},${LS.item})">${I('undo', 20)}Give it again</button>` : !add ? `<button class="az-btn az-btn--ghost" onclick="setChange({op:'remove',feed:${LS.feed},item:${LS.item}})">${I('do_not_disturb_on', 20)}Stop giving it</button>` : LS.had ? `<button class="az-btn az-btn--ghost" onclick="undoAdd(${LS.wasFeed},${LS.was})">Remove</button>` : `<button class="az-btn az-btn--outline" onclick="closeSheet()">Cancel</button>`;
   /* one clean form: time (when adding), item, the amount as one field with − and + inside, the days as one row, preparation and cut side by side */
   const units = it ? unitsFor(it) : [];
-  const amount = it ? `<div class="qtyf"><button class="qtyf__b" aria-label="Less" onclick="stepQty(-1)">${I('remove')}</button><input id="ls-qty" type="number" inputmode="decimal" min="0" step="any" value="${LS.qty ?? ''}" oninput="LS.qty=+this.value;redrawSheet()" aria-label="Daily amount per animal"><button class="qtyf__u" onclick="unitSheet()" ${units.length > 1 ? '' : 'disabled'} aria-label="Unit: ${LS.unit}">${LS.unit}${units.length > 1 ? I('keyboard_arrow_down', 18) : ''}</button><button class="qtyf__b" aria-label="More" onclick="stepQty(1)">${I('add')}</button></div>`
+  const amount = it ? `<div class="qtyf"><button class="qtyf__b" aria-label="Less" onclick="stepQty(-1)">${I('remove')}</button><input id="ls-qty" type="number" inputmode="decimal" min="0" step="any" value="${LS.qty ?? ''}" oninput="LS.qty=+this.value;redrawSheet()" aria-label="Daily Amount per animal"><button class="qtyf__u" onclick="unitSheet()" ${units.length > 1 ? '' : 'disabled'} aria-label="Unit: ${LS.unit}">${LS.unit}${units.length > 1 ? I('keyboard_arrow_down', 18) : ''}</button><button class="qtyf__b" aria-label="More" onclick="stepQty(1)">${I('add')}</button></div>`
     : `<div class="qtyf qtyf--off"><span>Choose the item first</span></div>`;
   /* how often, as Kitchen & Diet: days of the week, every few days from a first feed, or one day a month */
   const rep = LS.cad ? (LS.cad.every ? 'every' : 'monthly') : 'week';
-  const repSeg = `<div class="az-segment az-segment--sm" role="tablist" aria-label="Repeats">${thumb()}${[['week', 'Days of week'], ['every', 'Every few days'], ['monthly', 'Monthly']].map(([k, l]) => `<button role="tab" aria-selected="${rep === k}" onclick="setRepeat('${k}')">${l}</button>`).join('')}</div>`;
+  const repSeg = `<div class="az-segment az-segment--sm" role="tablist" aria-label="Repeats">${thumb()}${[['week', 'Days Of Week'], ['every', 'Every Few Days'], ['monthly', 'Monthly']].map(([k, l]) => `<button role="tab" aria-selected="${rep === k}" onclick="setRepeat('${k}')">${l}</button>`).join('')}</div>`;
   const days = repSeg + (rep === 'week' ? `<div class="dsel" role="group" aria-label="Days"><button class="dsel__all" aria-pressed="${LS.days === EVERY_DAY}" onclick="setDays(-1)">Daily</button>${DAYS.map((x, i) => `<button aria-pressed="${LS.days !== EVERY_DAY && !!(LS.days & (1 << i))}" aria-label="${x}" onclick="setDays(${i})">${x[0]}</button>`).join('')}</div>`
-    : rep === 'every' ? `<div class="az-two"><label class="az-field"><span class="az-label">Every (days)</span><span class="az-input az-input--text"><input id="ls-every" type="number" min="2" max="60" value="${LS.cad.every}" oninput="if(+this.value>=2){LS.cad.every=+this.value;redrawSheet()}" aria-label="Every how many days"></span></label><label class="az-field"><span class="az-label">First feed</span><span class="az-input az-input--text"><input id="ls-from" type="date" value="${LS.cad.from}" onchange="if(this.value){LS.cad.from=this.value;redrawSheet()}" aria-label="First feed"></span></label></div><span class="hint">Next: ${nextFeeds({ cad: LS.cad }, 3).map(s => `${wday(s)} ${fmtDay(s)}`).join(' · ')}</span>`
-    : select('Day of the month', LS.cad.monthly === 'last' ? 'Last day' : `Day ${LS.cad.monthly}`, `optionSheet('Day of the month',[...Array.from({length:28},(_,i)=>[i+1,'Day '+(i+1)]),['last','Last day']],LS.cad.monthly,'pickMonthDay')`));
-  return { title: add ? 'Add item' : `Change ${esc(item(LS.item).name)}`, sub: add ? '' : bandText(feed(LS.feed)), form: true,
+    : rep === 'every' ? `<div class="az-two"><label class="az-field"><span class="az-label">Every (days)</span><span class="az-input az-input--text"><input id="ls-every" type="number" min="2" max="60" value="${LS.cad.every}" oninput="if(+this.value>=2){LS.cad.every=+this.value;redrawSheet()}" aria-label="Every how many days"></span></label><label class="az-field"><span class="az-label">First Feed</span><span class="az-input az-input--text"><input id="ls-from" type="date" value="${LS.cad.from}" onchange="if(this.value){LS.cad.from=this.value;redrawSheet()}" aria-label="First feed"></span></label></div><span class="hint">Next: ${nextFeeds({ cad: LS.cad }, 3).map(s => `${wday(s)} ${fmtDay(s)}`).join(' · ')}</span>`
+    : select('Day Of The Month', LS.cad.monthly === 'last' ? 'Last Day' : `Day ${LS.cad.monthly}`, `optionSheet('Day Of The Month',[...Array.from({length:28},(_,i)=>[i+1,'Day '+(i+1)]),['last','Last Day']],LS.cad.monthly,'pickMonthDay')`));
+  return { title: add ? 'Add Item' : `Change ${esc(item(LS.item).name)}`, sub: add ? '' : bandText(feed(LS.feed)), form: true,
     body: (add ? select('Time', bandText(feed(LS.feed)), `optionSheet('Time',FEEDS.map(f=>[f.id,bandText(f)]),LS.feed,'pickLsFeed')`, { req: true }) : '')
-    + select('Item', it ? it.name : '', 'pickItem()', { req: true, placeholder: 'Choose item' })
-    + `<div class="az-field"><span class="az-label">${LS.cad ? 'Amount per feed' : 'Daily amount'}, per animal <span class="az-req">*</span></span>${amount}</div>`
-    + `<div class="az-field"><span class="az-label">How often</span>${days}</div>`
-    + `<div class="az-two">${select('Preparation', LS.prep, `optionSheet('Preparation',[['','None'],...PREPS.map(p=>[p,p])],LS.prep,'pickPrep')`, { placeholder: 'None' })}${select('Cut size', LS.cut, `optionSheet('Cut size',[['','None'],...CUTS.map(p=>[p,p])],LS.cut,'pickCut')`, { placeholder: 'None' })}</div>`
+    + select('Item', it ? it.name : '', 'pickItem()', { req: true, placeholder: 'Choose Item' })
+    + `<div class="az-field"><span class="az-label">${LS.cad ? 'Amount Per Feed' : 'Daily Amount'}, per animal <span class="az-req">*</span></span>${amount}</div>`
+    + `<div class="az-field"><span class="az-label">How Often</span>${days}</div>`
+    + `<div class="az-two">${select('Preparation', LS.prep, `optionSheet('Preparation',[['','None'],...PREPS.map(p=>[p,p])],LS.prep,'pickPrep')`, { placeholder: 'None' })}${select('Cut Size', LS.cut, `optionSheet('Cut Size',[['','None'],...CUTS.map(p=>[p,p])],LS.cut,'pickCut')`, { placeholder: 'None' })}</div>`
     + (st !== 'ok' ? `<div class="az-warnline">${I('warning', 20)}<span>${st === 'out' ? `<b>${esc(it.name)} is out of stock.</b>` : `<b>Only ${stockText(it)} ${esc(it.name)} in stock.</b> It needs ${need} a day.`}</span></div>` : ''),
     foot: `${left}<button class="az-btn"${ok ? '' : ' disabled'} onclick="saveLine()">${add ? 'Add' : diff || !LS.had ? 'Save change' : 'Undo change'}</button>` };
 }
@@ -402,7 +402,7 @@ function ipHtml() {
   const list = D.items.filter(i => !taken.has(i.id) && (!q || i.name.toLowerCase().includes(q))).sort((a, b) => a.name.localeCompare(b.name));
   const ok = list.filter(i => stockFor(i, LS.qty, LS.unit, n) === 'ok'), low = list.filter(i => stockFor(i, LS.qty, LS.unit, n) !== 'ok');
   const chips = (h, xs, warn) => xs.length ? `<p class="cap">${h}</p><div class="itemchips">${xs.map(i => `<button class="${warn ? 'warn' : ''}" aria-pressed="${i.id === LS.to}" onclick="chooseItem(${i.id})">${esc(i.name)}</button>`).join('')}</div>` : '';
-  return { title: 'Choose item', body: `<label class="az-search" style="background:var(--white)">${I('search', 20)}<input id="ip-q" placeholder="Search items" value="${esc(IP.q)}" oninput="IP.q=this.value;redrawSheet()" aria-label="Search items"></label>${chips('In stock', ok)}${chips('Low stock', low, true)}${list.length ? '' : '<div class="nodiet">No item matches</div>'}` };
+  return { title: 'Choose Item', body: `<label class="az-search" style="background:var(--white)">${I('search', 20)}<input id="ip-q" placeholder="Search items" value="${esc(IP.q)}" oninput="IP.q=this.value;redrawSheet()" aria-label="Search items"></label>${chips('In stock', ok)}${chips('Low stock', low, true)}${list.length ? '' : '<div class="nodiet">No item matches</div>'}` };
 }
 function chooseItem(id) {
   const it = item(id), dim = BASE[it.unit][0];
@@ -422,19 +422,19 @@ function dietSec(d) {
 /* New diet: start from what they eat now, from another diet, or empty; it gets a name; then the Kitchen table */
 function startSec(d) {
   const has = eatOf(d).list.length, chips = [['now', 'What they eat now'], ['other', 'Another diet'], ['empty', 'Empty']].filter(([k]) => k !== 'now' || has);
-  const other = d.startFrom === 'other' ? select('Diet to start from', d.base ? diet(d.base).name : '', 'otherDietSheet()', { req: true, placeholder: 'Choose diet', id: 'f-from' }) : '';
-  return section('add_circle', 'The new diet', `<div class="az-field"><span class="az-label">Start from</span><div class="daychips">${chips.map(([k, l]) => `<button aria-pressed="${d.startFrom === k}" onclick="setStart('${k}')">${l}</button>`).join('')}</div></div>${other}
+  const other = d.startFrom === 'other' ? select('Diet To Start From', d.base ? diet(d.base).name : '', 'otherDietSheet()', { req: true, placeholder: 'Choose diet', id: 'f-from' }) : '';
+  return section('add_circle', 'The New Diet', `<div class="az-field"><span class="az-label">Start From</span><div class="daychips">${chips.map(([k, l]) => `<button aria-pressed="${d.startFrom === k}" onclick="setStart('${k}')">${l}</button>`).join('')}</div></div>${other}
     <label class="az-field"><span class="az-label">Diet name <span class="az-req">*</span></span><span class="az-input az-input--text"><input id="f-name" value="${esc(dietNameOf(d))}" oninput="S.draft.name=this.value;S.draft.nameEdited=true;redrawFoot()" aria-label="Diet name"></span></label>`, true) + itemsSec(d);
 }
 function setStart(k) { const d = S.draft; d.startFrom = k; if (k === 'other') { d.base = null; d.changes = []; render(); otherDietSheet(); return; } sync(d); render(); }
 function otherDietSheet() {
   openSheet(() => { const d = S.draft, sps = new Set(d.targets.map(t => t.sp)), list = D.diets.filter(x => D.assigns.some(a => a.diet === x.id && !ended(a))).sort((x, y) => sps.has(y.sp) - sps.has(x.sp) || x.name.localeCompare(y.name));
-    return { title: 'Start from', bottom: true, body: list.map(x => `<button class="az-pickrow" role="radio" aria-checked="${d.base === x.id}" onclick="pickFrom('${x.id}')"><span class="az-pickrow__t"><b>${esc(x.name)}</b><span>${esc(species(x.sp).name)} · ${plural(dietItems(x), 'item')}</span></span>${I(d.base === x.id ? 'radio_button_checked' : 'radio_button_unchecked', 24, d.base === x.id)}</button>`).join('') };
+    return { title: 'Start From', bottom: true, body: list.map(x => `<button class="az-pickrow" role="radio" aria-checked="${d.base === x.id}" onclick="pickFrom('${x.id}')"><span class="az-pickrow__t"><b>${esc(x.name)}</b><span>${esc(species(x.sp).name)} · ${plural(dietItems(x), 'item')}</span></span>${I(d.base === x.id ? 'radio_button_checked' : 'radio_button_unchecked', 24, d.base === x.id)}</button>`).join('') };
   });
 }
 function pickFrom(id) { const d = S.draft; if (d.base !== id) { d.base = id; d.changes = []; } closeAll(); render(); }
 /* End a diet early: its last day */
-const stopSec = d => section('event_busy', 'Last day', `<div class="daychips">${[[0, 'Today'], [1, 'Tomorrow']].map(([n, l]) => `<button aria-pressed="${d.stop === addDays(TODAY, n)}" onclick="S.draft.stop='${addDays(TODAY, n)}';render()">${l} · ${fmtDay(addDays(TODAY, n))}</button>`).join('')}</div>
+const stopSec = d => section('event_busy', 'Last Day', `<div class="daychips">${[[0, 'Today'], [1, 'Tomorrow']].map(([n, l]) => `<button aria-pressed="${d.stop === addDays(TODAY, n)}" onclick="S.draft.stop='${addDays(TODAY, n)}';render()">${l} · ${fmtDay(addDays(TODAY, n))}</button>`).join('')}</div>
   <label class="az-field"><span class="az-label">Or pick a day</span><span class="az-input az-input--text">${I('calendar_month')}<input type="date" id="p-stop" min="${TODAY}" value="${d.stop}" onchange="if(this.value)S.draft.stop=this.value;render()"></span></label>`, true);
 /* no feed on a day: which day, which feeds (a note to the kitchen; Kitchen & Diet has no one-day diet) */
 function skipSec(d) {
@@ -450,7 +450,7 @@ function howSec(d) {
   const seg = `<div class="az-segment" role="tablist" aria-label="How long">${thumb()}${HOW.map(([k, l]) => `<button role="tab" aria-selected="${d.how === k}"${lock && k !== 'always' ? ' disabled aria-disabled="true"' : ` onclick="setHow('${k}')"`}>${l}</button>`).join('')}</div>`;
   const dates = d.how === 'always' ? '' : `<div class="az-two"><label class="az-field"><span class="az-label">${yr ? 'From, every year' : 'Start'} <span class="az-req">*</span></span><span class="az-input az-input--text"><input type="date" id="p-start"${yr ? '' : ` min="${TODAY}"`} value="${d.start}" onchange="S.draft.start=this.value;render()"></span></label>
     <label class="az-field"><span class="az-label">${yr ? 'To' : 'End'} <span class="az-req">*</span></span><span class="az-input az-input--text"><input type="date" id="p-end"${yr ? '' : ` min="${addDays(d.start, 1)}"`} value="${d.end}" onchange="S.draft.end=this.value;render()"></span></label></div>`;
-  return section('event', 'How long', `${seg}<div class="howtag">${ktag(HOW_KIND[d.how])}<span>${d.how === 'always' ? 'Starts when approved' : yr ? 'Comes back every year' : 'Runs once, then they go back'}</span></div>${dates}`, true);
+  return section('event', 'How Long', `${seg}<div class="howtag">${ktag(HOW_KIND[d.how])}<span>${d.how === 'always' ? 'Starts when approved' : yr ? 'Comes back every year' : 'Runs once, then they go back'}</span></div>${dates}`, true);
 }
 function setHow(k) { const d = S.draft; d.how = k; if (k === 'once' && (!d.start || d.start < TODAY)) { d.start = addDays(TODAY, 1); d.end = addDays(TODAY, 14); } render(); }
 /* When approved: what Kitchen & Diet will do, worked out from its rules (plan.js), before anyone sends it */
@@ -460,12 +460,12 @@ function effectSec(d, p) {
     return `<${tag} class="forrow${l.view ? '' : ' forrow--static'}"${l.view ? ` onclick="reachSheet('${l.view}')"` : ''}><span class="eav">${I(l.icon, 20)}</span><span class="grow"><b>${esc(l.b)}</b>${l.small ? `<small>${esc(l.small)}</small>` : ''}${l.x ? `<small>${esc(l.x)}</small>` : ''}</span>${l.tag ? ktag(l.tag) : l.view ? I('chevron_right', 20) : ''}</${tag}>`; }).join('');
   const ask = p.shared ? `<div class="az-field effect__ask"><span class="az-label">Also fed to ${esc(p.shared.map(s => s.name).join(', '))}. Change it for <span class="az-req">*</span></span><div class="az-segment" role="tablist">${thumb()}${[['all', 'All species'], ['only', sps.size === 1 ? `Only ${species([...sps][0]).name}` : 'Only these species']].map(([k, l]) => `<button role="tab" aria-selected="${d.forAll === k}" onclick="S.draft.forAll='${k}';render()">${esc(l)}</button>`).join('')}</div></div>` : '';
   const warn = p.block ? `<div class="az-warnline az-warnline--bad">${I('error', 18)}<span>${esc(p.block)}</span></div>` : '';
-  return section('task_alt', 'When approved', `${warn}${rows ? `<div class="forcard effect">${rows}</div>` : ''}${ask}`);
+  return section('task_alt', 'When Approved', `${warn}${rows ? `<div class="forcard effect">${rows}</div>` : ''}${ask}`);
 }
 /* the animals behind a line of When approved: who gets it, who moves, who keeps their own diet; or every diet that changes */
 function reachSheet(view, id = '') {
   openSheet(() => { const r = id ? by('requests', id) : asReq(S.draft), p = planOf(r);
-    if (view === 'ops') return { title: 'Diets that change', sub: plural(p.ops.length, 'diet'), bottom: true, body: p.ops.map(o => eatGrp(`<span class="davatar">${I(o.type === 'edit' ? 'edit' : o.type === 'share' ? 'swap_horiz' : 'add')}</span>`, o.type === 'edit' ? diet(o.diet).name : o.name || diet(o.diet).name, o.type === 'edit' ? `Changed · ${plural(o.changes.length, 'change')}` : `New · for ${placesText(o.slots)}`, '', [])).join('') };
+    if (view === 'ops') return { title: 'Diets That Change', sub: plural(p.ops.length, 'diet'), bottom: true, body: p.ops.map(o => eatGrp(`<span class="davatar">${I(o.type === 'edit' ? 'edit' : o.type === 'share' ? 'swap_horiz' : 'add')}</span>`, o.type === 'edit' ? diet(o.diet).name : o.name || diet(o.diet).name, o.type === 'edit' ? `Changed · ${plural(o.changes.length, 'change')}` : `New · for ${placesText(o.slots)}`, '', [])).join('') };
     const list = view === 'keep' ? p.keep : view === 'moved' ? p.moved || [] : p.get, bySp = {};
     list.forEach(a => (bySp[a.sp] = bySp[a.sp] || []).push(a));
     return { title: view === 'keep' ? 'Keep their own diet' : view === 'moved' ? 'Move from another diet' : 'Who gets it', sub: plural(list.length, 'animal'), bottom: true,
@@ -479,23 +479,23 @@ function rulesSec(d) {
   const dts = eatOf(d).list.map(e => e.diet), n = d.rules.length;
   const rows = d.rules.map((u, i) => { const k = dts.filter(x => changesFor(x, [u]).length).length;
     return `<div class="forrow forrow--static"><span class="eav">${I(RULE_IC[u.op], 20)}</span><span class="grow"><b>${esc(ruleText(u))}</b><small>In ${k} of ${plural(dts.length, 'diet')}</small></span><button class="az-iconbtn" onclick="S.draft.rules.splice(${i},1);render()" aria-label="Remove">${I('close', 20)}</button></div>`; }).join('');
-  return `<section class="az-section"><h2 class="az-section__title">${I('edit_note', 20)}<span class="grow">What should change<span class="az-req">*</span></span>${n ? `<span class="chgcount">${plural(n, 'change')}</span>` : ''}</h2><div class="forcard rulecard">${rows}<button class="forrow" onclick="ruleSheet()"><span class="eav">${I('add_circle', 22)}</span><span class="grow"><b>Add a change</b><small>Said once, for each of their diets</small></span>${I('chevron_right', 20)}</button></div>${n ? kitchenNote(d) : ''}</section>`;
+  return `<section class="az-section"><h2 class="az-section__title">${I('edit_note', 20)}<span class="grow">What should change<span class="az-req">*</span></span>${n ? `<span class="chgcount">${plural(n, 'change')}</span>` : ''}</h2><div class="forcard rulecard">${rows}<button class="forrow" onclick="ruleSheet()"><span class="eav">${I('add_circle', 22)}</span><span class="grow"><b>Add A Change</b><small>Said once, for each of their diets</small></span>${I('chevron_right', 20)}</button></div>${n ? kitchenNote(d) : ''}</section>`;
 }
 function ruleSheet() { LS = { mode: 'add', rule: true, op: 'add', feed: FEEDS[0].id, to: null, item: null, qty: null, unit: null, prep: '', cut: '', days: EVERY_DAY, cad: null, pct: -10, had: false }; openSheet(ruleHtml); }
 function ruleHtml() {
   const seg = `<div class="az-segment" role="tablist" aria-label="Change">${thumb()}${RULE_OPS.map(([k, l]) => `<button role="tab" aria-selected="${LS.op === k}" onclick="LS.op='${k}';redrawSheet()">${l}</button>`).join('')}</div>`;
   const foot = ok => `<button class="az-btn az-btn--outline" onclick="closeSheet()">Cancel</button><button class="az-btn"${ok ? '' : ' disabled'} onclick="saveRule()">Add</button>`;
-  if (LS.op === 'add') { const h = lsHtml(); return { title: 'Add a change', form: true, body: seg + h.body, foot: foot(LS.to && LS.qty > 0) }; }
+  if (LS.op === 'add') { const h = lsHtml(); return { title: 'Add A Change', form: true, body: seg + h.body, foot: foot(LS.to && LS.qty > 0) }; }
   const cnt = {}; eatOf(S.draft).list.forEach(e => new Set(e.diet.meals.flatMap(m => m.items.map(i => i.item))).forEach(id => { cnt[id] = (cnt[id] || 0) + 1; }));
   const opts = Object.entries(cnt).sort((a, b) => b[1] - a[1]).map(([id, n]) => [+id, item(+id).name, `In ${plural(n, 'diet')}`]);
-  const body = select('Item', LS.item ? item(LS.item).name : '', `optionSheet('Item',${JSON.stringify(opts).replace(/"/g, '&quot;')},LS.item,'pickRuleItem')`, { req: true, placeholder: 'Choose item' })
-    + (LS.op === 'replace' ? select('Replace with', LS.to ? item(LS.to).name : '', 'pickItem()', { req: true, placeholder: 'Choose item' }) : '')
-    + (LS.op === 'amount' ? `<div class="az-field"><span class="az-label">Change the amount by <span class="az-req">*</span></span><div class="qtyf"><button class="qtyf__b" aria-label="Less" onclick="LS.pct=Math.max(-90,(LS.pct||0)-10);redrawSheet()">${I('remove')}</button><input id="ls-pct" type="number" value="${LS.pct ?? 0}" oninput="LS.pct=+this.value;redrawSheet()" aria-label="Percent"><span class="qtyf__u">%</span><button class="qtyf__b" aria-label="More" onclick="LS.pct=Math.min(200,(LS.pct||0)+10);redrawSheet()">${I('add')}</button></div></div>` : '');
-  return { title: 'Add a change', form: true, body: seg + body, foot: foot(LS.item && (LS.op === 'stop' || (LS.op === 'replace' && LS.to && LS.to !== LS.item) || (LS.op === 'amount' && LS.pct && LS.pct > -100))) };
+  const body = select('Item', LS.item ? item(LS.item).name : '', `optionSheet('Item',${JSON.stringify(opts).replace(/"/g, '&quot;')},LS.item,'pickRuleItem')`, { req: true, placeholder: 'Choose Item' })
+    + (LS.op === 'replace' ? select('Replace With', LS.to ? item(LS.to).name : '', 'pickItem()', { req: true, placeholder: 'Choose Item' }) : '')
+    + (LS.op === 'amount' ? `<div class="az-field"><span class="az-label">Change The Amount By <span class="az-req">*</span></span><div class="qtyf"><button class="qtyf__b" aria-label="Less" onclick="LS.pct=Math.max(-90,(LS.pct||0)-10);redrawSheet()">${I('remove')}</button><input id="ls-pct" type="number" value="${LS.pct ?? 0}" oninput="LS.pct=+this.value;redrawSheet()" aria-label="Percent"><span class="qtyf__u">%</span><button class="qtyf__b" aria-label="More" onclick="LS.pct=Math.min(200,(LS.pct||0)+10);redrawSheet()">${I('add')}</button></div></div>` : '');
+  return { title: 'Add A Change', form: true, body: seg + body, foot: foot(LS.item && (LS.op === 'stop' || (LS.op === 'replace' && LS.to && LS.to !== LS.item) || (LS.op === 'amount' && LS.pct && LS.pct > -100))) };
 }
 function pickRuleItem(v) { LS.item = +v; SH.pop(); redrawSheet(); }
 function saveRule() { const L0 = LS; S.draft.rules.push(L0.op === 'add' ? { op: 'add', item: L0.to, feed: L0.feed, qty: L0.qty, unit: L0.unit, prep: L0.prep, cut: L0.cut, days: L0.cad ? EVERY_DAY : L0.days, cad: L0.cad || null } : L0.op === 'amount' ? { op: 'amount', item: L0.item, pct: L0.pct } : { op: L0.op, item: L0.item, to: L0.to || null }); closeAll(); render(); }
-const kitchenNote = d => `<label class="az-field"><span class="az-label">Note to kitchen (optional)</span><span class="az-input az-input--text az-textarea"><textarea id="d-note" rows="2" placeholder="Preparation, timing, serving" oninput="S.draft.note=this.value">${esc(d.note)}</textarea></span></label>`;
+const kitchenNote = d => `<label class="az-field"><span class="az-label">Note To Kitchen (optional)</span><span class="az-input az-input--text az-textarea"><textarea id="d-note" rows="2" placeholder="Preparation, timing, serving" oninput="S.draft.note=this.value">${esc(d.note)}</textarea></span></label>`;
 const whySec = d => section('label', 'Why', select('Reason', d.reason, `optionSheet('Reason',REASONS[S.draft.kind].map(t=>[t,t]),S.draft.reason,'pickReason')`, { req: true, id: 'f-reason' })
   + `<label class="az-field"><span class="az-label">Details (optional)</span><span class="az-input az-input--text az-textarea"><textarea id="f-text" rows="3" placeholder="What the approver should know" oninput="S.draft.text=this.value;redrawFoot()">${esc(d.text)}</textarea></span></label>`, true);
 function pickReason(v) { S.draft.reason = v; closeAll(); render(); }
@@ -521,7 +521,7 @@ function deptSection(d) {
 const SAMPLE_FILES = [{ name: 'Vet note.pdf', kind: 'pdf', size: '320 KB' }, { name: 'Photo of the enclosure.jpg', kind: 'image', size: '1.4 MB' }, { name: 'Weight chart.xlsx', kind: 'doc', size: '42 KB' }];
 function addFile() { const d = S.draft, f = SAMPLE_FILES.find(x => !d.files.some(y => y.name === x.name)); if (f) d.files.push(f); render(); }
 const attachSec = d => section('attach_file', 'Attachments', `${d.files.length ? `<div class="files">${d.files.map((f, i) => `<span class="file">${I(f.kind === 'image' ? 'image' : f.kind === 'pdf' ? 'picture_as_pdf' : 'description', 20)}${esc(f.name)}<button class="az-iconbtn" style="width:28px;height:28px" onclick="S.draft.files.splice(${i},1);render()" aria-label="Remove ${esc(f.name)}">${I('close', 18)}</button></span>`).join('')}</div>` : ''}
-  <button class="az-upload" onclick="addFile()"><i class="az-i" aria-hidden="true">add_photo_alternate</i><b>Add photos or files</b><span>PDF, images or documents</span></button>`);
+  <button class="az-upload" onclick="addFile()"><i class="az-i" aria-hidden="true">add_photo_alternate</i><b>Add Photos Or Files</b><span>PDF, images or documents</span></button>`);
 /* priority sits at the top right, as the Help Desk app: the Antz flag */
 function prioSheet() { optionSheet('Priority', Object.entries(PRIO).map(([k, [, l]]) => [k, l, PRI_TEXT[k]]), S.draft.prio, 'pickFormPrio'); }
 function pickFormPrio(v) { S.draft.prio = v; closeAll(); render(); }
@@ -533,15 +533,15 @@ function reviewSec(d) {
   const title = editing ? `<label class="az-input az-input--text"><input id="f-title" placeholder="Title" value="${esc(t)}" oninput="S.draft.title=this.value;S.draft.titleEdited=true;redrawFoot()" aria-label="Title"></label>`
     : t ? `<div class="rvtitle"><b>${esc(t)}</b><button class="az-iconbtn" onclick="S.draft.tEdit=true;render();setTimeout(()=>{const i=document.getElementById('f-title');if(i)i.focus()},30)" aria-label="Edit title">${I('edit', 20)}</button></div>` : '';
   const row = (icon, k, v) => `<div class="rsec__r">${I(icon)}<span class="t"><span>${k}</span><b>${v}</b></span></div>`;
-  return section('send', 'Your request', title + `<div class="rsec">${[ap ? row('how_to_reg', 'To be approved by', `${esc(ap.name)} · ${esc(ap.title)}`) : '',
-    row('person', 'Requested by', `${youName(S.user)} · ${esc(u.title)}`), d.site ? row('location_on', 'Requesting site', esc(by('sites', d.site).name)) : ''].join('')}</div>`);
+  return section('send', 'Your Request', title + `<div class="rsec">${[ap ? row('how_to_reg', 'To Be Approved By', `${esc(ap.name)} · ${esc(ap.title)}`) : '',
+    row('person', 'Requested By', `${youName(S.user)} · ${esc(u.title)}`), d.site ? row('location_on', 'Requesting Site', esc(by('sites', d.site).name)) : ''].join('')}</div>`);
 }
 /* ---------- a diet request in steps, one question at a time (as Kitchen & Diet's create-diet wizard), owner 3 Nov: "Full scroll… rethink".
    Phone: a progress bar, the answers so far as chips, the step, Back | Next. iPad: the steps down the left with their answers (tap one to go
    back); in landscape, When approved stays on the right as you answer ---------- */
-const STEP_NAME = { what: 'What', for: 'For', change: 'Changes', how: 'How long', day: 'Day and feeds', last: 'Last day', send: 'Check and send' };
+const STEP_NAME = { what: 'What', for: 'For', change: 'Changes', how: 'How Long', day: 'Day And Feeds', last: 'Last Day', send: 'Check And Send' };
 const stepsOf = d => d.kind === 'skip' ? ['what', 'for', 'day', 'send'] : d.kind === 'end' ? ['what', 'for', 'last', 'send'] : ['what', 'for', 'change', 'how', 'send'];
-const stepName = (d, s) => s === 'change' ? (d.kind === 'new' ? 'The new diet' : d.kind === 'diet' ? 'Which diet' : 'Changes') : STEP_NAME[s];
+const stepName = (d, s) => s === 'change' ? (d.kind === 'new' ? 'The New Diet' : d.kind === 'diet' ? 'Which diet' : 'Changes') : STEP_NAME[s];
 const stepAt = d => { const ss = stepsOf(d); d.step = Math.min(d.step || 0, ss.length - 1); d.reach = Math.min(Math.max(d.reach || 0, d.step), ss.length - 1); return ss[d.step]; };
 /* what is still missing on a step (Next looks off and says it when tapped) */
 function stepErr(d, s) {
@@ -591,9 +591,9 @@ function stepBody(d, s) {
 }
 /* Back | Next, and Send on the last step; Next and Send look off until the step is answered (design system), a tap says what is missing */
 function formFoot(d) {
-  if (d.dept === 'diet') { const e = dfErr(d); return `<div class="az-actionbar"><button class="az-btn${e ? ' az-btn--disabled' : ''}" aria-disabled="${!!e}" onclick="submitDraft()">${d.edit ? 'Update request' : 'Submit request'}</button></div>`; }
+  if (d.dept === 'diet') { const e = dfErr(d); return `<div class="az-actionbar"><button class="az-btn${e ? ' az-btn--disabled' : ''}" aria-disabled="${!!e}" onclick="submitDraft()">${d.edit ? 'Update Request' : 'Submit Request'}</button></div>`; }
   const e = err(d);
-  return `<div class="az-actionbar"><button class="az-btn${e ? ' az-btn--disabled' : ''}" aria-disabled="${!!e}" onclick="submitDraft()">${d.edit ? 'Update request' : 'Submit request'}</button></div>`;
+  return `<div class="az-actionbar"><button class="az-btn${e ? ' az-btn--disabled' : ''}" aria-disabled="${!!e}" onclick="submitDraft()">${d.edit ? 'Update Request' : 'Submit Request'}</button></div>`;
 }
 /* phone: a bar of steps and the answers so far as chips; iPad: the steps down the left, each with its answer */
 function wizTop(d) {
@@ -613,7 +613,7 @@ function redrawFoot() { const f = $('#form-foot'); if (f && S.draft) f.innerHTML
    Your request stay beside the form */
 function paneForm(q) {
   const d = initDraft(q), close = d.edit ? `#/requests/${d.edit}` : S.back;
-  if (d.blocked) return pane('pane--fill', topbar({ back: close, title: 'Edit request' }), empty1('This request can no longer be edited'));
+  if (d.blocked) return pane('pane--fill', topbar({ back: close, title: 'Edit Request' }), empty1('This request can no longer be edited'));
   if (d.pick) return whoPage(d.pick, 'S.draft.pick', { back: 'S.draft.pick=null;render()', done: 'dfWhoDone()' });
   if (d.ent) return paneEntity(d);
   const prio = `<button class="prio-pick" onclick="prioSheet()" aria-label="Priority: ${PRIO[d.prio][1]}"><span class="prio prio--${d.prio}">${d.prio === 'emergency' ? I('local_fire_department', 16, true) : PRIO[d.prio][0]}</span>${PRIO[d.prio][1]}${I('keyboard_arrow_down', 20)}</button>`;
@@ -667,17 +667,17 @@ function submitDraft() {
    - Diet request: said in words for the kitchen (skip a feed, an extra feed, medicine with food …); the diet itself stays as it is;
    - Diet change: the diet's configuration (change item values, another diet, a new diet); approving it changes the diet.
    Anybody can raise either; the Dietician approves; approving applies it, and the kitchen works from the diet as it now is */
-const DGROUPS = [['request', 'Diet request', 'Skip a feed, extra feed, medicine with food', 'chat'], ['change', 'Diet change', 'Change item values, another diet or a new diet', 'tune']];
+const DGROUPS = [['request', 'Diet Request', 'Skip a feed, extra feed, medicine with food', 'chat'], ['change', 'Diet Change', 'Change item values, another diet or a new diet', 'tune']];
 const DTYPES = [
-  ['skip', 'skip', 'Skip a feed', 'Fasting, a vet procedure or a transfer', 'no_meals', 'request'],
-  ['extra', 'extra', 'Extra feed', 'Treats, enrichment or an event', 'cookie', 'request'],
-  ['medicine', 'medicine', 'Medicine with food', 'Mix a medicine into a feed', 'medication', 'request'],
-  ['quality', 'quality', 'Food quality', 'Spoiled, wrong cut or wrong amount', 'report', 'request'],
-  ['other', 'other', 'Something else', 'Anything else for the diet team', 'more_horiz', 'request'],
-  ['change', 'items', 'Change item values', 'More, less, swap, add or stop a food', 'tune', 'change'],
-  ['move', 'diet', 'Another diet', 'Move them to a diet that already exists', 'restaurant', 'change'],
-  ['newdiet', 'new', 'New diet', 'Start from a diet and set its foods', 'add_circle', 'change'],
-  ['end', 'end', 'End a diet early', 'Back to their usual diet sooner', 'event_busy', 'change'],
+  ['skip', 'skip', 'Skip A Feed', 'Fasting, a vet procedure or a transfer', 'no_meals', 'request'],
+  ['extra', 'extra', 'Extra Feed', 'Treats, enrichment or an event', 'cookie', 'request'],
+  ['medicine', 'medicine', 'Medicine With Food', 'Mix a medicine into a feed', 'medication', 'request'],
+  ['quality', 'quality', 'Food Quality', 'Spoiled, wrong cut or wrong amount', 'report', 'request'],
+  ['other', 'other', 'Something Else', 'Anything else for the diet team', 'more_horiz', 'request'],
+  ['change', 'items', 'Change Item Values', 'More, less, swap, add or stop a food', 'tune', 'change'],
+  ['move', 'diet', 'Another Diet', 'Move them to a diet that already exists', 'restaurant', 'change'],
+  ['newdiet', 'new', 'New Diet', 'Start from a diet and set its foods', 'add_circle', 'change'],
+  ['end', 'end', 'End A Diet Early', 'Back to their usual diet sooner', 'event_busy', 'change'],
 ];
 const dtOf = k => DTYPES.find(x => x[0] === k);
 /* a request's type from its kind ('ask' is a new diet with nothing to start from: the dietician builds it) */
@@ -771,7 +771,7 @@ const dfFoods = (d, label) => d.changes.length ? `<div class="sg-sum df-sum"><di
 function dtypeFields(d) {
   /* Why (owner, 19 Nov: no endless forms): one field; the reasons open in a sheet with search, the usual ones first */
   const k = d.dtype, out = [], why = list => { DF_WHY = [...new Set([...list.filter(t => SG_REASONS.includes(t)), ...list])]; return select('Why', d.reason || '', 'dfWhySheet()', { req: true, placeholder: 'Choose a reason', id: 'f-reason' }); };
-  const how = () => dfield('How long', `${howTiles(d.how, v => `S.draft.how='${v}';render()`)}
+  const how = () => dfield('How Long', `${howTiles(d.how, v => `S.draft.how='${v}';render()`)}
     ${d.how === 'once' ? dchips([[3, '3 days'], [7, '7 days'], [14, '14 days'], [30, '30 days']], v => d.days === v, v => `S.draft.days=${v};render()`) : ''}
     ${d.how === 'yearly' ? dchips(SG_SEASONS.map(([s, a, b]) => [s, `${s} · ${mdText(a)} – ${mdText(b)}`]), v => d.season === v, v => `S.draft.season='${v}';render()`) : ''}
     ${d.how && d.how !== 'yearly' ? dchips([[0, 'From today'], [1, 'From tomorrow']], v => d.from === v, v => `S.draft.from=${v};render()`) : ''}`, true);
@@ -790,36 +790,36 @@ function dtypeFields(d) {
     if (d.changes.length) out.push(how(), why(REASONS.items));
   }
   if (k === 'newdiet') {
-    out.push(select('Start from', d.base ? diet(d.base).name : 'Nothing · the dietician builds it', 'dfStartSheet()', { id: 'f-from', icon: 'search' }));
-    if (d.base) out.push(`<label class="az-field"><span class="az-label">Diet name</span><span class="az-input az-input--text"><input id="df-name" placeholder="${esc(dfNewName(d) || 'Name the diet')}" value="${esc(d.name || '')}" oninput="S.draft.name=this.value;redrawFoot()"></span></label>`,
+    out.push(select('Start From', d.base ? diet(d.base).name : 'Nothing · the dietician builds it', 'dfStartSheet()', { id: 'f-from', icon: 'search' }));
+    if (d.base) out.push(`<label class="az-field"><span class="az-label">Diet Name</span><span class="az-input az-input--text"><input id="df-name" placeholder="${esc(dfNewName(d) || 'Name the diet')}" value="${esc(d.name || '')}" oninput="S.draft.name=this.value;redrawFoot()"></span></label>`,
       dfield('Foods', dfFoods(d, `Set the foods, from ${esc(diet(d.base).name)}`)), how(), why(REASONS.items));
     else out.push(dfield('Needed from', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(7, 'Next week')], v => (d.f.from ?? 1) === v, v => `S.draft.f.from=${v};render()`)), why(REASONS.items));
   }
   if (k === 'move') { const opts = dfMoveOpts(d);
-    out.push(opts.length ? select('Move to', d.diet ? diet(d.diet).name : '', 'dfMoveSheet()', { req: true, placeholder: 'Search and choose a diet', id: 'f-move', icon: 'search' }) : dfield('Move to', '<p class="sg-none">No other diet for this species</p>', true), how(), why(REASONS.items)); }
+    out.push(opts.length ? select('Move To', d.diet ? diet(d.diet).name : '', 'dfMoveSheet()', { req: true, placeholder: 'Search and choose a diet', id: 'f-move', icon: 'search' }) : dfield('Move to', '<p class="sg-none">No other diet for this species</p>', true), how(), why(REASONS.items)); }
   if (k === 'end') { const es = endable(d);
-    out.push(es.length ? select('Diet to end', d.ends[0] ? diet(by('assigns', d.ends[0]).diet).name : '', 'dfEndSheet()', { req: true, placeholder: 'Search and choose a diet', id: 'f-end', icon: 'search' }) : dfield('Diet to end', '<p class="sg-none">No diet here ends early: only Seasonal, Time-bound or place diets do</p>', true),
-      dfield('Last day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(2, 'In 2 days')], v => d.stop === addDays(TODAY, v), v => `S.draft.stop='${addDays(TODAY, v)}';render()`), true), why(REASONS.items)); }
+    out.push(es.length ? select('Diet To End', d.ends[0] ? diet(by('assigns', d.ends[0]).diet).name : '', 'dfEndSheet()', { req: true, placeholder: 'Search and choose a diet', id: 'f-end', icon: 'search' }) : dfield('Diet To End', '<p class="sg-none">No diet here ends early: only Seasonal, Time-bound or place diets do</p>', true),
+      dfield('Last Day', dchips([dayOpt(0, 'Today'), dayOpt(1, 'Tomorrow'), dayOpt(2, 'In 2 days')], v => d.stop === addDays(TODAY, v), v => `S.draft.stop='${addDays(TODAY, v)}';render()`), true), why(REASONS.items)); }
   return out.join('');
 }
 function dfToggleFeed(f) { const d = S.draft; let l = d.feeds === 'all' ? [] : [...d.feeds]; l = l.includes(f) ? l.filter(x => x !== f) : [...l, f]; d.feeds = l.length === dfFeeds(d).length ? 'all' : l; render(); }
-/* the form: the app's Request Details card. Under Requesting to: Request (Diet request | Diet change), its Type as chips, For */
+/* the form: the app's Request Details card. Under Requesting To: Request (Diet request | Diet change), its Type as chips, For */
 function dietForm(d) {
   const t = d.targets[0], dt = d.dtype && dtOf(d.dtype), g = d.dgroup && dgOf(d.dgroup), ap = d.approver && user(d.approver), words = d.dgroup === 'request', needText = words || (dt && dfKind(d) === 'ask');
   const kindRows = d.edit && dt ? `<div class="az-field"><span class="az-label">Request</span><div class="az-picked">${pkIc(dt[4])}<span class="grow"><span class="az-who__name">${esc(dt[2])}</span><span class="az-who__sub">${esc(g[1])}</span></span></div></div>`
     : dfield('Request', pkList(DGROUPS.map(([k, l, h, ic]) => pkRow(`dfGroup('${k}')`, pkIc(ic), l, h, undefined, d.dgroup === k)).join('')), true, 'f-dgroup')
       + (g ? dfield('Type', dchips(DTYPES.filter(x => x[5] === d.dgroup).map(x => [x[0], x[2]]), v => d.dtype === v, v => `dfType('${v}')`), true, 'f-dtype') : '');
   return section('category', 'Request Details', [
-    select('Requesting to', 'Diet', 'deptSheet()', { disabled: !!d.edit }),
+    select('Requesting To', 'Diet', 'deptSheet()', { disabled: !!d.edit }),
     kindRows,
     dt ? select('For', t ? (t.level === 'species' ? `${sgName(t)} · ${sgWhere(t)}` : `${species(t.sp).name} · ${sgName(t)}`) : '', 'dfWho()', { req: true, placeholder: 'Choose the species, a place or an animal', id: 'f-sp' }) : '',
     dt && t ? dtypeFields(d) : '',
-    dt ? `<span class="az-label">${words ? 'Your request' : 'What are you requesting?'}</span>
+    dt ? `<span class="az-label">${words ? 'Your Request' : 'What are you requesting?'}</span>
       <label class="az-input az-input--text"><input id="f-title" placeholder="Title" value="${esc(dfTitle(d))}" oninput="S.draft.title=this.value;S.draft.titleEdited=true;redrawFoot()" aria-label="Title"></label>
-      <label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="${words ? 4 : 3}" placeholder="${esc(needText ? `${DT_HINT[d.dtype] || 'Details'} *` : 'Description / Justification')}" oninput="S.draft.text=this.value;redrawFoot()" aria-label="${needText ? 'Details' : 'Description or justification'}">${esc(d.text)}</textarea></label>
-      <div class="az-field"><span class="az-label">Requested by</span>${personCard(d.edit ? by('requests', d.edit).by : S.user)}</div>
-      ${d.site ? `<div class="az-field"><span class="az-label">Requesting site</span><div class="az-site az-site--picked"><span class="az-site__thumb" style="display:grid;place-items:center;color:var(--Outline)">${I('location_on', 20)}</span><span class="grow"><span class="az-site__name">${esc(by('sites', d.site).name)}</span></span></div></div>` : ''}
-      <div class="az-field"><span class="az-label">To be approved by <span class="az-req">*</span></span><button class="az-picked dfappr" onclick="optionSheet('To be approved by',DIET_APPROVERS.filter(id=>id!==S.user).map(id=>[id,user(id).name,user(id).title]),S.draft.approver,'pickApprover')">${avatar(ap.name)}<span class="grow"><span class="az-who__name">${esc(ap.name)}</span><span class="az-who__sub">${esc(ap.title)}</span></span>${I('keyboard_arrow_down')}</button></div>` : ''].join(''), true)
+      <label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="${words ? 4 : 3}" placeholder="${esc(needText ? `${DT_HINT[d.dtype] || 'Details'} *` : 'Description / Justification')}" oninput="S.draft.text=this.value;redrawFoot()" aria-label="${needText ? 'Details' : 'Description Or Justification'}">${esc(d.text)}</textarea></label>
+      <div class="az-field"><span class="az-label">Requested By</span>${personCard(d.edit ? by('requests', d.edit).by : S.user)}</div>
+      ${d.site ? `<div class="az-field"><span class="az-label">Requesting Site</span><div class="az-site az-site--picked"><span class="az-site__thumb" style="display:grid;place-items:center;color:var(--Outline)">${I('location_on', 20)}</span><span class="grow"><span class="az-site__name">${esc(by('sites', d.site).name)}</span></span></div></div>` : ''}
+      <div class="az-field"><span class="az-label">To Be Approved By <span class="az-req">*</span></span><button class="az-picked dfappr" onclick="optionSheet('To Be Approved By',DIET_APPROVERS.filter(id=>id!==S.user).map(id=>[id,user(id).name,user(id).title]),S.draft.approver,'pickApprover')">${avatar(ap.name)}<span class="grow"><span class="az-who__name">${esc(ap.name)}</span><span class="az-who__sub">${esc(ap.title)}</span></span>${I('keyboard_arrow_down')}</button></div>` : ''].join(''), true)
     + (dt ? attachSec(d) : '');
 }
 /* Request: a Diet request or a Diet change; Type: one of its few kinds (chips) */
@@ -838,11 +838,11 @@ function dfWhoDone() { const t = S.draft.pick.sel; S.draft.pick = null; dfPick(t
 function dfPick(t) { const d = S.draft; d.targets = [{ sp: t.sp, level: t.level, ref: t.ref ?? null }]; d.site = sgSite(d.targets[0]); const e = dfEat(d)[0]; d.base = e ? e.diet.id : null; d.changes = []; d.diet = null; d.ends = []; closeAll(); render(); }
 /* the diet fields' sheets (owner, 19 Nov 2026: "Move diet also like a bottom sheet, I can search and select"); no animal counts */
 const dfMoveOpts = d => { const now = dfEat(d)[0]; return [...new Set(D.assigns.filter(a => a.sp === d.targets[0].sp && !ended(a)).map(a => a.diet))].filter(id => !now || id !== now.diet.id); };
-function dfStartSheet() { const d = S.draft, sp = d.targets[0].sp; dietPickSheet({ title: 'Start from', sub: esc(species(sp).name), none: ['Nothing', 'The dietician builds it'], list: [...new Set(D.assigns.filter(a => a.sp === sp && !ended(a)).map(a => a.diet))].map(id => ({ id, d: diet(id), sub: dietWhere(id, sp) })), cur: d.base || '', cb: 'dfSetStart' }); }
+function dfStartSheet() { const d = S.draft, sp = d.targets[0].sp; dietPickSheet({ title: 'Start From', sub: esc(species(sp).name), none: ['Nothing', 'The dietician builds it'], list: [...new Set(D.assigns.filter(a => a.sp === sp && !ended(a)).map(a => a.diet))].map(id => ({ id, d: diet(id), sub: dietWhere(id, sp) })), cur: d.base || '', cb: 'dfSetStart' }); }
 function dfSetStart(id) { const d = S.draft; if ((d.base || '') !== id) { d.base = id || null; d.changes = []; } render(); }
 function dfMoveSheet() { const d = S.draft, sp = d.targets[0].sp; dietPickSheet({ title: 'Move to', sub: esc(species(sp).name), list: dfMoveOpts(d).map(id => ({ id, d: diet(id), sub: dietWhere(id, sp) })), cur: d.diet, cb: 'dfSetMove' }); }
 function dfSetMove(id) { S.draft.diet = id; render(); }
-function dfEndSheet() { const d = S.draft; dietPickSheet({ title: 'Diet to end', sub: esc(dfPlace(d)), list: endable(d).map(a => ({ id: a.id, d: diet(a.diet), sub: `Set for ${whereSet(a)}${a.end ? ` · till ${fmtDay(a.end)}` : ''}` })), cur: d.ends[0], cb: 'dfSetEnd' }); }
+function dfEndSheet() { const d = S.draft; dietPickSheet({ title: 'Diet To End', sub: esc(dfPlace(d)), list: endable(d).map(a => ({ id: a.id, d: diet(a.diet), sub: `Set for ${whereSet(a)}${a.end ? ` · till ${fmtDay(a.end)}` : ''}` })), cur: d.ends[0], cb: 'dfSetEnd' }); }
 function dfSetEnd(id) { S.draft.ends = [id]; render(); }
 let DF_WHY = [];
 function dfWhySheet() { textPickSheet({ title: 'Why', items: DF_WHY, cur: S.draft.reason, cb: 'dfSetWhy' }); }

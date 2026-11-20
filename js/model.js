@@ -34,7 +34,7 @@ const weekDays = off => { const m = addDays(mondayOf(TODAY), off * 7); return [0
 /* ---------- places ---------- */
 const LEVELS = ['species', 'site', 'section', 'enclosure', 'animal'];
 const LEVEL = { species: 'Species', site: 'Site', section: 'Section', enclosure: 'Enclosure', animal: 'Animal' };
-const animalName = a => a.name || `#${a.id}`;
+const animalName = a => a.name || `AID ${a.id}`;   /* animals go by their AID, as in every Antz module (Lab, Hospital, Training) */
 function pathOfAnimal(a) { const e = by('enclosures', a.enc), s = by('sections', e.section); return { site: s.site, section: s.id, enclosure: e.id, animal: a.id }; }
 function pathOf(t) {
   if (t.level === 'animal') return pathOfAnimal(by('animals', t.ref));
@@ -67,7 +67,7 @@ const spAnimals = (sp, site = 'all') => D.animals.filter(a => a.sp === sp && (si
 /* the options one level down, inside what is already chosen (the cascading picker) */
 function placesUnder(sp, level, within, pool = null) {
   const as = (pool || D.animals.filter(a => a.sp === sp)).filter(a => Object.entries(within).every(([k, v]) => !v || pathOfAnimal(a)[k] === v));
-  if (level === 'animal') return as.map(a => ({ id: a.id, name: animalName(a), n: 1, sub: a.name ? `#${a.id}` : '', sex: a.sex }));
+  if (level === 'animal') return as.map(a => ({ id: a.id, name: animalName(a), n: 1, sub: a.name ? `AID ${a.id}` : '', sex: a.sex }));
   const ids = [...new Set(as.map(a => pathOfAnimal(a)[level]))];
   return ids.map(id => ({ id, name: placeOf(level, id).name, n: as.filter(a => pathOfAnimal(a)[level] === id).length })).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
 }
@@ -263,12 +263,12 @@ function approvedWhen(r) {
 /* the status in the Help Desk's words, and its tone */
 function stateOf(r) {
   switch (r.state) {
-    case 'pending': return { label: 'Awaiting approval', tone: 'awaiting', icon: 'pace' };
-    case 'delayed': return { label: `Delayed till ${fmtDay(r.delay.until)}`, tone: 'awaiting', icon: 'timer' };
+    case 'pending': return { label: 'Awaiting Approval', tone: 'awaiting', icon: 'pace' };
+    case 'delayed': return { label: `Delayed Until ${fmtDay(r.delay.until)}`, tone: 'awaiting', icon: 'timer' };
     case 'approved': return { label: 'Approved', tone: 'positive', icon: 'check_circle' };
     /* the work after approval, as the Help Desk app: the department moves it to In progress, then to Completed. Positive like Approved (the design system's Positive is "active, approved, done"); the label and icon tell them apart */
-    case 'in_progress': return { label: 'In progress', tone: 'positive', icon: 'progress_activity' };
-    case 'completed': return { label: changesDiet(r) ? 'Diet updated' : 'Completed', tone: 'positive', icon: 'task_alt' };
+    case 'in_progress': return { label: 'In Progress', tone: 'positive', icon: 'progress_activity' };
+    case 'completed': return { label: changesDiet(r) ? 'Diet Updated' : 'Completed', tone: 'positive', icon: 'task_alt' };
     case 'rejected': return { label: 'Rejected', tone: 'negative', icon: 'cancel' };
     case 'cancelled': return { label: 'Canceled', tone: 'neutral', icon: 'do_not_disturb_on' };
     case 'deleted': return { label: 'Deleted', tone: 'neutral', icon: 'delete' };
@@ -277,7 +277,7 @@ function stateOf(r) {
 /* Help Desk tabs (owner, 19 Nov 2026: "Pending Approval has no space"): four that fit the width. Pending holds the delayed ones too;
    Approved holds In progress and Completed; Closed holds Rejected, Canceled and Deleted. Each of the last two has chips under it */
 const HDTABS = [['pending', 'Pending'], ['approved', 'Approved'], ['closed', 'Closed'], ['all', 'All']];
-const HDSUBS = { approved: [['all', 'All'], ['approved', 'Approved'], ['in_progress', 'In progress'], ['completed', 'Completed']], closed: [['all', 'All'], ['rejected', 'Rejected'], ['cancelled', 'Canceled'], ['deleted', 'Deleted']] };
+const HDSUBS = { approved: [['all', 'All'], ['approved', 'Approved'], ['in_progress', 'In Progress'], ['completed', 'Completed']], closed: [['all', 'All'], ['rejected', 'Rejected'], ['cancelled', 'Canceled'], ['deleted', 'Deleted']] };
 const wasApproved = r => ['approved', 'in_progress', 'completed'].includes(r.state);
 const tabOf = r => r.state === 'delayed' ? 'pending' : wasApproved(r) ? 'approved' : ['rejected', 'cancelled', 'deleted'].includes(r.state) ? 'closed' : r.state;
 /* the Antz priority flags */

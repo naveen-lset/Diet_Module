@@ -17,7 +17,7 @@ function dietPdfPage(a) {
     return `<tr>${i === 0 ? `<td class="pdfp__time" rowspan="${g.rows.length}">${bandText(feed(g.feed))}</td>` : ''}${i === 0 || g.rows[i - 1].day !== r.day ? `<td class="pdfp__day" rowspan="${run}">${r.day}</td>` : ''}
       <td class="pdfp__item"><b>${r.name.replace(MIXTAG, '')}</b>${r.gar ? ` <i>(${r.gar})</i>` : ''}${parts}</td><td class="pdfp__amt">${r.amt}</td></tr>`;
   }).join('')).join('');
-  const notes = [['Kitchen note', d.note], ['Site note', d.site], ['Remark', d.remark], ['Change reason', [d.reason, d.remarks].filter(Boolean).join('. ')]].filter(n => n[1]);
+  const notes = [['Kitchen note', d.note], ['Site note', d.site], ['Remark', d.remark], ['Change Reason', [d.reason, d.remarks].filter(Boolean).join('. ')]].filter(n => n[1]);
   const foot = [d.id, slotKind(a), state, useText(a), `Created ${ddmmyy(d.made.at)}`, d.cert ? `Certified by ${user(d.cert.by).name}` : 'Not certified', `Antz Kitchen · generated ${ddmmyy(TODAY)}`].join(' · ');
   return `<div class="pdfp">
     <div class="pdfp__head"><img src="${spPhoto(sp.id)}" alt=""><span><b>${esc(sp.name)}</b><i>${esc(sp.sci)}</i></span></div>
