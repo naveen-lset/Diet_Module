@@ -102,7 +102,7 @@ function newName(r, X, slots) {
 let PLANMEMO = { k: null, v: null };
 const L = (icon, b, small = '', x = {}) => ({ icon, b, small, ...x });
 function planOf(r) {
-  const k = JSON.stringify([r.id, r.kind, targetsOf(r), r.base, r.slot, r.ends, r.changes, r.rules, r.diet, r.how, r.start, r.end, r.stop, r.date, r.feeds, r.name, r.forAll, r.reason, D.assigns.length, D.history.length, D.diets.length]);
+  const k = JSON.stringify([r.id, r.kind, targetsOf(r), r.base, r.slot, r.ends, r.changes, r.rules, r.diet, r.how, r.start, r.end, r.stop, r.date, r.dates, r.feeds, r.name, r.forAll, r.reason, D.assigns.length, D.history.length, D.diets.length]);
   if (PLANMEMO.k === k) return PLANMEMO.v;
   const v = plan0(r); PLANMEMO = { k, v }; return v;
 }
@@ -117,7 +117,7 @@ function plan0(r) {
     P.block = `${species(none.sp).name} has no diet yet. Start with a Year-round diet for the whole species`;
   if (r.kind === 'skip') {
     P.get = ts.flatMap(tAnimals);
-    P.lines = [L('no_meals', 'No diet changes', `The kitchen leaves out ${r.feeds === 'all' ? 'every feed' : (r.feeds || []).map(f => bandText(feed(f))).join(', ')} ${onDay(r.date)}`), L('groups', plural(P.get.length, 'animal'), whereText(P.get), { view: 'get' })];
+    P.lines = [L('no_meals', 'No diet changes', `The kitchen leaves out ${r.feeds === 'all' ? 'every feed' : (r.feeds || []).map(f => bandText(feed(f))).join(', ')} ${onDays(r)}`), L('groups', plural(P.get.length, 'animal'), whereText(P.get), { view: 'get' })];
     return P;
   }
   if (r.kind === 'end') {
@@ -252,6 +252,7 @@ function applyApproval(r, at, doneBy = null) {
     }
     if (o.type === 'end') { const a = by('assigns', o.slot); a.stop = r.stop; addHistory({ ...H, type: 'lifecycle', diet: a.diet, sp: a.sp, level: a.level, ref: a.ref, ended: `Ends early · last day ${fmtDay(r.stop)}` }); }
   });
-  if (r.kind === 'skip') targetsOf(r).forEach(t => addHistory({ ...H, type: 'lifecycle', sp: t.sp, level: t.level, ref: t.ref, diet: (currentDiet(t) || { diet: {} }).diet.id || null, skip: { date: r.date, feeds: r.feeds } }));
+  /* each skipped day is its own mark in the diet's history */
+  if (r.kind === 'skip') reqDates(r).forEach(day => targetsOf(r).forEach(t => addHistory({ ...H, type: 'lifecycle', sp: t.sp, level: t.level, ref: t.ref, diet: (currentDiet(t) || { diet: {} }).diet.id || null, skip: { date: day, feeds: r.feeds } })));
   r.applied = true;
 }
