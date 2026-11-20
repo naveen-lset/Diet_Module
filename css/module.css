@@ -2092,3 +2092,42 @@ button.step{cursor:pointer}
 /* the days picked, in words */
 .wd-sum{display:flex;align-items:flex-start;gap:8px;margin:0 2px;font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant)}
 .wd-sum .az-i{color:var(--OnPrimaryContainer);margin-top:1px}
+
+/* ---- Help Desk list header (owner, 20 Nov 2026: "still this part has work: no spacing, no animation at all") ---- */
+/* chips: the dark pill slides to the one tapped */
+.hdpills{position:relative}
+.hdpills > .az-chip{position:relative;z-index:1;transition:color .22s,background-color .22s}
+.hdpills > .az-chip[aria-selected="true"]{background:transparent!important;color:var(--white)}
+.hdpills > .hl{background:var(--OnPrimaryContainer);border-radius:var(--r-8);transition:left .34s var(--ease-sheet),width .34s var(--ease-sheet),top .34s var(--ease-sheet),opacity .15s}
+.hdchips{padding:16px 16px 14px;gap:8px}
+.tab .hdchips{padding:16px 20px 14px}
+.hdchips .az-chip,.hdscope .az-chip{height:40px;padding:0 14px}
+/* count tabs: room above and below, the number big, a short green line that slides */
+.hdtabs{position:relative;padding:2px 0 0}
+.hdtabs .az-counttab{padding:12px 0 14px;transition:background-color .2s}
+.hdtabs .az-counttab::after{display:none}
+.hdtabs .az-counttab__in{gap:2px}
+.hdtabs .az-counttab b{font:600 20px/26px var(--font);color:var(--OnSurfaceVariant);transition:color .22s}
+.hdtabs .az-counttab span{font:var(--t-body-regular);color:var(--neutralSecondary);transition:color .22s}
+.hdtabs .az-counttab[aria-selected="true"] b{color:var(--Primary)}
+.hdtabs .az-counttab[aria-selected="true"] span{color:var(--OnSurfaceVariant);font-weight:500}
+.hdtabs > .hl--line{height:3px!important;border-radius:3px 3px 0 0;background:var(--Primary);transform:scaleX(.5);transition:left .36s var(--ease-sheet),width .36s var(--ease-sheet),opacity .15s}
+.hdtabs .az-counttab:active{background:var(--displaybgPrimary)}
+/* My Approvals | All, then Requests (n): their own space under the tabs */
+.hdscope-row{padding:4px 0 2px}
+.hdscope{gap:8px}
+.hdscope .az-chip:not([aria-selected="true"]){background:rgba(31,81,91,.08)}
+.hdscope-row + .az-countline{margin-top:6px}
+.hdstat{gap:8px}
+/* the cards come in from the side the highlight moved to */
+@keyframes hdin{from{opacity:0;transform:translateY(14px)}}
+@keyframes hdfwd{from{opacity:0;transform:translateX(36px)}}
+@keyframes hdback{from{opacity:0;transform:translateX(-36px)}}
+.hdlist.hd-rise > *{animation:hdin .42s var(--ease-sheet) both}
+.hdlist.hd-fwd > *{animation:hdfwd .42s var(--ease-sheet) both}
+.hdlist.hd-back > *{animation:hdback .42s var(--ease-sheet) both}
+.hdlist:is(.hd-rise,.hd-fwd,.hd-back) > :nth-child(2){animation-delay:.045s}
+.hdlist:is(.hd-rise,.hd-fwd,.hd-back) > :nth-child(3){animation-delay:.09s}
+.hdlist:is(.hd-rise,.hd-fwd,.hd-back) > :nth-child(4){animation-delay:.135s}
+.hdlist:is(.hd-rise,.hd-fwd,.hd-back) > :nth-child(n+5){animation-delay:.18s}
+.tab .hdstat{padding:2px 20px 16px}
