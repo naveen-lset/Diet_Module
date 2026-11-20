@@ -82,6 +82,7 @@ function render() {
   render.last = location.hash; render.done = true;
   if (SH.length) drawOverlay();
   positionThumbs($('.device'));
+  if (typeof stripView === 'function') stripView();
   fabFit();
   drawStage();
 }
