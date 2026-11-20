@@ -110,6 +110,7 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
   - Sentences and hints keep only the first word capitalised.
   - `tcase()` in `js/ui.js` turns a label into Title Case where it is shown.
 - **Animals** go by their AID ("AID 215920"), as in every Antz module.
+- **Diet home** opens with a stats card above the tabs (Species · Diets · Certified · Uncertified at the site picked), as the Lab and Mortality modules. Each number opens its list (`dietStats` in `js/diets.js`).
 
 ## Branches
 
