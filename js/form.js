@@ -734,13 +734,15 @@ const dfFeeds = d => [...FEEDS].sort((a, b) => a.from.localeCompare(b.from)).map
    - Feeds: the kitchen's feed times as equal tiles, the start big and the end under it; tap one or more. */
 const dayLong = n => { const iso = addDays(TODAY, n); return `${n === 0 ? 'Today · ' : n === 1 ? 'Tomorrow · ' : n === -1 ? 'Yesterday · ' : ''}${wday(iso)} ${fmtDay(iso)}`; };
 const wfield = (label, answer, body, { req = false, ph = false, id = '' } = {}) => `<div class="wf"${id ? ` id="${id}"` : ''}><div class="wf__h"><span>${label}${req ? ' <span class="az-req">*</span>' : ''}</span><b${ph ? ' class="ph"' : ''}>${answer}</b></div>${body}</div>`;
-function dayStrip(cur, key, { past = false, days = 21, max = 365 } = {}) {
-  const span = Array.from({ length: days }, (_, i) => past ? -i : i), out = typeof cur === 'number' && !span.includes(cur) ? cur : null;
+function dayStrip(cur, key, { past = false, days = 21, max = 365, c = '', first = 0, label = 'Day' } = {}) {
+  /* c names the state the strip writes to ('draft' or 'sg'); without it the strip writes to the form's draft */
+  const set = n => c ? `hwSet('${c}','${key}',${n})` : `dfSetDay('${key}',${n})`;
+  const span = Array.from({ length: days }, (_, i) => past ? -i : first + i), out = typeof cur === 'number' && !span.includes(cur) ? cur : null;
   const cell = n => { const iso = addDays(TODAY, n), on = n === cur;
-    return `<button class="dstrip__d${on ? ' on' : ''}${n === 0 ? ' today' : ''}" role="radio" aria-checked="${on}" aria-label="${dayLong(n)}" onclick="dfSetDay('${key}',${n})"><small>${n === 0 ? 'Today' : wday(iso)}</small><b>${+iso.slice(8)}</b><small>${MON[+iso.slice(5, 7) - 1]}</small></button>`; };
-  const lo = past ? addDays(TODAY, -60) : TODAY, hi = past ? TODAY : addDays(TODAY, max);
-  const cal = `<label class="dstrip__d dstrip__cal" title="Pick another date">${I('calendar_month', 22)}<small>Other</small><input type="date" min="${lo}" max="${hi}" value="${typeof cur === 'number' ? addDays(TODAY, cur) : ''}" onclick="try{this.showPicker()}catch(e){}" onchange="if(this.value)dfSetDay('${key}',daysBetween(TODAY,this.value))" aria-label="Pick another date"></label>`;
-  return `<div class="dstrip" role="radiogroup" aria-label="Day">${span.map(cell).join('')}${out !== null ? cell(out) : ''}${cal}</div>`;
+    return `<button class="dstrip__d${on ? ' on' : ''}${n === 0 ? ' today' : ''}" role="radio" aria-checked="${on}" aria-label="${dayLong(n)}" onclick="${set(n)}"><small>${n === 0 ? 'Today' : wday(iso)}</small><b>${+iso.slice(8)}</b><small>${MON[+iso.slice(5, 7) - 1]}</small></button>`; };
+  const lo = past ? addDays(TODAY, -60) : addDays(TODAY, first), hi = past ? TODAY : addDays(TODAY, max);
+  const cal = `<label class="dstrip__d dstrip__cal" title="Pick another date">${I('calendar_month', 22)}<small>Other</small><input type="date" min="${lo}" max="${hi}" value="${typeof cur === 'number' ? addDays(TODAY, cur) : ''}" onclick="try{this.showPicker()}catch(e){}" onchange="if(this.value)${set('daysBetween(TODAY,this.value)')}" aria-label="Pick another date"></label>`;
+  return `<div class="dstrip" role="radiogroup" aria-label="${label}">${span.map(cell).join('')}${out !== null ? cell(out) : ''}${cal}</div>`;
 }
 /* a strip keeps its picked day in view (a date picked from the calendar lands at its end) */
 function stripView() { document.querySelectorAll('.dstrip, .hdpills').forEach(row => { const c = row.querySelector('.on, [aria-selected="true"]'); if (c && (c.offsetLeft < row.scrollLeft || c.offsetLeft + c.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollTo({ left: c.offsetLeft - 12, behavior: calm() ? 'auto' : 'smooth' }); }); }
@@ -864,20 +866,36 @@ function foodEditor(d) {
 }
 /* How Long (owner, 20 Nov 2026: "now is good, improve more"): the three choices as the design system's segment, then only what that choice
    needs (when it starts; how many days or which season), and the dates it makes, drawn as a line from start to end in the diet kind's colour */
-const HOW_OPTS = [['always', 'From Now On'], ['once', 'For Some Days'], ['yearly', 'Every Year']];
-function dfHow(k) { const d = S.draft; if (d.how === k) return; d.how = k; if (k === 'once' && !d.days) d.days = 14; render(); playFx($('.how-tl'), 'tl-in'); }
-function dfDays(n) { const d = S.draft; d.days = Math.min(90, Math.max(1, (d.days || 14) + n)); render(); }
-function howBlock(d) {
-  const seg = `<div class="az-segment rv-seg how-seg" role="tablist" aria-label="How long">${thumb()}${HOW_OPTS.map(([k, l]) => `<button role="tab" aria-selected="${d.how === k}" onclick="dfHow('${k}')">${l}</button>`).join('')}</div>`;
+const HOW_OPTS = [['always', 'From Now On'], ['once', 'Select Dates'], ['yearly', 'Every Year']];
+/* How Long is written once and used twice: by the New Request form (the draft) and by the Review Request sheet (SG).
+   c says which of the two a tap writes to, so both screens get the same days, the same calendar and the same dates. */
+const HOW_CTX = {
+  draft: { st: () => S.draft, base: () => baseOf(S.draft), draw: () => render() },
+  sg: { st: () => SG, base: () => sgDiet(), draw: () => redrawSheet() },
+};
+function hwSet(c, k, v) {
+  const x = HOW_CTX[c], d = x && x.st(); if (!d) return;
+  if (k === 'how') { if (d.how === v) return; d.how = v; if (v === 'once' && !d.days) d.days = 14; }
+  /* the last day, picked as a date: before the first day it moves the start instead */
+  else if (k === 'last') { if (v < d.from) { d.from = v; d.days = 1; } else d.days = Math.min(365, v - d.from + 1); d.dSet = true; }
+  else if (k === 'days') { d.days = Math.min(365, Math.max(1, v)); d.dSet = true; }
+  else d[k] = v;
+  x.draw();
+  if (typeof stripView === 'function') stripView();
+  playFx($(k === 'how' ? '.how-body' : '.how-tl'), k === 'how' ? 'sh-swap' : 'tl-in');
+}
+function howBlock(d, c = 'draft') {
+  const seg = `<div class="az-segment rv-seg how-seg" role="tablist" aria-label="How long">${thumb()}${HOW_OPTS.map(([k, l]) => `<button role="tab" aria-selected="${d.how === k}" onclick="hwSet('${c}','how','${k}')">${l}</button>`).join('')}</div>`;
   if (!d.how) return seg + '<p class="how-none">Choose how long the change lasts</p>';
-  const base = baseOf(d), dt = dfDates(d), dd = s => `${wday(s)} ${fmtDay(s)}`;
-  const starts = wfield('Starts', dayLong(d.from), dayStrip(d.from, 'from'));
-  const days = dfield('For', `<div class="how-days"><button class="how-step" onclick="dfDays(-1)" aria-label="One day less"${d.days <= 1 ? ' disabled' : ''}>${I('remove')}</button><b>${plural(d.days, 'Day')}</b><button class="how-step" onclick="dfDays(1)" aria-label="One day more">${I('add')}</button></div>`
-    + dchips([[3, '3 Days'], [7, '7 Days'], [14, '14 Days'], [30, '30 Days']], v => d.days === v, v => `S.draft.days=${v};render()`));
-  const season = dfield('Season', dchips(SG_SEASONS.map(([s1, a, b2]) => [s1, s1, `${mdText(a)} – ${mdText(b2)}`]), v => d.season === v, v => `S.draft.season='${v}';render()`));
+  const base = HOW_CTX[c].base(), bname = base ? base.name : 'their usual diet', dt = dfDates(d), dd = s => `${wday(s)} ${fmtDay(s)}`, last = d.from + Math.max(1, d.days || 1) - 1;
+  const starts = wfield(d.how === 'once' ? 'First Day' : 'Starts', dayLong(d.from), dayStrip(d.from, 'from', { c, label: 'First day' }));
+  /* the last day is picked as a date of its own, from the first day on; the chips are only a shortcut to the common lengths */
+  const days = wfield('Last Day', dayLong(last), dayStrip(last, 'last', { c, first: d.from, days: 28, label: 'Last day' })
+    + dchips([[3, '3 Days'], [7, '7 Days'], [14, '14 Days'], [30, '30 Days']], v => d.days === v, v => `hwSet('${c}','days',${v})`));
+  const season = dfield('Season', dchips(SG_SEASONS.map(([s1, a, b2]) => [s1, s1, `${mdText(a)} – ${mdText(b2)}`]), v => d.season === v, v => `hwSet('${c}','season','${v}')`));
   const line = (a, mid, b2, note) => `<div class="how-tl how-tl--${d.how}"><span class="how-tl__d"><small>Starts</small><b>${a}</b></span><span class="how-tl__line"><i></i><em>${mid}</em></span><span class="how-tl__d how-tl__d--end"><small>Ends</small><b>${b2}</b></span></div><p class="how-note">${I('info', 18)}<span>${note}</span></p>`;
-  const tl = d.how === 'once' ? line(dd(dt.start), plural(d.days, 'Day'), dd(dt.end), `Then back to ${esc(base.name)}`)
-    : d.how === 'yearly' ? line(mdText(dt.start), 'Every Year', mdText(dt.end), `${esc(base.name)} the rest of the year`)
+  const tl = d.how === 'once' ? line(dd(dt.start), plural(d.days, 'Day'), dd(dt.end), `Then back to ${esc(bname)}`)
+    : d.how === 'yearly' ? line(mdText(dt.start), 'Every Year', mdText(dt.end), `${esc(bname)} the rest of the year`)
     : line(dd(dt.start), 'Ongoing', 'No End Date', `The diet keeps this change until someone changes it again`);
   return seg + `<div class="how-body" data-fx>${d.how === 'yearly' ? season : starts + (d.how === 'once' ? days : '')}${tl}</div>`;
 }
