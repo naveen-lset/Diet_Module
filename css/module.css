@@ -1903,31 +1903,21 @@ button.step{cursor:pointer}
 .qdays{display:flex;flex-direction:column;gap:12px;padding:12px 14px 14px;border-top:1px solid var(--white)}
 .ls-stop{color:var(--Error);border-color:transparent;background:#FDE8EB}
 
-/* ---- How Long: the segment, what that choice needs, and the dates as a line in the kind's colour ---- */
+/* ---- How Long: the segment, then one plain field per answer and one line of help ---- */
 .how-seg{display:flex;width:100%}
 .how-body{display:flex;flex-direction:column;gap:16px;margin-top:16px}
 .how-none{margin:10px 2px 0;font:var(--t-body-regular);color:var(--neutralSecondary)}
-.how-days{display:flex;align-items:center;gap:12px;margin-bottom:10px}
 .how-step{width:44px;height:44px;border-radius:50%;background:var(--Background);color:var(--OnPrimaryContainer);display:grid;place-items:center;cursor:pointer;transition:transform .14s var(--ease-sheet)}
 .how-step:active{transform:scale(.9)}
 .how-step[disabled]{opacity:.4;cursor:default}
-.how-days b{min-width:92px;text-align:center;font:600 18px/24px var(--font);color:var(--OnSurfaceVariant)}
-.how-tl{display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;background:var(--Background)}
-.how-tl__d{display:flex;flex-direction:column;gap:2px;flex:none}
-.how-tl__d small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
-.how-tl__d b{font:var(--t-body-medium);color:var(--OnSurfaceVariant)}
-.how-tl__d--end{text-align:right}
-.how-tl__line{flex:1;min-width:36px;display:flex;flex-direction:column;align-items:center;gap:6px}
-.how-tl__line i{display:block;width:100%;height:4px;border-radius:2px;background:var(--kc);transform-origin:left}
-.how-tl__line em{font:500 12px/16px var(--font);font-style:normal;color:var(--kc);white-space:nowrap}
-.how-tl--always{--kc:#2E9E5B}
-.how-tl--once{--kc:#1C8DB0}
-.how-tl--yearly{--kc:#D9661E}
-.how-note{display:flex;gap:6px;align-items:flex-start;margin:-8px 2px 0;font:var(--t-body-regular);color:var(--neutralSecondary)}
+.how-note{display:flex;gap:6px;align-items:flex-start;margin:-6px 2px 0;font:var(--t-body-regular);color:var(--neutralSecondary)}
 .how-note .az-i{color:var(--Outline);margin-top:1px}
-@keyframes linegrow{from{transform:scaleX(0)}}
-.tl-in .how-tl__line i{animation:linegrow .55s var(--ease-sheet)}
-.tl-in .how-tl__d,.tl-in .how-tl__line em,.tl-in + .how-note{animation:rowin .36s var(--ease-sheet) both}
+/* a date in the design system's select field: the native picker sits over the row, invisible */
+.az-date{position:relative}
+.az-date .grow{display:flex;flex-direction:column;gap:2px;min-width:0}
+.az-date .grow small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.az-date input{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer;-webkit-appearance:none;appearance:none}
+.tl-in{animation:rowin .36s var(--ease-sheet) both}
 /* ---- Why: reasons as chips (no outline), More Reasons, and a text box ---- */
 .why-chips{display:flex;flex-wrap:wrap;gap:8px}
 .why-c{height:auto;min-height:40px;padding:8px 14px;gap:6px;border-radius:var(--r-full);font:var(--t-body-medium);transition:background-color .2s,color .2s,transform .14s var(--ease-sheet)}
