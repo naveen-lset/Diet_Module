@@ -734,13 +734,12 @@ const dfFeeds = d => [...FEEDS].sort((a, b) => a.from.localeCompare(b.from)).map
    - Feeds: the kitchen's feed times as equal tiles, the start big and the end under it; tap one or more. */
 const dayLong = n => { const iso = addDays(TODAY, n); return `${n === 0 ? 'Today · ' : n === 1 ? 'Tomorrow · ' : n === -1 ? 'Yesterday · ' : ''}${wday(iso)} ${fmtDay(iso)}`; };
 const wfield = (label, answer, body, { req = false, ph = false, id = '' } = {}) => `<div class="wf"${id ? ` id="${id}"` : ''}><div class="wf__h"><span>${label}${req ? ' <span class="az-req">*</span>' : ''}</span><b${ph ? ' class="ph"' : ''}>${answer}</b></div>${body}</div>`;
-function dayStrip(cur, key, { past = false, days = 21, max = 365, c = '', first = 0, label = 'Day' } = {}) {
-  /* c names the state the strip writes to ('draft' or 'sg'); without it the strip writes to the form's draft */
-  const set = n => c ? `hwSet('${c}','${key}',${n})` : `dfSetDay('${key}',${n})`;
-  const span = Array.from({ length: days }, (_, i) => past ? -i : first + i), out = typeof cur === 'number' && !span.includes(cur) ? cur : null;
+function dayStrip(cur, key, { past = false, days = 21, max = 365, label = 'Day' } = {}) {
+  const set = n => `dfSetDay('${key}',${n})`;
+  const span = Array.from({ length: days }, (_, i) => past ? -i : i), out = typeof cur === 'number' && !span.includes(cur) ? cur : null;
   const cell = n => { const iso = addDays(TODAY, n), on = n === cur;
     return `<button class="dstrip__d${on ? ' on' : ''}${n === 0 ? ' today' : ''}" role="radio" aria-checked="${on}" aria-label="${dayLong(n)}" onclick="${set(n)}"><small>${n === 0 ? 'Today' : wday(iso)}</small><b>${+iso.slice(8)}</b><small>${MON[+iso.slice(5, 7) - 1]}</small></button>`; };
-  const lo = past ? addDays(TODAY, -60) : addDays(TODAY, first), hi = past ? TODAY : addDays(TODAY, max);
+  const lo = past ? addDays(TODAY, -60) : TODAY, hi = past ? TODAY : addDays(TODAY, max);
   const cal = `<label class="dstrip__d dstrip__cal" title="Pick another date">${I('calendar_month', 22)}<small>Other</small><input type="date" min="${lo}" max="${hi}" value="${typeof cur === 'number' ? addDays(TODAY, cur) : ''}" onclick="try{this.showPicker()}catch(e){}" onchange="if(this.value)${set('daysBetween(TODAY,this.value)')}" aria-label="Pick another date"></label>`;
   return `<div class="dstrip" role="radiogroup" aria-label="${label}">${span.map(cell).join('')}${out !== null ? cell(out) : ''}${cal}</div>`;
 }
@@ -789,7 +788,7 @@ function daysField(k, label, req) {
 const feedTiles = (on, js) => `<div class="feedts" role="group" aria-label="Feeds">${dfFeeds().map(f => { const x = feed(f), y = on(f);
   return `<button class="feedt${y ? ' on' : ''}" role="checkbox" aria-checked="${y}" onclick="${js(f)}"><b>${x.from}</b><small>to ${x.to}</small></button>`; }).join('')}</div>`;
 const feedsText = l => l === 'all' ? 'Whole Day' : (l || []).length ? (l.length > 2 ? plural(l.length, 'Feed') : l.map(f => feed(f).from).join(', ')) : 'Choose one or more';
-function dfSetDay(k, n) { const d = S.draft; if (k.startsWith('f.')) d.f[k.slice(2)] = n; else if (k === 'date' || k === 'stop') d[k] = addDays(TODAY, n); else d[k] = n; render(); if (k === 'from') playFx($('.how-tl'), 'tl-in'); }
+function dfSetDay(k, n) { const d = S.draft; if (k.startsWith('f.')) d.f[k.slice(2)] = n; else if (k === 'date' || k === 'stop') d[k] = addDays(TODAY, n); else d[k] = n; render(); }
 function dfToggleF(k, f) { const d = S.draft, l = Array.isArray(d.f[k]) ? d.f[k] : []; d.f[k] = (l.includes(f) ? l.filter(x => x !== f) : [...l, f]).sort((a, b) => feed(a).from.localeCompare(feed(b).from)); render(); }
 const dfPlace = d => d.targets[0] ? sgName(d.targets[0]) : '';
 function dfDates(d) {
@@ -864,8 +863,9 @@ function foodEditor(d) {
   return `<div class="fe-diet"><span class="davatar davatar--s">${I('restaurant', 20)}</span><span class="grow"><b>${esc(base.name)}</b><small>${n ? plural(n, 'change') : 'Tap a food to change it'}</small></span>${n ? `<button class="lnk" onclick="S.draft.changes=[];render()">Undo All</button>` : ''}</div>`
     + `<div class="fe">${feeds.map(band).join('')}</div>`;
 }
-/* How Long (owner, 20 Nov 2026: "now is good, improve more"): the three choices as the design system's segment, then only what that choice
-   needs (when it starts; how many days or which season), and the dates it makes, drawn as a line from start to end in the diet kind's colour */
+/* How Long (owner, 21 Nov 2026: "it is not proper components, also too much — redo"): the design system's segment, then one plain field per
+   answer — a date row that opens the device's date picker — and one quiet line saying what it means. The day strips stay in When, where the
+   owner asked for them; How Long is three fields and nothing else: no strip, no stepper, no timeline. */
 const HOW_OPTS = [['always', 'From Now On'], ['once', 'Select Dates'], ['yearly', 'Every Year']];
 /* How Long is written once and used twice: by the New Request form (the draft) and by the Review Request sheet (SG).
    c says which of the two a tap writes to, so both screens get the same days, the same calendar and the same dates. */
@@ -882,22 +882,19 @@ function hwSet(c, k, v) {
   else d[k] = v;
   x.draw();
   if (typeof stripView === 'function') stripView();
-  playFx($(k === 'how' ? '.how-body' : '.how-tl'), k === 'how' ? 'sh-swap' : 'tl-in');
+  playFx($('.how-body'), k === 'how' ? 'sh-swap' : 'tl-in');
 }
+/* a date, in the design system's select field: the row says the day, a tap opens the device's own date picker */
+const hwDate = (c, key, label, n, { lo = 0, hi = 365, sub = '' } = {}) => `<div class="az-field"><span class="az-label">${label}</span><label class="az-input az-input--select az-date"><span class="grow">${dayLong(n)}${sub ? `<small>${esc(sub)}</small>` : ''}</span>${I('calendar_month', 24)}<input type="date" value="${addDays(TODAY, n)}" min="${addDays(TODAY, lo)}" max="${addDays(TODAY, hi)}" onclick="try{this.showPicker()}catch(e){}" onchange="if(this.value)hwSet('${c}','${key}',daysBetween(TODAY,this.value))" aria-label="${label}"></label></div>`;
 function howBlock(d, c = 'draft') {
   const seg = `<div class="az-segment rv-seg how-seg" role="tablist" aria-label="How long">${thumb()}${HOW_OPTS.map(([k, l]) => `<button role="tab" aria-selected="${d.how === k}" onclick="hwSet('${c}','how','${k}')">${l}</button>`).join('')}</div>`;
   if (!d.how) return seg + '<p class="how-none">Choose how long the change lasts</p>';
-  const base = HOW_CTX[c].base(), bname = base ? base.name : 'their usual diet', dt = dfDates(d), dd = s => `${wday(s)} ${fmtDay(s)}`, last = d.from + Math.max(1, d.days || 1) - 1;
-  const starts = wfield(d.how === 'once' ? 'First Day' : 'Starts', dayLong(d.from), dayStrip(d.from, 'from', { c, label: 'First day' }));
-  /* the last day is picked as a date of its own, from the first day on; the chips are only a shortcut to the common lengths */
-  const days = wfield('Last Day', dayLong(last), dayStrip(last, 'last', { c, first: d.from, days: 28, label: 'Last day' })
-    + dchips([[3, '3 Days'], [7, '7 Days'], [14, '14 Days'], [30, '30 Days']], v => d.days === v, v => `hwSet('${c}','days',${v})`));
+  const base = HOW_CTX[c].base(), bname = base ? base.name : 'their usual diet', days = Math.max(1, d.days || 1), last = d.from + days - 1;
+  const starts = hwDate(c, 'from', d.how === 'once' ? 'From' : 'Starts', d.from);
+  const ends = hwDate(c, 'last', 'To', last, { lo: d.from, sub: plural(days, 'day') });
   const season = dfield('Season', dchips(SG_SEASONS.map(([s1, a, b2]) => [s1, s1, `${mdText(a)} – ${mdText(b2)}`]), v => d.season === v, v => `hwSet('${c}','season','${v}')`));
-  const line = (a, mid, b2, note) => `<div class="how-tl how-tl--${d.how}"><span class="how-tl__d"><small>Starts</small><b>${a}</b></span><span class="how-tl__line"><i></i><em>${mid}</em></span><span class="how-tl__d how-tl__d--end"><small>Ends</small><b>${b2}</b></span></div><p class="how-note">${I('info', 18)}<span>${note}</span></p>`;
-  const tl = d.how === 'once' ? line(dd(dt.start), plural(d.days, 'Day'), dd(dt.end), `Then back to ${esc(bname)}`)
-    : d.how === 'yearly' ? line(mdText(dt.start), 'Every Year', mdText(dt.end), `${esc(bname)} the rest of the year`)
-    : line(dd(dt.start), 'Ongoing', 'No End Date', `The diet keeps this change until someone changes it again`);
-  return seg + `<div class="how-body" data-fx>${d.how === 'yearly' ? season : starts + (d.how === 'once' ? days : '')}${tl}</div>`;
+  const note = d.how === 'once' ? `Then back to ${esc(bname)}` : d.how === 'yearly' ? `${esc(bname)} the rest of the year` : 'Until someone changes it again';
+  return seg + `<div class="how-body" data-fx>${d.how === 'yearly' ? season : starts + (d.how === 'once' ? ends : '')}<p class="how-note">${I('info', 18)}<span>${note}</span></p></div>`;
 }
 /* Why (owner, 20 Nov 2026: "Reason, why also: remove the outline, I want a text box also"): the common reasons as chips, More Reasons searches
    all of Kitchen & Diet's reasons, and a text box for the rest */
