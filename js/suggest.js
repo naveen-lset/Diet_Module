@@ -217,9 +217,6 @@ function diffLine(c, d) {
   return R(esc(item(c.item).name), `${f} feed`, part(w, false), `<b>${part(c, true)}</b>`);
 }
 const diffTable = (cs, d) => `<div class="dtab"><div class="dtab__h"><span>Food</span><span>Was</span><span>Now</span></div>${cs.map(c => diffLine(c, d)).join('')}</div>`;
-const SG_HOW = [['always', 'From Now On'], ['once', 'Some Days'], ['yearly', 'Every Year']];
-/* how long: the design system's segment (the New Request form uses it too) */
-const howTiles = (cur, set) => `<div class="az-segment rv-seg" role="tablist" aria-label="How long">${SG_HOW.map(([k, l]) => `<button role="tab" aria-selected="${cur === k}" onclick="${set(k)}">${l}</button>`).join('')}</div>`;
 /* (owner, 19 Nov 2026: "Send to Hydar … just Request, that's all") the review: the changes, how long, why, proof, who it goes to; the button says Send Request.
    In the design system's parts, as the Hub's Help Desk and Item requests forms: labels over fields, chips, the upload box, a picked card */
 function sgReviewHtml() {
@@ -228,11 +225,9 @@ function sgReviewHtml() {
   const edit = `<button class="lnk" onclick="closeSheet()">Edit</button>`;
   const chg = r.kind === 'skip' ? F('Skip a feed', `<div class="az-picked">${I('no_meals')}<span class="grow"><span class="az-who__name">${esc(sgSkipText())}</span><span class="az-who__sub">The diet stays as it is</span></span></div>`, false, edit)
     : F(`Changes · ${SG.changes.length}`, `<p class="rv-for">${esc(sgName(SG.t))} · ${esc(d.name)}</p>${diffTable(SG.changes, d)}`, false, edit);
-  const how = r.kind === 'skip' ? '' : F('How Long', `${howTiles(SG.how, k => `SG.how='${k}';redrawSheet()`)}
-    ${SG.how === 'once' ? `<div class="sg-chips">${[3, 7, 14, 30].map(k => `<button class="az-chip" aria-selected="${SG.days === k}" onclick="SG.days=${k};SG.dSet=true;redrawSheet()">${k} days</button>`).join('')}</div>` : ''}
-    ${SG.how === 'yearly' ? `<div class="sg-chips">${SG_SEASONS.map(([k, a, b]) => `<button class="az-chip" aria-selected="${SG.season === k}" onclick="SG.season='${k}';redrawSheet()">${k} · ${mdText(a)} – ${mdText(b)}</button>`).join('')}</div>` : ''}
-    ${SG.how && SG.how !== 'yearly' ? `<div class="sg-chips">${[[0, 'From today'], [1, 'From tomorrow']].map(([k, l]) => `<button class="az-chip" aria-selected="${SG.from === k}" onclick="SG.from=${k};redrawSheet()">${l}</button>`).join('')}</div>` : ''}
-    ${SG.how ? `<p class="rv-when2">${esc(SG.how === 'always' ? `From ${dayText(r.start)}, until someone changes it` : SG.how === 'once' ? `${fmtDay(r.start)} – ${fmtDayY(r.end)}, then back to their diet` : `${mdText(r.start)} – ${mdText(r.end)}, every year`)}</p>` : ''}`, true);
+  /* How Long (owner, 21 Nov 2026: "only today, tomorrow there; where is the other selection, I want select dates"): the same block as the
+     New Request form, so the days, the calendar and the first and last dates are picked here too */
+  const how = r.kind === 'skip' ? '' : F('How Long', howBlock(SG, 'sg'), true);
   const all = r.kind === 'skip' ? REASONS.skip : REASONS.items, shown = SG.more ? all : (r.kind === 'skip' ? all : SG_REASONS);
   const why = F('Why', `<div class="sg-chips">${shown.map(t => `<button class="az-chip" aria-selected="${SG.reason === t}" onclick="SG.reason=${JSON.stringify(t).replace(/"/g, '&quot;')};redrawSheet()">${esc(t)}</button>`).join('')}${r.kind === 'skip' || SG.more ? '' : `<button class="az-chip sg-more" onclick="SG.more=true;redrawSheet()">More Reasons</button>`}</div>`, true);
   const has = k => SG.files.some(f => f.kind === k);
