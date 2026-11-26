@@ -134,9 +134,12 @@ function reqFacts(r) {
     if (JOB_KINDS.includes(r.kind)) {
       /* a request in words: when, which feed and how long in one row (From · Feed · For), the rest as their own rows */
       const rows = (r.f && r.f.rows) || [], when = rows.filter(([k]) => JOB_WHENISH.includes(k)), rest = rows.filter(x => !when.includes(x));
-      if (when.length) add('when', 'calendar_month', 'When', `<div class="az-kvgrid rkv3">${when.map(([k, v]) => `<div><span>${esc(tcase(k))}</span><b>${esc(v)}</b></div>`).join('')}</div>`);
+      const wv = whenView(r);
+      if (wv) add('when', 'calendar_month', 'When', wv);
+      else if (when.length) add('when', 'calendar_month', 'When', `<div class="az-kvgrid rkv3">${when.map(([k, v]) => `<div><span>${esc(tcase(k))}</span><b>${esc(v)}</b></div>`).join('')}</div>`);
       rest.forEach(([k, v]) => add('job', REQ_JI[k] || 'info', tcase(k), `<b>${esc(v)}</b>`));
-    } else add('when', 'calendar_month', r.kind === 'end' ? 'Last Day' : 'When', `<b>${r.kind === 'skip' ? `${reqDates(r).length > 1 ? `${cap(datesText(reqDates(r)))} · ${plural(reqDates(r).length, 'day')}` : `${wday(r.date)} ${fmtDayY(r.date)}`} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ')}` : r.kind === 'end' ? `${wday(r.stop)} ${fmtDayY(r.stop)}` : howText(r)}</b>${r.how && r.kind !== 'skip' ? ktag(HOW_KIND[r.how]) : ''}`);
+    } else if (r.kind === 'skip') add('when', 'calendar_month', 'When', whenView(r));
+    else add('when', 'calendar_month', r.kind === 'end' ? 'Last Day' : 'When', `<b>${r.kind === 'skip' ? `${reqDates(r).length > 1 ? `${cap(datesText(reqDates(r)))} · ${plural(reqDates(r).length, 'day')}` : `${wday(r.date)} ${fmtDayY(r.date)}`} · ${r.feeds === 'all' ? 'all feeds' : r.feeds.map(f => bandText(feed(f))).join(', ')}` : r.kind === 'end' ? `${wday(r.stop)} ${fmtDayY(r.stop)}` : howText(r)}</b>${r.how && r.kind !== 'skip' ? ktag(HOW_KIND[r.how]) : ''}`);
   }
   /* the work after approval: who is in charge (the team can change it while in progress), and what the team wrote when completing */
   if (['in_progress', 'completed'].includes(r.state)) {
@@ -198,6 +201,22 @@ function paneRequest(id, { cls = '' } = {}) {
   const body = head + `<div class="rboxes">${boxes.join('')}</div>`;
   /* the record head scrolls away with the request; only the top bar and the status bar stay */
   return pane(`${cls} req-a req-b${isLand() ? ' req-wide' : ''}`, topbar({ back, title: r.id, actions: more }), body, statusBar(r), `req-${r.id}`);
+}
+/* When, with proper dates (owner, 26 Nov 2026): rows, the label on the left and the full date on the right (weekday, day, month, year, and
+   Today / Tomorrow under it), the days as chips when there are several, then the feed. Offsets in a request's answers count from the day it was raised */
+function whenView(r) {
+  const f = r.f || {}, raised = r.events[0].at.slice(0, 10), off = n => addDays(raised, n);
+  const full = iso => { const w = relDay(iso); return `${wday(iso)} ${fmtDayY(iso)}${['Today', 'Tomorrow', 'Yesterday'].includes(w) ? `<small>${w}</small>` : ''}`; };
+  const feedsT = l => l === 'all' || !(l || []).length ? 'Whole day<small>All four feeds</small>' : l.map(x => esc(bandText(feed(x)))).join('<br>');
+  const rows = []; let ds = null;
+  if (r.kind === 'skip') { ds = reqDates(r); rows.push(['Feed', feedsT(r.feeds)]); }
+  else if (r.kind === 'extra') { ds = f.dates ? [...f.dates].sort() : (() => { const n = typeof f.when === 'number' ? f.when : 1, a = off(n); return f.week || f.when === 'week' ? Array.from({ length: 7 }, (_, i) => addDays(a, i)) : [a]; })(); rows.push(['Feed', feedsT(f.feed)]); }
+  else if (r.kind === 'medicine') { const a = off(f.from ?? 0), n = f.days ?? 5, b = addDays(a, n - 1); rows.push(['Starts', full(a)], ['Ends', `${wday(b)} ${fmtDayY(b)}<small>After ${plural(n, 'day')}</small>`], ['Feed', feedsT(f.feed)]); }
+  else if (r.kind === 'quality') { rows.push(['Day', full(off(f.day ?? 0))], ['Feed', feedsT(f.feed)]); }
+  else return '';
+  if (ds) { if (ds.length === 1) rows.unshift(['Day', full(ds[0])]); else rows.unshift(['Days', `${plural(ds.length, 'day')}<small>${esc(fmtDay(ds[0]))} – ${esc(fmtDayY(ds[ds.length - 1]))}</small>`]); }
+  const chips = ds && ds.length > 1 ? `<div class="whn__chips">${ds.map(x => `<span>${wday(x)} ${fmtDay(x)}</span>`).join('')}</div>` : '';
+  return `<div class="whn">${rows.map(([k, v], i) => `<div class="whn__r"><span>${k}</span><b>${v}</b></div>${i === 0 ? chips : ''}`).join('')}</div>`;
 }
 /* Activity, as the Figma (Comment Input, 1 Sep 2025): Show All with its filter, an attach button and "Add Your Comment", then each entry;
    a status change shows old → new in its colour */

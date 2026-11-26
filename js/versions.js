@@ -63,25 +63,44 @@ function vWhat(v) {
   const a = D.assigns.find(x => x.diet === v.diet && x.sp === diet(v.diet).sp) || D.assigns.find(x => x.diet === v.diet);
   return a ? `${esc(tcase(slotKind(a)))} diet · ${esc(useText(a))}` : 'New diet';
 }
-const VFILT = sp => [['all', 'All Diets'], ...spDietIds(sp).map(id => [id, diet(id).name])];
-/* the tab: a line of what is here, the diets to filter by, then the versions newest first as one white card each */
+const VFILT = sp => [['all', 'All diets'], ...spDietIds(sp).map(id => [id, diet(id).name])];
+/* (owner, 26 Nov 2026: option A of the mockup; "it was going top and down") the versions on one line, newest on top, grouped by day. Each is a
+   card: what happened, the diet, the change, who and the time, and two ticks (Dietitian · Kitchen). A tap opens why, who certified and when,
+   the request, and View diet, in place (no redraw, so nothing moves). The diet filter is one dropdown; a new filter starts the list at its top */
 function versionsTab(sp) {
   const all = spVersions(sp);
   if (!all.length) return '<div class="nodiet">No diet history yet</div>';
   const f = S.vDiet && S.vDiet.sp === sp ? S.vDiet.id : 'all', list = all.filter(v => f === 'all' || v.diet === f).reverse(), top = all[all.length - 1].n;
-  const chips = `<div class="az-chips vchips" role="tablist" aria-label="Diet">${VFILT(sp).map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${f === k}" onclick="S.vDiet={sp:${sp},id:'${k}'};render()">${esc(l)} - ${k === 'all' ? all.length : all.filter(v => v.diet === k).length}</button>`).join('')}</div>`;
-  const card = v => {
-    const [t, ic] = VKIND[v.kind], cur = v.n === top, last = all.filter(x => x.diet === v.diet).pop() === v;
-    const why = v.h && v.h.reason ? `<span class="vcard__why">${esc(v.h.reason)}${v.h.remarks ? ` · ${esc(v.h.remarks)}` : ''}</span>` : '';
-    const via = v.h && v.h.req ? `<span class="vcard__row">${I('assignment', 18)}<span>Request ${v.h.req}${v.h.approvedBy ? ` · approved by ${youName(v.h.approvedBy)}` : ''}</span></span>` : '';
-    const certs = v.certs.map(c => `<span class="vcard__row vcard__row--ok">${I(c.kind === 'cert' ? 'verified' : 'soup_kitchen', 18, true)}<span><b>${c.kind === 'cert' ? 'Certified by Dietitian' : 'Certified by Kitchen'}</b> · ${vWho(c.by, c.at)}</span></span>`).join('');
-    const wait = last && v.kind !== 'ended' && !v.certs.some(c => c.kind === 'cert') && !diet(v.diet).cert ? `<span class="vcard__row vcard__row--wait">${I('gpp_maybe', 18)}<span>Not certified by a dietitian yet</span></span>` : '';
-    return `<article class="vcard${cur ? ' vcard--cur' : ''}"><div class="vcard__top"><span class="vtag">v${v.n}</span><span class="vcard__k">${I(ic, 18)}${t}</span>${cur ? pill('positive', 'Current') : last ? '' : `<span class="vcard__old">Changed later</span>`}</div>
-      <b class="vcard__d">${esc(diet(v.diet).name)}</b><span class="vcard__w">${vWhat(v)}</span>${why}
-      <span class="vcard__row">${I('person', 18)}<span>${vWho(v.by, v.at)}</span></span>${via}${certs}${wait}
-      <button class="az-btn az-btn--outline az-btn--compact vcard__go" onclick="go('#/diets/${sp}/v/${v.n}')">${I('visibility', 20)}View Diet</button></article>`;
-  };
-  return `<div class="vsum"><b>${plural(all.length, 'version')}</b><span>${plural(spDietIds(sp).length, 'diet')} · now at v${top}</span></div>${spDietIds(sp).length > 1 ? chips : ''}<div class="vlist">${list.map(card).join('')}</div>`;
+    const fname = f === 'all' ? 'All diets' : diet(f).name;
+  const head = `<div class="vh__top"><span class="vh__t"><b>${plural(list.length, 'version')}</b><span>Now at v${top} · ${plural(spDietIds(sp).length, 'diet')}</span></span>
+    ${spDietIds(sp).length > 1 ? `<button class="vh__f" onclick="vFilterPop(this,${sp})" aria-haspopup="menu"><span>${esc(fname)}</span>${I('keyboard_arrow_down', 20)}</button>` : ''}</div>`;
+  /* (owner, 26 Nov 2026: "A · Versions on one line, by day — history has to be like this") the mockup's option A: a heading per day, the version
+     numbers on one line down the left, and a white card for each on the page colour. A card says what happened and to which diet, then who
+     did it and when; each certification the same way. Nothing else (no item changes, no reasons). View diet at its foot */
+  const who = (icon, label, uid, at, fill = false) => `<div class="vr">${I(icon, 18, fill)}<span class="vr__t"><small>${label}</small><b>${esc(user(uid).name)}<span> · ${esc(user(uid).title)}</span></b><span class="vr__w">${fmtDay(at.slice(0, 10))}, ${fmtTime(at)}</span></span></div>`;
+  const VERB = { created: 'Created by', changed: 'Changed by', moved: 'Changed by', shared: 'Shared by', ended: 'Ended by' };
+  let day = '', html = '';
+  list.forEach(v => {
+    const d = v.at.slice(0, 10); if (d !== day) { html += `<p class="vday">${wday(d)} ${fmtDayY(d)}</p>`; day = d; }
+    const [t] = VKIND[v.kind], cur = v.n === top, cert = v.certs.find(c => c.kind === 'cert'), kc = v.certs.find(c => c.kind === 'kcert');
+    html += `<div class="tv${cur ? ' cur' : ''}"><span class="tv__n">v${v.n}</span><article class="vc2${cur ? ' cur' : ''}"><div class="vc2__h"><span class="vc2__k">${t}</span>${cur ? pill('positive', 'Current') : ''}</div>
+      <b class="vc2__d">${esc(diet(v.diet).name)}</b>
+      <div class="vc2__rows">${who('person', VERB[v.kind], v.by, v.at)}${cert ? who('verified', 'Certified by Dietitian', cert.by, cert.at, true) : ''}${kc ? who('soup_kitchen', 'Certified by Kitchen', kc.by, kc.at) : ''}</div>
+      <div class="vc2__f"><button class="lnk" onclick="go('#/diets/${sp}/v/${v.n}')">View diet${I('chevron_right', 18)}</button></div></article></div>`;
+  });
+  return head + `<div class="tl tl2">${html}</div>`;
+}
+function vOpen(el) { const o = el.getAttribute('aria-expanded') === 'true'; el.setAttribute('aria-expanded', String(!o)); el.closest('.tv').classList.toggle('open', !o); }
+/* the diet filter: a menu under its button (no sheet, no second dimming) */
+function vFilterPop(btn, sp) {
+  const dev = $('.device'), d = dev.getBoundingClientRect(), k = d.width / dev.offsetWidth || 1, b = btn.getBoundingClientRect(), all = spVersions(sp), f = S.vDiet && S.vDiet.sp === sp ? S.vDiet.id : 'all';
+  closeMenu();
+  $('#ovl').insertAdjacentHTML('beforeend', `<div class="menu-scrim" onclick="if(event.target===this)closeMenu()"><div class="az-menu vf-menu" role="menu" style="right:${(d.right - b.right) / k}px;top:${(b.bottom - d.top) / k + 4}px">${VFILT(sp).map(([id, l]) => `<button role="menuitemradio" aria-checked="${f === id}" class="${f === id ? 'on' : ''}" onclick="closeMenu();vFilter(${sp},'${id}')"><span class="grow">${esc(l)}</span><small>${id === 'all' ? all.length : all.filter(v => v.diet === id).length}</small>${f === id ? I('check', 20) : ''}</button>`).join('')}</div></div>`);
+}
+function vFilter(sp, id) {
+  S.vDiet = { sp, id }; render();
+  const t = $('.vh__top'), box = t && (t.closest('.spsheet__body') || t.closest('.pane__body'));
+  if (box) box.scrollTo({ top: 0, behavior: calm() ? 'auto' : 'smooth' });
 }
 /* View Diet: the diet as it read in that version, its change marked the Kitchen way, with who and when on top */
 function paneVersion(sp, n, { cls = '', back = '' } = {}) {

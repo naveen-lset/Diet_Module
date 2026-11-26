@@ -734,15 +734,12 @@ const dfFeeds = d => [...FEEDS].sort((a, b) => a.from.localeCompare(b.from)).map
    - Feeds: the kitchen's feed times as equal tiles, the start big and the end under it; tap one or more. */
 const dayLong = n => { const iso = addDays(TODAY, n); return `${n === 0 ? 'Today · ' : n === 1 ? 'Tomorrow · ' : n === -1 ? 'Yesterday · ' : ''}${wday(iso)} ${fmtDay(iso)}`; };
 const wfield = (label, answer, body, { req = false, ph = false, id = '' } = {}) => `<div class="wf"${id ? ` id="${id}"` : ''}><div class="wf__h"><span>${label}${req ? ' <span class="az-req">*</span>' : ''}</span><b${ph ? ' class="ph"' : ''}>${answer}</b></div>${body}</div>`;
-function dayStrip(cur, key, { past = false, days = 21, max = 365, label = 'Day' } = {}) {
-  const set = n => `dfSetDay('${key}',${n})`;
-  const span = Array.from({ length: days }, (_, i) => past ? -i : i), out = typeof cur === 'number' && !span.includes(cur) ? cur : null;
-  const cell = n => { const iso = addDays(TODAY, n), on = n === cur;
-    return `<button class="dstrip__d${on ? ' on' : ''}${n === 0 ? ' today' : ''}" role="radio" aria-checked="${on}" aria-label="${dayLong(n)}" onclick="${set(n)}"><small>${n === 0 ? 'Today' : wday(iso)}</small><b>${+iso.slice(8)}</b><small>${MON[+iso.slice(5, 7) - 1]}</small></button>`; };
-  const lo = past ? addDays(TODAY, -60) : TODAY, hi = past ? TODAY : addDays(TODAY, max);
-  const cal = `<label class="dstrip__d dstrip__cal" title="Pick another date">${I('calendar_month', 22)}<small>Other</small><input type="date" min="${lo}" max="${hi}" value="${typeof cur === 'number' ? addDays(TODAY, cur) : ''}" onclick="try{this.showPicker()}catch(e){}" onchange="if(this.value)${set('daysBetween(TODAY,this.value)')}" aria-label="Pick another date"></label>`;
-  return `<div class="dstrip" role="radiogroup" aria-label="${label}">${span.map(cell).join('')}${out !== null ? cell(out) : ''}${cal}</div>`;
+/* (owner, 26 Nov 2026) a day is a field: a tap opens the calendar popup (js/calpick.js); the strip is gone */
+function dayStrip(cur, key, { past = false, days = 21, max = 365, label = 'Select Date' } = {}) {
+  const lo = past ? addDays(TODAY, -60) : TODAY, hi = past ? TODAY : addDays(TODAY, max), iso = typeof cur === 'number' ? addDays(TODAY, cur) : null;
+  return calField({ dates: iso ? [iso] : [], open: `calOpen({title:'${label}',sel:${iso ? `['${iso}']` : '[]'},lo:'${lo}',hi:'${hi}',cb:'dfCalDay',key:'${key}'})` });
 }
+function dfCalDay(ds) { dfSetDay(CALP.key, daysBetween(TODAY, ds[0])); }
 /* a strip keeps its picked day in view (a date picked from the calendar lands at its end) */
 function stripView() { document.querySelectorAll('.dstrip, .hdpills').forEach(row => { const c = row.querySelector('.on, [aria-selected="true"]'); if (c && (c.offsetLeft < row.scrollLeft || c.offsetLeft + c.offsetWidth > row.scrollLeft + row.clientWidth)) row.scrollTo({ left: c.offsetLeft - 12, behavior: calm() ? 'auto' : 'smooth' }); }); }
 /* Days (owner, 20 Nov 2026, again: "only one date could be chosen; I want a particular week or different dates; Every Day For A Week in its
@@ -764,26 +761,18 @@ function dfSetDates(k, ds, m) { const o = dstate(k); o.dates = [...new Set(ds)].
 function dfDmode(k, m) { const o = dstate(k), ds = o.dates || [], first = ds[0] || addDays(TODAY, 1); if ((o.dmode || 'one') === m) return; dfSetDates(k, m === 'week' ? weekOf(first) : [first], m); playFx($(`#wd-${k} [data-fx]`), 'sh-swap'); }
 function dfTapDay(k, iso) { const o = dstate(k), ds = o.dates || [], m = o.dmode || 'one';
   if (m === 'one') dfSetDates(k, [iso]); else if (m === 'some') dfSetDates(k, ds.includes(iso) ? ds.filter(x => x !== iso) : [...ds, iso]); else dfSetDates(k, weekOf(iso)); }
+/* Days: one field; a tap opens Select Days (One day · Several days · A week, then the month); the days come back as chips */
 function daysField(k, label, req) {
   const o = dstate(k), m = o.dmode || 'one', ds = (k === 'skip' ? skipDays(o) : extraDays(o)).slice().sort(), n = ds.length;
-  const answer = m === 'one' ? (n ? dayLong(daysBetween(TODAY, ds[0])) : 'Choose a day') : n ? plural(n, 'Day') : 'Tap the days';
-  const seg = `<div class="az-segment rv-seg wd-seg" role="tablist" aria-label="How many days">${thumb()}${DMODES.map(([v, l]) => `<button role="tab" aria-selected="${m === v}" onclick="dfDmode('${k}','${v}')">${l}</button>`).join('')}</div>`;
-  /* the days: four weeks from today, a small gap before each Monday, the calendar cell for any other date */
-  const span = Array.from({ length: 28 }, (_, i) => addDays(TODAY, i)), extra = ds.filter(x => !span.includes(x));
-  const cell = iso => { const on = ds.includes(iso), t = iso === TODAY, mon = (new Date(iso + 'T00:00:00').getDay()) === 1 && iso !== TODAY;
-    return `<button class="dstrip__d${on ? ' on' : ''}${t ? ' today' : ''}${mon ? ' mon' : ''}" role="${m === 'some' ? 'checkbox' : 'radio'}" aria-checked="${on}" aria-label="${dayLong(daysBetween(TODAY, iso))}" onclick="dfTapDay('${k}','${iso}')"><small>${t ? 'Today' : wday(iso)}</small><b>${+iso.slice(8)}</b><small>${MON[+iso.slice(5, 7) - 1]}</small></button>`; };
-  const cal = (cls, lab) => `<label class="dstrip__d dstrip__cal${cls}" title="Pick another date">${I('calendar_month', 22)}<small>${lab}</small><input type="date" min="${TODAY}" max="${addDays(TODAY, 365)}" onclick="try{this.showPicker()}catch(e){}" onchange="if(this.value){dfTapDay('${k}',this.value);this.value=''}" aria-label="Pick another date"></label>`;
-  const strip = `<div class="dstrip" role="${m === 'some' ? 'group' : 'radiogroup'}" aria-label="Days">${span.map(cell).join('')}${extra.map(cell).join('')}${cal('', 'Other')}</div>`;
-  /* the weeks as cards: This Week (what is left of it), Next Week, then the weeks after */
-  const weeks = Array.from({ length: 6 }, (_, i) => weekOf(addDays(TODAY, i * 7))).filter(w => w.length);
-  const picked = m === 'week' && n ? JSON.stringify(ds) : '';
-  const card = (w, i) => { const on = JSON.stringify(w) === picked, a = w[0], b = w[w.length - 1];
-    return `<button class="wcard${on ? ' on' : ''}" role="radio" aria-checked="${on}" onclick="dfSetDates('${k}',${JSON.stringify(w).replace(/"/g, "'")})"><small>${i === 0 ? 'This Week' : i === 1 ? 'Next Week' : `Week Of ${fmtDay(addDays(b, -6))}`}</small><b>${a.slice(5, 7) === b.slice(5, 7) ? +a.slice(8) : fmtDay(a)} – ${fmtDay(b)}</b><small>${w.length === 7 ? 'Mon – Sun' : `${wday(a)} – Sun · ${w.length} days`}</small></button>`; };
-  const other = picked && !weeks.some(w => JSON.stringify(w) === picked) ? card(ds, 9) : '';
-  const wcards = `<div class="wcards" role="radiogroup" aria-label="Week">${weeks.map(card).join('')}${other}${cal(' wcard', 'Other Week')}</div>`;
-  const sum = m === 'some' && n ? `<p class="wd-sum">${I('event', 18)}<span>${cap(datesText(ds))}</span></p>` : '';
-  return `<div class="wf wd" id="wd-${k}">${`<div class="wf__h"><span>${label}${req ? ' <span class="az-req">*</span>' : ''}</span><b${n ? '' : ' class="ph"'}>${answer}</b></div>`}${seg}<div class="wd-pick" data-fx>${m === 'week' ? wcards : strip}${sum}</div></div>`;
+  const answer = !n ? 'Choose the days' : m === 'week' ? 'A week' : plural(n, 'Day');
+  const field = calField({ dates: ds, ph: 'Choose the days', id: `wd-${k}-f`, remove: k === 'skip' ? 'dfDropSkip' : 'dfDropExtra',
+    open: `calOpen({title:'Select ${label}',modes:true,mode:'${m}',sel:${JSON.stringify(ds).replace(/"/g, "'")},cb:'dfCalDays',key:'${k}'})` });
+  return `<div class="wf wd" id="wd-${k}"><div class="wf__h"><span>${label}${req ? ' <span class="az-req">*</span>' : ''}</span><b${n ? '' : ' class="ph"'}>${answer}</b></div>${field}</div>`;
 }
+function dfCalDays(ds, mode) { dfSetDates(CALP.key, ds, mode); }
+const dfDropDay = (k, iso) => { const o = dstate(k), ds = (k === 'skip' ? skipDays(o) : extraDays(o)).filter(x => x !== iso); dfSetDates(k, ds, ds.length <= 1 ? 'one' : o.dmode === 'week' ? 'some' : o.dmode); };
+function dfDropSkip(iso) { dfDropDay('skip', iso); }
+function dfDropExtra(iso) { dfDropDay('extra', iso); }
 /* the kitchen's feed times as tiles; on(f) says if one is picked, js(f) what a tap does */
 const feedTiles = (on, js) => `<div class="feedts" role="group" aria-label="Feeds">${dfFeeds().map(f => { const x = feed(f), y = on(f);
   return `<button class="feedt${y ? ' on' : ''}" role="checkbox" aria-checked="${y}" onclick="${js(f)}"><b>${x.from}</b><small>to ${x.to}</small></button>`; }).join('')}</div>`;
@@ -871,7 +860,7 @@ const HOW_OPTS = [['always', 'From Now On'], ['once', 'Select Dates'], ['yearly'
    c says which of the two a tap writes to, so both screens get the same days, the same calendar and the same dates. */
 const HOW_CTX = {
   draft: { st: () => S.draft, base: () => baseOf(S.draft), draw: () => render() },
-  sg: { st: () => SG, base: () => sgDiet(), draw: () => redrawSheet() },
+  sg: { st: () => SG, base: () => sgDiet(), draw: () => SH.length ? redrawSheet() : render() },
 };
 function hwSet(c, k, v) {
   const x = HOW_CTX[c], d = x && x.st(); if (!d) return;
@@ -893,8 +882,7 @@ function howBlock(d, c = 'draft') {
   const starts = hwDate(c, 'from', d.how === 'once' ? 'From' : 'Starts', d.from);
   const ends = hwDate(c, 'last', 'To', last, { lo: d.from, sub: plural(days, 'day') });
   const season = dfield('Season', dchips(SG_SEASONS.map(([s1, a, b2]) => [s1, s1, `${mdText(a)} – ${mdText(b2)}`]), v => d.season === v, v => `hwSet('${c}','season','${v}')`));
-  const note = d.how === 'once' ? `Then back to ${esc(bname)}` : d.how === 'yearly' ? `${esc(bname)} the rest of the year` : 'Until someone changes it again';
-  return seg + `<div class="how-body" data-fx>${d.how === 'yearly' ? season : starts + (d.how === 'once' ? ends : '')}<p class="how-note">${I('info', 18)}<span>${note}</span></p></div>`;
+  return seg + `<div class="how-body" data-fx>${d.how === 'yearly' ? season : starts + (d.how === 'once' ? ends : '')}</div>`;
 }
 /* Why (owner, 20 Nov 2026: "Reason, why also: remove the outline, I want a text box also"): the common reasons as chips, More Reasons searches
    all of Kitchen & Diet's reasons, and a text box for the rest */
