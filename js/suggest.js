@@ -413,7 +413,7 @@ function whoPage(P, ref, { back, done, title = 'Select Species' }) {
   if (!P.sp) {
     const q = P.q.trim().toLowerCase(), sps = D.species.filter(s => !q || s.name.toLowerCase().includes(q) || s.sci.toLowerCase().includes(q) || String(s.id).includes(q)), places = q ? sgFind(P.q).filter(t => t.level !== 'species') : [];
     body = search('who-q', P.q, 'Search species, enclosure or animal', `${ref}.q=this.value;render()`, true)
-      + (q ? '' : `<p class="who-h">Recent</p><div class="who-recent">${sgRecent().map(t => `<button class="who-rc" onclick="${ref}.sp=${t.sp};${ref}.tab='${whoNew(t).tab}';${ref}.sel=${whoJs(t)};render()">${spThumb(species(t.sp))}<span><b>${esc(sgName(t))}</b><small>${esc(sgWhere(t))}</small></span></button>`).join('')}</div>`)
+      + (true ? '' : `<p class="who-h">Recent</p><div class="who-recent">${sgRecent().map(t => `<button class="who-rc" onclick="${ref}.sp=${t.sp};${ref}.tab='${whoNew(t).tab}';${ref}.sel=${whoJs(t)};render()">${spThumb(species(t.sp))}<span><b>${esc(sgName(t))}</b><small>${esc(sgWhere(t))}</small></span></button>`).join('')}</div>`)
       + (places.length ? `<p class="who-h">Enclosures And Animals</p><div class="who-list">${places.map(t => `<button class="who-row" onclick="${ref}.sp=${t.sp};${ref}.tab='${whoNew(t).tab}';${ref}.sel=${whoJs(t)};render()"><span class="who-av">${I(t.level === 'animal' ? 'pets' : t.level === 'section' ? 'grid_view' : 'fence', 22)}</span><span class="grow"><b>${esc(sgName(t))}</b><span class="who-cc">${cnt(sgWhere(t), '')}${cnt('Animals', tAnimals(t).length)}</span></span>${I('chevron_right', 20)}</button>`).join('')}</div>` : '')
       + `<p class="who-h">Species · ${sps.length}</p>${sps.map(s => { const as = spAnimals(s.id);
         return `<button class="who-spc" onclick="${ref}.sp=${s.id};${ref}.tab='all';${ref}.sel=${whoJs({ sp: s.id, level: 'species', ref: null })};render()">${spThumb(s)}<span class="grow"><b>${esc(s.name)}</b><i>${esc(s.sci)}</i>${sexChips(as)}</span><span class="who-big">${as.length}</span></button>`; }).join('') || `<p class="sg-none">No species by that name</p>`}`;
@@ -460,9 +460,16 @@ const pkIc = ic => `<span class="pk-ic">${I(ic, 22)}</span>`;
    "check Species Selection from the codebase"): Species-wide · Site-wide · Section-wide · Enclosure-wide · Animal-wide, each with how many diets are set
    there; the open one lists its places with their path and diets (LocationScopePicker), animals with search. A tap picks and closes. cb(sp, level, ref) */
 let PK = { q: '', sp: null, lvl: 'species', aq: '', kind: 'all', site: 'all', cb: '', cur: null };
-function spPickSheet(cb, cur = null) { PK = { q: '', sp: null, lvl: 'species', aq: '', kind: 'all', site: 'all', cb, cur }; openSheet(spPickHtml); pkFocus('pk-q'); }
+function spPickSheet(cb, cur = null) { PK = { q: '', sp: null, lvl: 'species', aq: '', kind: 'all', site: 'all', sec: 'all', enc: 'all', fOpen: false, cb, cur }; openSheet(spPickHtml); pkFocus('pk-q'); }
 function pkKind(k) { if (PK.kind === k) return; PK.kind = k; redrawSheet(); }
-function pkSite(v) { const s = v === 'all' ? 'all' : +v; if (PK.site === s) return; PK.site = s; redrawSheet(); }
+/* the place filters (owner, 26 Nov 2026: "near the search I want filters: Site, Section, Enclosure; remove Recents"): a Filter button beside the
+   search opens them in the sheet itself — Site, then that site's Sections, then that section's Enclosures; each narrows the next */
+function pkSite(v) { const s = v === 'all' ? 'all' : +v; if (PK.site === s) return; PK.site = s; PK.sec = 'all'; PK.enc = 'all'; redrawSheet(); }
+function pkSec(v) { const s = v === 'all' ? 'all' : +v; if (PK.sec === s) return; PK.sec = s; PK.enc = 'all'; if (s !== 'all') PK.site = by('sections', s).site; redrawSheet(); }
+function pkEnc(v) { const s = v === 'all' ? 'all' : +v; if (PK.enc === s) return; PK.enc = s; redrawSheet(); }
+const pkFilterN = () => ['site', 'sec', 'enc'].filter(k => PK[k] !== 'all').length;
+/* does an animal sit inside the places filtered? */
+const pkIn = a => { const p = pathOfAnimal(a); return (PK.site === 'all' || p.site === PK.site) && (PK.sec === 'all' || p.section === PK.sec) && (PK.enc === 'all' || a.enc === PK.enc); };
 const PK_SCOPES = [['species', 'Species-wide', 'public'], ['site', 'Site-wide', 'location_on'], ['section', 'Section-wide', 'grid_view'], ['enclosure', 'Enclosure-wide', 'fence'], ['animal', 'Animal-wide', 'pets']];
 /* how many diets are set at a place of the species (not inherited), as the Kitchen's scope cards say */
 const dietsSetAt = (sp, level, ref = null) => new Set(D.assigns.filter(a => a.sp === sp && a.level === level && (level === 'species' || a.ref === ref) && !ended(a)).map(a => a.diet)).size;
@@ -482,17 +489,28 @@ function spPickHtml() {
     const qr = `<button class="who-qr" onclick="event.preventDefault();${go1(rc)};toast('Scanned the QR on ${esc(sgName(rc))}')" aria-label="Scan the enclosure QR">${I('qr_code_scanner')}</button>`;
     /* (owner, 21 Nov 2026: "which place it is asking, right there is species search only, so I need search filters option also") the search
        looks through all of them; the filters say which kind to show, and under which site. The site row comes only when a kind needs it. */
-    const atSite = id => site === 'all' || id === site;
-    const spAt = sp => site === 'all' || D.animals.some(a => a.sp === sp && pathOfAnimal(a).site === site);
+    const atSite = id => site === 'all' || id === site, filt = pkFilterN() > 0;
+    const spAt = sp => !filt || D.animals.some(a => a.sp === sp && pkIn(a));
     const sps = D.species.filter(x => spAt(x.id) && (!q || x.name.toLowerCase().includes(q) || x.sci.toLowerCase().includes(q) || String(x.id).includes(q))).sort((a, b) => a.name.localeCompare(b.name));
     const kinds = [['all', 'All'], ['species', 'Species'], ['enclosure', 'Enclosures'], ['animal', 'Animals']];
     const sites = D.sites.filter(x => D.animals.some(a => pathOfAnimal(a).site === x.id));
     const chips = (label, opts, cur, fn) => `<div class="az-chips pk-f" role="tablist" aria-label="${label}">${thumb()}${opts.map(([v, l]) => `<button class="az-chip" role="tab" aria-selected="${cur === v}" onclick="${fn}('${v}')">${esc(l)}</button>`).join('')}</div>`;
-    const filters = chips('What to show', kinds, kind, 'pkKind')
-      + (kind !== 'species' && sites.length > 1 ? chips('Site', [['all', 'All Sites'], ...sites.map(x => [String(x.id), x.name])], String(site), 'pkSite') : '');
+    /* the Filter panel, in the sheet: Site · Section (of the site picked) · Enclosure (of the section picked) */
+    const plain = (opts, cur, fn) => `<div class="az-chips pk-fc">${opts.map(([v, l]) => `<button class="az-chip" aria-selected="${cur === v}" onclick="${fn}('${v}')">${esc(l)}</button>`).join('')}</div>`;
+    const secs = D.sections.filter(x => (site === 'all' || x.site === site) && D.animals.some(a => pathOfAnimal(a).section === x.id)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    const encs = PK.sec === 'all' ? [] : D.enclosures.filter(e => e.section === PK.sec && D.animals.some(a => a.enc === e.id)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    const panel = PK.fOpen ? `<div class="pk-fp">
+        <p class="pk-fp__h">Site</p>${plain([['all', 'All Sites'], ...sites.map(x => [String(x.id), x.name])], String(site), 'pkSite')}
+        <p class="pk-fp__h">Section</p>${plain([['all', 'All Sections'], ...secs.map(x => [String(x.id), x.name])], String(PK.sec), 'pkSec')}
+        <p class="pk-fp__h">Enclosure</p>${PK.sec === 'all' ? '<p class="pk-fp__none">Choose a section first</p>' : plain([['all', 'All Enclosures'], ...encs.map(x => [String(x.id), x.name])], String(PK.enc), 'pkEnc')}
+        <div class="pk-fp__foot"><button class="lnk" onclick="PK.site='all';PK.sec='all';PK.enc='all';redrawSheet()">Clear</button><button class="az-btn az-btn--compact" onclick="PK.fOpen=false;redrawSheet()">Done</button></div></div>` : '';
+    const on = [PK.site !== 'all' ? ['site', by('sites', PK.site).name] : null, PK.sec !== 'all' ? ['sec', by('sections', PK.sec).name] : null, PK.enc !== 'all' ? ['enc', by('enclosures', PK.enc).name] : null].filter(Boolean);
+    const clearJs = k => k === 'site' ? "PK.site='all';PK.sec='all';PK.enc='all'" : k === 'sec' ? "PK.sec='all';PK.enc='all'" : "PK.enc='all'";
+    const active = on.length && !PK.fOpen ? `<div class="pk-on">${on.map(([k, l]) => `<button class="fchip" onclick="${clearJs(k)};redrawSheet()" aria-label="Remove filter ${esc(l)}">${esc(l)}${I('close', 16)}</button>`).join('')}</div>` : '';
+    const filters = chips('What to show', kinds, kind, 'pkKind') + active + panel;
     /* every enclosure that holds animals, one row per species in it, grouped site › section */
     const encRows = () => { const gs = [];
-      D.enclosures.filter(e => { const sec = by('sections', e.section); return atSite(sec.site) && (!q || e.name.toLowerCase().includes(q) || sec.name.toLowerCase().includes(q)); })
+      D.enclosures.filter(e => { const sec = by('sections', e.section); return atSite(sec.site) && (PK.sec === 'all' || e.section === PK.sec) && (PK.enc === 'all' || e.id === PK.enc) && (!q || e.name.toLowerCase().includes(q) || sec.name.toLowerCase().includes(q)); })
         .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
         .forEach(e => { const sec = by('sections', e.section), h = `${esc(by('sites', sec.site).name)} › ${esc(sec.name)}`;
           [...new Set(D.animals.filter(a => a.enc === e.id).map(a => a.sp))].forEach(sp => { const t = { sp, level: 'enclosure', ref: e.id };
@@ -501,7 +519,7 @@ function spPickHtml() {
       return gs; };
     /* every animal, grouped under its enclosure */
     const aniRows = () => { const gs = [];
-      D.animals.filter(a => atSite(pathOfAnimal(a).site) && (!q || animalName(a).toLowerCase().includes(q) || String(a.id).includes(q) || by('enclosures', a.enc).name.toLowerCase().includes(q) || species(a.sp).name.toLowerCase().includes(q)))
+      D.animals.filter(a => pkIn(a) && (!q || animalName(a).toLowerCase().includes(q) || String(a.id).includes(q) || by('enclosures', a.enc).name.toLowerCase().includes(q) || species(a.sp).name.toLowerCase().includes(q)))
         .sort((a, b) => by('enclosures', a.enc).name.localeCompare(by('enclosures', b.enc).name, undefined, { numeric: true }) || a.id - b.id)
         .slice(0, 150).forEach(a => { const h = esc(by('enclosures', a.enc).name), t = { sp: a.sp, level: 'animal', ref: a.id };
           const r = pkRow(go1(t), spThumb(species(a.sp)), esc(animalName(a)), esc(`AID ${a.id} · ${species(a.sp).name}`), undefined, isOn(t));
@@ -516,14 +534,14 @@ function spPickHtml() {
     if (kind === 'enclosure') { const gs = encRows(); list = gs.length ? pkGroups(gs) : '<p class="sg-none">No enclosure by that name here</p>'; }
     else if (kind === 'animal') { const gs = aniRows(); list = gs.length ? pkGroups(gs) : '<p class="sg-none">No animal by that name or number here</p>'; }
     else if (kind === 'species') list = spList(false);
-    else { const places = q ? sgFind(PK.q).filter(t => t.level !== 'species' && atSite(pathOf(t).site)) : [];
-      list = (q ? '' : `<p class="az-label pk-h">Recent</p>${pkList(sgRecent().slice(0, 3).map(t => pkRow(go1(t), spThumb(species(t.sp)), esc(sgName(t)), esc(`${species(t.sp).name} · ${sgWhere(t)}`), undefined, isOn(t))).join(''))}`)
-        + (places.length ? `<p class="az-label pk-h">Enclosures And Animals</p>${pkList(places.map(t => pkRow(go1(t), pkIc(t.level === 'animal' ? 'pets' : t.level === 'section' ? 'grid_view' : 'fence'), esc(sgName(t)), esc(`${species(t.sp).name} · ${sgWhere(t)}`), undefined, isOn(t))).join(''))}` : '')
+    else { const places = q ? sgFind(PK.q).filter(t => t.level !== 'species' && tAnimals(t).some(pkIn)) : [];
+      list = (places.length ? `<p class="az-label pk-h">Enclosures And Animals</p>${pkList(places.map(t => pkRow(go1(t), pkIc(t.level === 'animal' ? 'pets' : t.level === 'section' ? 'grid_view' : 'fence'), esc(sgName(t)), esc(`${species(t.sp).name} · ${sgWhere(t)}`), undefined, isOn(t))).join(''))}` : '')
         + spList(true); }
-    const body = `<div class="pk-top">${pkSearch('pk-q', PK.q, 'Species, enclosure or animal', 'PK.q=this.value;redrawSheet()', qr)}${filters}</div><div class="pk-pane" data-fx>${list}</div>`;
-    return { title: 'Select Species', bottom: true, tall: true, step: `list:${kind}:${site}`, depth: 0, body };
+    const fbtn = `<button class="az-iconbtn pk-fbtn${pkFilterN() || PK.fOpen ? ' on' : ''}" onclick="PK.fOpen=!PK.fOpen;redrawSheet()" aria-expanded="${!!PK.fOpen}" aria-label="Filter by site, section or enclosure">${I('tune')}${pkFilterN() ? `<span class="pk-fbtn__n">${pkFilterN()}</span>` : ''}</button>`;
+    const body = `<div class="pk-top"><div class="pk-qrow">${pkSearch('pk-q', PK.q, 'Species, enclosure or animal', 'PK.q=this.value;redrawSheet()', qr)}${fbtn}</div>${filters}</div><div class="pk-pane" data-fx>${list}</div>`;
+    return { title: 'Select Species', bottom: true, tall: true, step: `list:${kind}:${site}:${PK.sec}:${PK.enc}`, depth: 0, body };
   }
-  const s = species(PK.sp), all = spAnimals(s.id), ids = k => [...new Set(all.map(a => pathOfAnimal(a)[k]))];
+  const s = species(PK.sp), all = spAnimals(s.id).filter(a => !pkFilterN() || pkIn(a)), ids = k => [...new Set(all.map(a => pathOfAnimal(a)[k]))];
   const siteN = id => by('sites', id).name, secN = id => by('sections', id).name, lvlIx = PK_SCOPES.findIndex(x => x[0] === PK.lvl);
   const word = { site: ['site', 'sites'], section: ['section', 'sections'], enclosure: ['enclosure', 'enclosures'] };
   const tabs = `<div class="pk-lv" role="tablist" aria-label="Who it is for">${thumb()}${PK_SCOPES.map(([l, , ic]) => `<button class="pk-lv__c" role="tab" aria-selected="${PK.lvl === l}" onclick="pkLvl('${l}')">${I(ic, 18)}${LEVEL[l]}</button>`).join('')}</div>`;

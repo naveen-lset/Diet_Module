@@ -79,7 +79,8 @@ const openReqs = () => D.requests.filter(r => isDiet(r) && visibleTo(r, me()) &&
 const dietTabs = cur => `<div class="az-tabs" role="tablist">${thumb(true)}${[['species', 'Species Wise'], ['diets', 'Diet Wise'], ['requests', 'Requests']].map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${cur === k}" onclick="homeTab('${k}')">${l}${k === 'requests' && openReqs() ? `<span class="tabn">${openReqs()}</span>` : ''}</button>`).join('')}</div>`;
 /* switching tabs keeps them pinned if they were, and shows the new list from its start */
 function homeTab(k) {
-  if (k === 'requests') { go('#/requests'); swapFx('.pane--home .list'); return; }
+  if (k === 'requests') { S.land = 'requests'; go('#/requests'); swapFx('.pane--home .list'); return; }
+  S.landWas = k;
   const b = document.querySelector('.pane--home .pane__body'), r = b && b.querySelector('.reqsum, .dstats');
   if (b) b.scrollTop = Math.min(b.scrollTop, r ? r.offsetHeight : 0);
   S.land = k; go('#/diets'); swapFx('.pane--home .list');
@@ -121,13 +122,20 @@ function dietStats() {
 /* the page scrolls as one: the stats card, search and chips go up with the list; Diet Wise | Species Wise stays pinned under the top bar */
 function paneDietHome({ cls = '', cur = null } = {}) {
   const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true, end: whoBtn() }), head = dietStats() + dietTabs(tab);   /* owner, 18 Nov: no request rows above the tabs (requests live in Help Desk); 20 Nov: the stats card goes there */
+  /* a New Request button on the landing page, on every tab (owner, 26 Nov 2026) */
+  const fab = canRaise(me()) ? `<a class="az-fab az-fab--pill dfab${isPhone() ? '' : ' az-fab--no-nav'}" href="#/new?dept=diet">${I('add_circle')}<span class="dfab__t">New Request</span></a>` : '';
+  const withFab = html => fab ? html.replace(/^<section class="pane /, '<section class="pane has-fab ').replace(/<\/section>$/, `${fab}</section>`) : html;
+  if (tab === 'requests') { const r = reqHomeParts(cur); return withFab(pane(`${cls} pane--home`, top, head + r.search + r.chips + r.body, '', 'home')); }
+  /* the count of the list, its filters as removable chips, and the Filter button (the same line the Requests list has) */
+  const countLine = n => { const act = activeFilters(tab), name = (k, v) => FILTERS[tab].find(f => f[0] === k)[2]().find(o => o[0] === v)[1];
+    return `<p class="az-countline lcount"><span class="lcount__n">${plural(n, tab === 'diets' ? 'diet' : 'species', tab === 'diets' ? 'diets' : 'species')}</span>${act.map(([k]) => `<button class="fchip" onclick="S.${k}='all';render();swapFx('.pane .list')" aria-label="Remove filter ${esc(name(k, S[k]))}">${esc(name(k, S[k]))}${I('close', 16)}</button>`).join('')}<span class="hdtools"><button class="az-iconbtn${act.length ? ' on' : ''}" onclick="filterSheet()" aria-label="Filter">${I('tune')}</button></span></p>`; };
   const chips = (key, opts, count) => `<div class="az-chips" role="tablist">${opts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l} - ${count(k)}</button>`).join('')}</div>`;
   if (tab === 'diets') {
     const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species, place or ID" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label></div>`;
     const list = dietsFor(S.dKind), on = (by('assigns', cur) || {}).diet, rows = list.map(a => dietRow(a, !!cur && on === a.diet)).join('');
     const none = S.dQ.trim() && !dietsFor(S.dKind, 'all').length;
-    return pane(`${cls} pane--home`, top, head + search + chips('dKind', [['all', 'All'], ...KINDS.map(k => [k, tcase(k)])], k => dietsFor(k).length)
-      + `<div class="body">${none ? '' : listToggle('dCert', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']])}<div class="list list--8">${rows || (none ? noMatch(S.dQ, "S.dQ=''") : empty1('No diet here'))}</div></div>`, '', 'home');
+    return withFab(pane(`${cls} pane--home`, top, head + search + chips('dKind', [['all', 'All'], ...KINDS.map(k => [k, tcase(k)])], k => dietsFor(k).length)
+      + `<div class="body">${none ? '' : listToggle('dCert', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']]) + countLine(list.length)}<div class="list list--8">${rows || (none ? noMatch(S.dQ, "S.dQ=''") : empty1('No diet here'))}</div></div>`, '', 'home'));
   }
   const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="sp-q" placeholder="Search species or taxonomy ID" value="${esc(S.spQ)}" oninput="S.spQ=this.value;render()" aria-label="Search species"></label></div>`;
   const list = speciesFor(S.spTab), clsChips = chips('spCls', [['all', 'All'], ...CLASSES.map(c => [c, c]), ['Other', 'Other']], c => speciesFor(S.spTab, c).length);
@@ -136,7 +144,7 @@ function paneDietHome({ cls = '', cur = null } = {}) {
   const rows = list.length ? list.map(s => { const all = slotsOf(s.id).length;
     return speciesRow(s, { href: `#/diets/${s.id}`, current: cur === s.id, big: true,
       end: `<span class="sprow__n${all ? '' : ' sprow__n--none'}"><b>${all ? activeDiets(s.id) : 0}</b><span>${all && activeDiets(s.id) === 1 ? 'Diet' : 'Diets'}</span></span>` }); }).join('') : none ? noMatch(S.spQ, "S.spQ=''") : empty1('No species here');
-  return pane(`${cls} pane--home`, top, head + search + clsChips + `<div class="body">${none ? '' : listToggle('spTab', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified'], ['without', 'No Diet']])}<div class="list list--8">${rows}</div></div>`, '', 'home');
+  return withFab(pane(`${cls} pane--home`, top, head + search + clsChips + `<div class="body">${none ? '' : listToggle('spTab', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified'], ['without', 'No Diet']]) + countLine(list.length)}<div class="list list--8">${rows}</div></div>`, '', 'home'));
 }
 
 /* a search that finds nothing says so, with a way back (audit, 2 Nov) */
@@ -411,6 +419,7 @@ function itemSheet(dietId, f, it) {
 }
 /* ---------- Diet per device ---------- */
 function vDiets(parts) {
+  if (S.land === 'requests') S.land = S.landWas || 'species';
   const spId = parts[1] ? +parts[1] : null, asgId = parts[2] === 'v' ? null : parts[2] || null;
   /* View Diet of a version: the phone's own page; on the iPad it takes the species' place on the right, with Back to it */
   if (parts[2] === 'v' && spId) {
