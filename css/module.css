@@ -2288,3 +2288,25 @@ button.step{cursor:pointer}
 .mtab-wrap--bands .mtab__s{display:block;margin:2px 0 0}
 .sg-bandsbox{display:flex;flex-direction:column;gap:6px;background:var(--white);border-radius:var(--r-8);padding:10px 14px;margin-bottom:12px}
 .sg-bandsbox .sgt__bands{font:var(--t-body-medium);gap:4px}
+
+/* ==================== round 31 (owner, 26 Nov 2026) ==================== */
+/* the landing page's lists all end their filters with one line: the count, filters picked (removable), the Filter button */
+.lcount{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:4px 0 0}
+.lcount .hdtools{margin-left:auto}
+.lcount .fchip{height:28px}
+.az-iconbtn.on{color:var(--Primary)}
+/* Select Species: Filter beside the search; the panel (Site · Section · Enclosure) opens in the sheet; picked filters as chips */
+.pk-qrow{display:flex;align-items:center;gap:8px}
+.pk-qrow .pk-q{flex:1;min-width:0}
+.pk-fbtn{position:relative;width:48px;height:48px;flex:none;border-radius:var(--r-8);background:var(--white)}
+.pk-fbtn.on{background:var(--OnPrimaryContainer);color:var(--white)}
+.pk-fbtn__n{position:absolute;top:4px;right:4px;min-width:18px;height:18px;padding:0 5px;border-radius:var(--r-full);background:var(--Primary);color:var(--white);font:600 11px/18px var(--font);text-align:center}
+.pk-on{display:flex;flex-wrap:wrap;gap:6px}
+.pk-fp{display:flex;flex-direction:column;gap:6px;background:var(--white);border-radius:var(--r-12);padding:12px 14px}
+.pk-fp__h{font:var(--t-body-medium);color:var(--OnSurfaceVariant);margin-top:4px}
+.pk-fp__none{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.pk-fc{gap:8px;padding:0;margin:0 -14px;padding:0 14px;background:none;overflow-x:auto;scrollbar-width:none}
+.pk-fc::-webkit-scrollbar{display:none}
+.pk-fc .az-chip{flex:none;background:var(--displaybgSecondary);color:var(--OnPrimaryContainer)}
+.pk-fc .az-chip[aria-selected="true"]{background:var(--OnPrimaryContainer);color:var(--white)}
+.pk-fp__foot{display:flex;align-items:center;justify-content:space-between;margin-top:6px}

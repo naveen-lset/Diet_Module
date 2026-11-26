@@ -65,26 +65,20 @@ function hdCard(r, cur = false) {
     ${c ? `<span class="hdcard__cmt">${I('format_quote', 22, true)}<span><i>${esc(c.note)}</i><small>${youName(c.by)} • ${fmtTime(c.at)} • ${fmtDayY(c.at.slice(0, 10))}</small></span></span>` : ''}
     <span class="az-strip az-strip--${s.tone}">${I(s.icon, 20)}${esc(s.label)}<span class="az-strip__time">${stripTime(r)}</span></span></a>`;
 }
-function paneHelpDesk({ cls = '', cur = null } = {}) {
-  /* the phone has count tabs; the iPad has the same as one row of chips with counts, the selected one dark (Hospital iPad, 22 Sep 2026) */
-  /* (owner, 20 Nov 2026: "no spacing, no animation at all") each row's highlight slides to the one tapped: a line under the count tabs, a dark
-     pill under the chips; the cards then come in from the side the tap moved to (hdSet) */
-  const tabs = isPhone() ? `<div class="az-counttabs az-counttabs--fit hdtabs" role="tablist">${thumb(true)}${HDTABS.map(([k, l]) => `<button class="az-counttab" role="tab" aria-selected="${S.rTab === k}" onclick="hdSet({rTab:'${k}',rSub:'all'})"><span class="az-counttab__in"><b>${hdList(k).length}</b><span>${l}</span></span></button>`).join('')}</div>`
-    : `<div class="az-chips hdstat hdpills" role="tablist" aria-label="Status">${thumb()}${HDTABS.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S.rTab === k}" onclick="hdSet({rTab:'${k}',rSub:'all'})">${l} - ${hdList(k).length}</button>`).join('')}</div>`;
-  /* whose requests: My Requests · My Approvals · All (only the ones this person has) */
+/* Requests, the third tab of the Diet landing page (owner, 26 Nov 2026: "when I change there itself show the listing filters"): the same page
+   as Species Wise and Diet Wise — stats card and tabs stay, the list changes in place — with its own search, whose requests (chips),
+   the status (the same toggle the other lists have), the sub-status chips, and Requests (n) with sort and filter */
+function reqHomeParts(cur = null) {
   const W = WHO_OPTS(), who = rWho();
-  const whoChips = W.length > 1 ? `<div class="az-chips hdchips hdpills" role="tablist" aria-label="Whose requests">${thumb()}${W.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${who === k}" onclick="hdSet({rWho:'${k}'})">${l}</button>`).join('')}</div>` : '';
-  const search = S.rSearch ? `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="hd-q" placeholder="Search requests" value="${esc(S.rQ)}" oninput="S.rQ=this.value;render()" aria-label="Search requests"></label></div>` : '';
-  /* under Approved (as the Help Desk app: All · Approved · In progress · Completed) and Closed (All · Rejected · Canceled · Deleted), each with its count; a chip with nothing in it is left out */
+  const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="hd-q" placeholder="Search request, species or ID" value="${esc(S.rQ)}" oninput="S.rQ=this.value;render()" aria-label="Search requests"></label></div>`;
+  const chips = W.length > 1 ? `<div class="az-chips" role="tablist" aria-label="Whose requests">${W.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${who === k}" onclick="hdSet({rWho:'${k}'})">${l} - ${hdList('all', 'diet', 'all', k).length}</button>`).join('')}</div>` : '';
+  const status = `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Status">${thumb()}${HDTABS.map(([k, l]) => `<button role="tab" aria-selected="${S.rTab === k}" onclick="hdSet({rTab:'${k}',rSub:'all'})">${l}</button>`).join('')}</div></div>`;
   const subOpts = (HDSUBS[S.rTab] || []).filter(([k]) => k === 'all' || k === S.rSub || hdList(S.rTab, 'diet', k).length);
   const subs = subOpts.length > 2 ? `<div class="az-chips az-chips--sub hdpills" role="tablist" aria-label="${HDTABS.find(x => x[0] === S.rTab)[1]} requests">${thumb()}${subOpts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S.rSub === k}" onclick="hdSet({rSub:'${k}'})">${l} - ${hdList(S.rTab, 'diet', k).length}</button>`).join('')}</div>` : '';
   const list = hdList(S.rTab, 'diet', S.rSub), filt = S.rPrio !== 'all';
-  const tools = `<span class="hdtools">${iconBtn('search', 'Search requests', "S.rSearch=!S.rSearch;S.rQ='';render();setTimeout(()=>{const i=document.getElementById('hd-q');if(i)i.focus()},30)")}${iconBtn('swap_vert', `Sort: ${S.rSort === 'priority' ? 'priority' : 'newest'}`, "S.rSort=S.rSort==='priority'?'newest':'priority';render();toast('Sorted by '+(S.rSort==='priority'?'priority':'newest'))")}<button class="az-iconbtn${filt ? ' on' : ''}" onclick="hdFilterSheet()" aria-label="Filter">${I('tune')}</button></span>`;
-  const count = `<p class="az-countline">Requests (${list.length})${tools}</p>`;
-  const fab = canRaise(me()) ? (isPhone() ? `<a class="az-fab az-fab--pill" href="#/new?dept=diet">${I('add_circle')}New Request</a>` : `<a class="az-fab az-fab--pill az-fab--no-nav" href="#/new?dept=diet">${I('add_circle')}New Request</a>`) : '';
-  const body = `<div class="body">${subs}${count}${list.length ? `<div class="list list--16 hdlist">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1(who === 'mine' ? 'You have no requests here' : 'No requests here')}</div>${fab}`;
-  /* the Diet module's own top bar and tabs: Species Wise · Diet Wise · Requests */
-  return pane(`${cls} pane--home${fab ? ' has-fab' : ''}`, topbar({ back: '#/home', title: 'Diet', site: true, end: whoBtn() }) + dietTabs('requests') + search + whoChips + tabs, body, '', 'hd');
+  const tools = `<span class="hdtools">${iconBtn('swap_vert', `Sort: ${S.rSort === 'priority' ? 'priority' : 'newest'}`, "S.rSort=S.rSort==='priority'?'newest':'priority';render();toast('Sorted by '+(S.rSort==='priority'?'priority':'newest'))")}<button class="az-iconbtn${filt ? ' on' : ''}" onclick="hdFilterSheet()" aria-label="Filter">${I('tune')}</button></span>`;
+  const body = `<div class="body">${status}${subs}<p class="az-countline lcount">${plural(list.length, 'request')}${tools}</p>${list.length ? `<div class="list list--16 hdlist">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1(who === 'mine' ? 'You have no requests here' : 'No requests here')}</div>`;
+  return { search, chips, body };
 }
 /* a tab, a department, a sub-status or My Approvals | All: the cards come in from the side the highlight moved to */
 const HD_ORDER = { rTab: () => HDTABS.map(x => x[0]), rWho: () => WHO_OPTS().map(x => x[0]), rSub: () => (HDSUBS[S.rTab] || []).map(x => x[0]) };
@@ -343,8 +337,8 @@ function animalsSheetFor(t) {
 
 /* ---------- Help Desk per device ---------- */
 function vHelpDesk(parts) {
-  const id = parts[1] || null;
-  if (isPhone()) return id ? paneRequest(id, { cls: 'pane--fill' }) : paneHelpDesk({ cls: 'pane--fill' });
-  const cur = id || (hdList(S.rTab)[0] || {}).id;
-  return paneHelpDesk({ cls: isLand() ? 'pane--w420' : 'pane--w360', cur }) + (cur ? paneRequest(cur, { cls: 'pane--fill' }) : pane('pane--fill', topbar({ title: 'Request' }), empty1('No requests here')));
+  const id = parts[1] || null; S.land = 'requests';
+  if (isPhone()) return id ? paneRequest(id, { cls: 'pane--fill' }) : paneDietHome({ cls: 'pane--fill' });
+  const cur = id || (hdList(S.rTab, 'diet', S.rSub)[0] || {}).id;
+  return paneDietHome({ cls: isLand() ? 'pane--w400' : 'pane--w340', cur }) + (cur ? paneRequest(cur, { cls: 'pane--fill' }) : pane('pane--fill', topbar({ title: 'Request' }), empty1('No requests here')));
 }
