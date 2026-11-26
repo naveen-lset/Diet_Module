@@ -22735,14 +22735,13 @@ const DEFAULT_LAYOUT = [
  * for priority; see it for the distinction.
  */
 const V2_LAYOUT = [
-  /* DIET MODULE PROTOTYPE (owner, 18 Nov 2026: "here only Diet & Help Desk module only"): the Home shows these two modules and no other */
+  /* DIET MODULE PROTOTYPE (owner, 18 Nov 2026: only Diet & Help Desk; 26 Nov 2026: Help Desk moved inside Diet, "In Home Page Remove Help Desk"): the Home shows Diet only */
   { variantId: 'diet.photo',         size: 'medium' },
-  { variantId: 'helpdesk.default',   size: 'medium' },
 ]
 /* THE V2 SEED HAS A NUMBER OF ITS OWN, as V4's does: a v2r grid saved from an
    older seed — the 280:3521 page, or the V4 list V2 borrowed on 24 Sep — is
    dropped for this one rather than kept for ever. */
-const V2_SEED = 10   /* 9: only Diet and Help Desk, for the Diet module prototype (18 Nov 2026) · 7: the insight cards (6 Oct 2026) · 8: Helpdesk (17 Oct 2026) */
+const V2_SEED = 11   /* 11: Diet only, Help Desk lives inside it (26 Nov 2026) · 9: only Diet and Help Desk, for the Diet module prototype (18 Nov 2026) · 7: the insight cards (6 Oct 2026) · 8: Helpdesk (17 Oct 2026) */
 
 /* V2 ON A PHONE · Figma 903:2 "Home · Mobile (5 Oct)", its Module Grid
    (903:533) row by row — two columns of 173 in rows of 115.3, 12 apart:
@@ -22757,11 +22756,10 @@ const V2_SEED = 10   /* 9: only Diet and Help Desk, for the Diet module prototyp
    The frame draws no Command Centre banner and no Animals count; neither is
    seeded here (both stay addable). From 744 up V2_LAYOUT is untouched. */
 const V2_PHONE_LAYOUT = [
-  /* DIET MODULE PROTOTYPE (owner, 18 Nov 2026: "here only Diet & Help Desk module only"): the Home shows these two modules and no other */
+  /* DIET MODULE PROTOTYPE (owner, 18 Nov 2026: only Diet & Help Desk; 26 Nov 2026: Help Desk moved inside Diet, "In Home Page Remove Help Desk"): the Home shows Diet only */
   { variantId: 'diet.photo',         size: 'medium' },
-  { variantId: 'helpdesk.default',   size: 'medium' },
 ]
-const V2_PHONE_SEED = 4   /* 3: only Diet and Help Desk (18 Nov 2026) · 2: Helpdesk (17 Oct 2026) */
+const V2_PHONE_SEED = 5   /* 5: Diet only (26 Nov 2026) · 3: only Diet and Help Desk (18 Nov 2026) · 2: Helpdesk (17 Oct 2026) */
 
 /* THE WEB'S CARDS ARE THE TABLET'S (owner, 8 Oct 2026: "Tablet View how
    we are Showing same way"): V2_LAYOUT's list, at V2_LAYOUT's sizes, in four
@@ -22779,11 +22777,10 @@ const V2_PHONE_SEED = 4   /* 3: only Diet and Help Desk (18 Nov 2026) · 2: Help
    Observation Notes sits under the grid in the same panel and Pending in the
    right column, so neither is a grid card here. Seed 5. */
 const V2_DESK_LAYOUT = [
-  /* DIET MODULE PROTOTYPE (owner, 18 Nov 2026: "here only Diet & Help Desk module only"): the Home shows these two modules and no other */
+  /* DIET MODULE PROTOTYPE (owner, 18 Nov 2026: only Diet & Help Desk; 26 Nov 2026: Help Desk moved inside Diet, "In Home Page Remove Help Desk"): the Home shows Diet only */
   { variantId: 'diet.photo',         size: 'medium' },
-  { variantId: 'helpdesk.default',   size: 'medium' },
 ]
-const V2_DESK_SEED = 8   /* 7: only Diet and Help Desk (18 Nov 2026) · 6: Helpdesk (17 Oct 2026) */
+const V2_DESK_SEED = 9   /* 9: Diet only (26 Nov 2026) · 7: only Diet and Help Desk (18 Nov 2026) · 6: Helpdesk (17 Oct 2026) */
 
 /**
  * V3 · NODE 506:10213's OWN ORDER, ROW BY ROW.
@@ -54024,7 +54021,7 @@ if (document.documentElement.dataset.review && isV2()) {
     ['medical', ['pharmacy', 'necropsy']],
     ['animal', ['species', 'training', 'mortality', 'fetal', 'eggs', 'focus']],
     ['operations', ['housing', 'diet', 'audit']],
-    ['admin', ['helpdesk', 'announcements', 'users', 'security', 'reports', 'communication']],
+    ['admin', ['announcements', 'users', 'security', 'reports', 'communication']],
   ]
   /* SEVENTEEN (owner, 21 Oct 2026: "Remove: Natality, Animals, Approvals") */
   const RENAME = { species: 'Collection', diet: 'Diet', helpdesk: 'Help Desk' }
@@ -57450,7 +57447,7 @@ if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
 /* Added for the Antz Diet module prototype (diet-module/). The other changes in this copy: the person is Yeswanth (was Sourav Tambe), and the module grid seeds only Diet and Help Desk (V2_LAYOUT, V2_PHONE_LAYOUT, V2_DESK_LAYOUT; owner, 18 Nov 2026).
    the Diet and Help Desk modules open the new Diet and Help Desk screens instead of their placeholder pages. */
 (function () {
-  var OPEN = { diet: 'diets', helpdesk: 'requests' };
+  var OPEN = { diet: 'diets' };   /* Help Desk lives inside Diet now (26 Nov 2026) */
   document.addEventListener('click', function (e) {
     /* a module's own tile (All Modules) carries data-mod; a card on the Home grid carries its variant (diet.photo, helpdesk.default) */
     var c = e.target.closest('#moduleGrid .card[data-variant]'), t = e.target.closest('[data-mod]');

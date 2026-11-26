@@ -117,7 +117,7 @@ const DIET_META = {
   'D-286': { cert: ['u-narendra', -12], kcert: ['u-suresh', -11], note: 'Cut chicken on the bone.' },
   'D-501': { cert: ['u-narendra', -30], reason: 'Breeding' },
   'D-509': { cert: ['u-narendra', -40], reason: 'Moult' },
-  'D-307': { cert: ['u-hydar', -3], kcert: ['u-suresh', -3], site: 'Feed at dusk; the fish hide in daylight.' },
+  'D-307': { cert: ['u-hydar', 0], kcert: ['u-suresh', -3], site: 'Feed at dusk; the fish hide in daylight.' },
   'D-308': { reason: 'Trial diet', remarks: 'Two weeks of live food before the breeding trial.' },
   'D-310': { cert: ['u-amruth', -7], kcert: ['u-suresh', -6], note: 'Fruit at room temperature. Remove seeds from papaya.', remark: 'No pineapple: too acidic for two of the birds.' },
   'D-311': { site: 'Eggs go in the nest-side tray, not the main bowl.' },
@@ -322,6 +322,18 @@ const HISTORY_RAW = [
   [-34, '11:20', 'u-hydar', 'created', 'D-330', 195022, 'species', null, { created: 1 }, 'Behavioural', 'Kept ready for a foraging trial.'],
 ];
 
+/* how a diet's amounts are given, as Kitchen & Diet's quantity_mode (antz_ktn_diet_plans.quantity_mode: standard | sex | age | weight).
+   Sex: daily_amount_male / daily_amount_female. Age and weight: antz_ktn_diet_plan_bands (kind age|weight, unit years|kg, from, to; open-ended
+   when to is empty) and one amount per band (antz_ktn_diet_plan_item_band_qtys). A diet not listed here is Standard: one amount for every animal.
+   share: each band's amount as a share of the diet line's own amount (demo) */
+const QMODES = {
+  'D-310': { mode: 'sex', bands: [['Male'], ['Female']], share: [1.1, 0.9] },
+  'D-263': { mode: 'age', unit: 'years', bands: [['0–1 y', 0, 1], ['1–5 y', 1, 5], ['5+ y', 5, null]], share: [0.4, 0.7, 1] },
+  'D-273': { mode: 'weight', unit: 'kg', bands: [['< 7 kg', 0, 7], ['7–9 kg', 7, 9], ['9+ kg', 9, null]], share: [0.8, 1, 1.2] },
+};
+/* a band's amount from the line's amount, rounded as a kitchen weighs it: 5 g or 5 ml, 0.05 kg or ltr, whole pieces (never under 1) */
+const bandQty = (qty, unit, share) => unit === 'pcs' ? Math.max(1, Math.round(qty * share)) : ['kg', 'ltr'].includes(unit) ? Math.round(qty * share * 20) / 20 : Math.max(5, Math.round(qty * share / 5) * 5);
+
 /* ---------- build the data set ---------- */
 let ITEM_ID = {};
 function SEED(t) {
@@ -349,6 +361,9 @@ function SEED(t) {
       ? { item: ITEM_ID[n], qty, unit, prep, cut, days: WK.daily, cad: days.every ? { every: days.every, from: addDays(t, days.from) } : { monthly: days.monthly } }
       : { item: ITEM_ID[n], qty, unit, prep, cut, days }) })) };
   });
+  diets.forEach(d => { const q = QMODES[d.id]; if (!q) return;
+    d.qmode = { mode: q.mode, unit: q.unit || null, bands: q.bands.map(([label, from = null, to = null]) => ({ label, from, to })) };
+    d.meals.forEach(m => m.items.forEach(l => { l.bq = q.share.map(x => bandQty(l.qty, l.unit, x)); })); });
   const assigns = ASSIGN_RAW(t).map(([diet, sp, level, ref, start, end, req, recur, group], i) => ({ id: 'AS-' + (i + 1), diet, sp, level, ref: ref === 'CASS-PB1' ? OLD : ref, start: start || null, end: end || null, req: req || null, recur: !!recur, group: group || null }));
   /* a seed change names only what differs; the rest of the line is the diet's own */
   const encOf = Object.fromEntries(enclosures.map(e => [e.id, e])), secOf = Object.fromEntries(sections.map(x => [x.id, x]));
