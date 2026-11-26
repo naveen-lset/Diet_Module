@@ -158,7 +158,8 @@ const lvlOf = sp => { const l = S.lvl[sp] || 'species'; return levelsOf(sp).incl
 function spHead(sp, close = '') {
   const as = spAnimals(sp.id, S.site), n = k => new Set(as.map(a => pathOfAnimal(a)[k])).size;
   const stats = [[as.length, 'Population'], [n('site'), n('site') === 1 ? 'Site' : 'Sites'], [n('section'), n('section') === 1 ? 'Section' : 'Sections'], [n('enclosure'), n('enclosure') === 1 ? 'Enclosure' : 'Enclosures']];
-  return `<div class="sphd">${close ? `<div class="sphd__bar"><button class="az-iconbtn" onclick="${close}" aria-label="Close">${I('close')}</button></div>` : ''}<span class="sphd__k">Species</span><b class="sphd__n">${esc(sp.name)}</b><i class="sphd__s">${esc(sp.sci)}</i>
+  /* on Version History the stats step aside, so the versions have the room (owner, 26 Nov 2026) */
+  return `<div class="sphd${S.spView === 'hist' ? ' sphd--min' : ''}">${close ? `<div class="sphd__bar"><button class="az-iconbtn" onclick="${close}" aria-label="Close">${I('close')}</button></div>` : ''}<span class="sphd__k">Species</span><b class="sphd__n">${esc(sp.name)}</b><i class="sphd__s">${esc(sp.sci)}</i>
     <div class="sphd__stats">${stats.map(([v, l]) => `<span><b>${v}</b><small>${l}</small></span>`).join('')}</div></div>`;
 }
 /* a species has two tabs (owner, 26 Nov 2026): its Diets, and its Version History (js/versions.js) */
@@ -200,7 +201,7 @@ function paneSpecies(spId, { cls = '', cur = null } = {}) {
   return pane(cls + (spFab(spId) ? ' has-fab' : ''), spHead(sp) + p.chips, `<div class="body">${p.body}</div>`, '', `sp-${spId}`).replace(/<\/section>$/, `${spFab(spId)}</section>`);
 }
 /* Raise request from a species: the request starts with it, whole species (a species without a diet has its own button) */
-const spFab = spId => canRaise(me()) && slotsOf(spId).length ? `<button class="az-fab az-fab--pill dfab" onclick="SG=null;go('#/suggest?sp=${spId}')">${I('edit_note')}<span class="dfab__t">Suggest A Change</span></button>` : '';
+const spFab = spId => canRaise(me()) && slotsOf(spId).length && S.spView !== 'hist' ? `<button class="az-fab az-fab--pill dfab" onclick="SG=null;go('#/suggest?sp=${spId}')">${I('edit_note')}<span class="dfab__t">Suggest A Change</span></button>` : '';
 /* the phone's species: a bottom sheet over Diet, with the species header */
 function speciesSheet(spId) {
   const sp = species(spId), p = speciesParts(spId, null);

@@ -2310,3 +2310,158 @@ button.step{cursor:pointer}
 .pk-fc .az-chip{flex:none;background:var(--displaybgSecondary);color:var(--OnPrimaryContainer)}
 .pk-fc .az-chip[aria-selected="true"]{background:var(--OnPrimaryContainer);color:var(--white)}
 .pk-fp__foot{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+
+/* ==================== round 32 (owner, 26 Nov 2026) ==================== */
+/* Version History, option A: versions on one line by day; a card opens in place */
+.sphd--min .sphd__stats{display:none}
+.vh__top{display:flex;align-items:center;gap:12px;padding:4px 2px 0}
+.vh__t{display:flex;flex-direction:column;min-width:0}
+.vh__t b{font:var(--t-minor-medium);color:var(--neutralPrimary)}
+.vh__t span{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.vh__f{margin-left:auto;display:flex;align-items:center;gap:4px;height:40px;max-width:55%;padding:0 8px 0 12px;border:1px solid var(--OutlineVariant);border-radius:var(--r-8);background:var(--white);font:var(--t-body-medium);color:var(--OnPrimaryContainer);cursor:pointer}
+.vh__f span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vf-menu{min-width:260px}
+.vf-menu button{width:100%;gap:12px;text-align:left}
+.vf-menu small{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.vf-menu .az-i{color:var(--Primary)}
+.vday{font:500 12px/16px var(--font);letter-spacing:.04em;text-transform:uppercase;color:var(--neutralSecondary);margin:16px 0 8px 2px}
+.tl{overflow-anchor:none}
+.tv{position:relative;display:grid;grid-template-columns:40px 1fr;gap:12px;padding-bottom:12px}
+.tv::before{content:"";position:absolute;left:19px;top:28px;bottom:-16px;width:2px;background:var(--OutlineVariant)}
+.tl > .tv:last-child::before{display:none}
+.tv__n{width:40px;height:28px;border-radius:var(--r-8);display:grid;place-items:center;background:var(--white);color:var(--OnPrimaryContainer);font:600 13px/28px var(--font);position:relative;z-index:1}
+.tv.cur .tv__n{background:var(--OnPrimaryContainer);color:var(--white)}
+.tv__c{background:var(--white);border-radius:var(--r-12);padding:12px 14px;display:flex;flex-direction:column;gap:2px;cursor:pointer;min-width:0}
+.tv.cur .tv__c{box-shadow:inset 0 0 0 2px var(--Primary)}
+.tv__k{display:flex;justify-content:space-between;align-items:center;gap:8px;font:500 12px/20px var(--font);color:var(--neutralSecondary)}
+.tv__d{font:var(--t-body-medium);color:var(--neutralPrimary)}
+.tv__w{font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.tv__by{display:flex;align-items:center;gap:6px;margin-top:6px;font:var(--t-body-regular);color:var(--neutralSecondary)}
+.vcks{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.vck{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:var(--r-full);font:500 12px/24px var(--font);background:#DDF3E6;color:#00703A}
+.vck .az-i{font-size:16px}
+.vck--no{background:var(--neutral05);color:var(--neutralSecondary)}
+.vmore{display:none;flex-direction:column;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--neutral05)}
+.tv.open .vmore{display:flex}
+.vmore p{display:flex;gap:8px;align-items:flex-start;margin:0;font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.vmore p .az-i{flex:none;color:var(--Outline)}
+.vmore p .az-i--fill{color:var(--Primary)}
+.vmore__why{font-style:italic;color:var(--neutralSecondary)!important}
+.vmore__go{align-self:flex-end;display:inline-flex;align-items:center;margin-top:2px}
+
+/* the calendar popup and the date field */
+.calp__seg{margin-bottom:12px}
+.calp__h{display:flex;align-items:center;justify-content:space-between;margin:0 0 8px}
+.calp__h b{font:var(--t-minor-medium);color:var(--neutralPrimary)}
+.calp{display:grid;grid-template-columns:repeat(7,1fr);gap:2px 0;text-align:center}
+.calp > i{font:500 12px/28px var(--font);font-style:normal;color:var(--neutralSecondary)}
+.calp__d{height:44px;border:0;background:none;font:var(--t-body-regular);color:var(--neutralPrimary);cursor:pointer;padding:0}
+.calp__d span{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:50%}
+.calp__d:disabled{color:var(--OutlineVariant);cursor:default}
+.calp__d.today span{box-shadow:inset 0 0 0 1.5px var(--Primary);color:var(--Primary);font-weight:500}
+.calp__d.on span{background:var(--OnPrimaryContainer);color:var(--white);box-shadow:none;font-weight:500}
+.calp__d.in{background:var(--displaybgSecondary)}
+.calp__d.in.s{border-radius:22px 0 0 22px}
+.calp__d.in.e{border-radius:0 22px 22px 0}
+.calp__d.in.s.e{border-radius:22px}
+.calp__sum{display:flex;gap:8px;align-items:center;margin-top:12px;padding:10px 12px;border-radius:var(--r-8);background:var(--displaybgSecondary);font:var(--t-body-medium);color:var(--OnSurfaceVariant)}
+.calp__sum .az-i{color:var(--OnPrimaryContainer)}
+.calf{display:flex;align-items:center;gap:10px;width:100%;text-align:left}
+.calf > .az-i:first-child{color:var(--OnPrimaryContainer)}
+.calf .grow{display:flex;flex-direction:column}
+.calf small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.calf__chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.wf:has(.calf) > .wf__h > b{display:none}
+
+/* the request page: When as rows with the full dates */
+.whn{display:flex;flex-direction:column}
+.whn__r{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:10px 0;border-top:1px solid var(--neutral05)}
+.whn__r:first-child{border-top:0;padding-top:0}
+.whn__r > span{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.whn__r > b{font:var(--t-body-medium);color:var(--neutralPrimary);text-align:right}
+.whn__r > b small{display:block;font:var(--t-body-regular);color:var(--neutralSecondary)}
+.whn__chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 0 10px}
+.whn__chips span{height:28px;padding:0 10px;border-radius:var(--r-full);background:var(--displaybgSecondary);font:500 13px/28px var(--font);color:var(--OnPrimaryContainer)}
+
+/* Suggest A Change: the answers on the page; the review only reads them back */
+.sg-att{display:flex;flex-direction:column;gap:10px}
+.sg-prio{display:flex;flex-wrap:wrap;gap:8px}
+.sg-prio .az-chip{height:40px;gap:6px}
+.sg-prio .az-chip[aria-selected="true"]{background:var(--OnPrimaryContainer);color:var(--white)}
+.sg-prio__t{margin-top:8px;font:var(--t-body-regular);color:var(--neutralSecondary)}
+.rv-ros{display:flex;flex-direction:column;background:var(--white);border-radius:var(--r-12);padding:4px 14px;margin-top:12px}
+.rv-ro{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:12px 0;border-top:1px solid var(--neutral05)}
+.rv-ro:first-child{border-top:0}
+.rv-ro > span{font:var(--t-body-regular);color:var(--neutralSecondary);flex:none}
+.rv-ro > b{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font:var(--t-body-medium);color:var(--neutralPrimary);text-align:right}
+.rv-ro > b small{font:var(--t-body-regular);color:var(--neutralSecondary)}
+.rv-ro > b.ph{color:var(--Error)}
+.rv-ro__f{display:inline-flex;align-items:center;gap:6px;font:var(--t-body-regular)}
+.rv-ro > b .prio-ic{display:inline-grid;vertical-align:middle;margin-right:6px}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.shake{animation:shake .4s}
+
+/* Version History, reworked (owner, 26 Nov 2026: "there is no spacing; what is the background colour?"): a white page, no boxes; each version
+   a row on the line with room around it; a day is a quiet heading with a hairline; what opens on a tap sits in a light grey well */
+.spsheet__body:has(.tl),.pane__body:has(.tl){background:var(--white)}
+.body:has(> .tl){padding:20px 20px 40px}
+.vh__top{padding:0 0 4px}
+.vh__t b{font:600 18px/26px var(--font)}
+.vday{display:flex;align-items:center;gap:12px;margin:24px 0 16px;font:500 12px/16px var(--font);letter-spacing:.06em;color:var(--neutralSecondary)}
+.vday::after{content:"";flex:1;height:1px;background:var(--neutral05)}
+.tv{grid-template-columns:44px 1fr;gap:14px;padding-bottom:24px}
+.tv::before{left:21px;top:30px;bottom:0;background:var(--neutral05)}
+.tl > .tv:has(+ .vday)::before{bottom:-40px}
+.tv__n{width:44px;height:28px;border-radius:var(--r-full);background:var(--white);box-shadow:inset 0 0 0 1.5px var(--OutlineVariant);color:var(--OnSurfaceVariant)}
+.tv.cur .tv__n{background:var(--OnPrimaryContainer);box-shadow:none;color:var(--white)}
+.tv__c,.tv.cur .tv__c{background:none;box-shadow:none;border-radius:0;padding:2px 0 0;gap:4px}
+.tv__k{font:500 13px/20px var(--font)}
+.tv__d{font:var(--t-minor-medium);color:var(--neutralPrimary)}
+.tv__w{font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.tv__by{margin-top:8px}
+.vcks{margin-top:10px}
+.vmore{margin-top:12px;padding:12px 14px;border-top:0;border-radius:var(--r-8);background:#F4F6F6;gap:8px}
+.vmore__go{margin-top:4px}
+
+/* Version History, third pass (owner, 26 Nov 2026): proper full-width tabs as Diet Details has, the page colour behind, one white card per version */
+.sptabs,.spsheet .sptabs{margin:0;flex:none;background:var(--white)}
+.sptabs .az-tab{flex:1}
+.spsheet__body:has(.vlist2),.pane__body:has(.vlist2){background:var(--displaybgSecondary)}
+.body:has(> .vlist2){padding:16px 16px 40px}
+.vlist2{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.vc2{background:var(--white);border-radius:var(--r-12);padding:16px;display:flex;flex-direction:column}
+.vc2.cur{box-shadow:inset 0 0 0 2px var(--Primary)}
+.vc2__h{display:flex;align-items:center;gap:10px}
+.vc2__n{display:inline-grid;place-items:center;min-width:36px;height:24px;padding:0 8px;border-radius:var(--r-8);background:var(--displaybgSecondary);color:var(--OnPrimaryContainer);font:600 13px/24px var(--font)}
+.vc2.cur .vc2__n{background:var(--OnPrimaryContainer);color:var(--white)}
+.vc2__k{flex:1;font:var(--t-body-medium);color:var(--OnSurfaceVariant)}
+.vc2__d{margin-top:10px;font:var(--t-minor-medium);color:var(--neutralPrimary)}
+.vc2__rows{display:flex;flex-direction:column;margin-top:12px;border-top:1px solid var(--neutral05)}
+.vr{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--neutral05)}
+.vr > .az-i{flex:none;color:var(--Outline);margin-top:2px}
+.vr > .az-i--fill{color:var(--Primary)}
+.vr__t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.vr__t small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.vr__t b{font:var(--t-body-medium);color:var(--neutralPrimary)}
+.vr__t b span{font-weight:400;color:var(--neutralSecondary)}
+.vr__w{font:var(--t-body-regular);color:var(--OnSurfaceVariant)}
+.vc2__f{display:flex;justify-content:flex-end;margin-top:10px}
+.vc2__f .lnk{display:inline-flex;align-items:center}
+
+/* Version History = option A (owner, 26 Nov 2026): days, the version line on the left, a white card each, on the page colour */
+.spsheet__body:has(.tl2),.pane__body:has(.tl2){background:var(--displaybgSecondary)}
+.body:has(> .tl2){padding:16px 16px 40px}
+.tl2 .vday{margin:20px 0 12px}
+.tl2 .vday::after{background:var(--OutlineVariant);opacity:.6}
+.tl2 .tv{grid-template-columns:40px 1fr;gap:12px;padding-bottom:12px}
+.tl2 .tv::before{left:19px;top:30px;bottom:0;background:var(--OutlineVariant)}
+.tl2 > .tv:has(+ .vday)::before{bottom:-36px}
+.tl2 > .tv:last-child::before{display:none}
+.tl2 .tv__n{width:40px;height:28px;border-radius:var(--r-8);background:var(--white);box-shadow:none;color:var(--OnPrimaryContainer)}
+.tl2 .tv.cur .tv__n{background:var(--OnPrimaryContainer);color:var(--white)}
+.tl2 .vc2{padding:14px 16px;min-width:0}
+.tl2 .vc2__d{margin-top:6px}
+.tl2 .vc2__rows{margin-top:10px}
+.tl2 .vr{padding:10px 0;gap:10px}
+.tl2 .vc2__f{margin-top:8px}
+.tl2 > .tv:has(+ .vday)::before{bottom:0}
