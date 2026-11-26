@@ -66,6 +66,7 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
 │   ├── diets.js          Diet module screens
 │   ├── history.js        A diet's change history
 │   ├── versions.js       A species' Version History (v1, v2 … for the whole species) and View Diet
+│   ├── calpick.js        The calendar popup and date field used by the request form
 │   ├── helpdesk.js       Help Desk list, request facts, the request page (boxes), status bar, Activity
 │   ├── form.js           New Request (and Edit): the departments' forms and the diet request types
 │   ├── suggest.js        Diet change: Suggest a change (anybody), Review request, Save it as; the species (scope picker), diet and reason search sheets
