@@ -222,7 +222,7 @@ function applyChanges(meals, cs) {
     const line = { item: c.to, qty: c.qty, unit: c.unit, prep: c.prep || '', cut: c.cut || '', days: c.days ?? EVERY_DAY, cad: c.cad || null };
     if (c.op === 'add') m.items.push(line);
     else if (c.op === 'remove') m.items = m.items.filter(i => i.item !== c.item);
-    else m.items = m.items.map(i => i.item === c.item ? line : i);
+    else m.items = m.items.map(i => i.item === c.item ? { ...line, ...(i.bq ? { bq: scaleBq(i, line) } : {}) } : i);
   });
   return out.filter(m => m.items.length);
 }

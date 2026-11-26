@@ -948,7 +948,8 @@ function dietForm(d) {
   const typeIn = dt ? `<span class="dtsel__ic">${I(dt[4])}</span><span class="grow"><b>${esc(dt[2])}</b><small>${esc(g[1])}</small></span>` : '<span class="grow">What do you need?</span>';
   const type = `<div class="az-field" id="f-dtype"><span class="az-label">Request Type <span class="az-req">*</span></span>${d.edit && dt ? `<div class="az-input az-input--select dtsel" aria-disabled="true">${typeIn}</div>`
     : `<button class="az-input az-input--select dtsel${dt ? '' : ' az-input--placeholder'}" onclick="dtypeSheet()" aria-haspopup="dialog">${typeIn}${I('keyboard_arrow_down')}</button>`}</div>`;
-  const out = [section('category', 'Request Details', select('Requesting To', 'Diet', 'deptSheet()', { disabled: !!d.edit }) + type, true)];
+  /* requests are raised inside the Diet module only (owner, 26 Nov 2026): Requesting To is Diet and cannot change */
+  const out = [section('category', 'Request Details', select('Requesting To', 'Diet', '', { disabled: true }) + type, true)];
   if (!dt) return out.join('');
   out.push(section('pets', 'For', t ? forPick(d) : select('', '', 'dfWho()', { placeholder: 'Choose an animal, a place or the species', id: 'f-sp', icon: 'search' }), true));
   if (t) out.push(dtypeFields(d));

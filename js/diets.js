@@ -68,14 +68,18 @@ function markedGroups(d, h, day, click) {
   const L = h.lines || [];
   return d.meals.map(m => {
     const rows = m.items.filter(l => fedOn(l, day)).map(l => { const c = L.find(x => x.feed === m.feed && x.op !== 'remove' && x.now && x.now.item === l.item);
-      return { ...(c ? lineRow(c.was, histChange(c)) : lineRow(l)), click: click ? `${click}('${d.id}',${m.feed},${l.item})` : '' }; });
+      /* a diet given by bands keeps its band amounts on a changed line: now as the diet has them, was in the same proportion */
+      return { ...(c ? lineRow(l.bq && c.was ? { ...c.was, bq: scaleBq(l, c.was) } : c.was, { ...histChange(c), ...(l.bq ? { bq: l.bq } : {}) }) : lineRow(l)), click: click ? `${click}('${d.id}',${m.feed},${l.item})` : '' }; });
     L.filter(x => x.feed === m.feed && x.op === 'remove' && fedOn(x.was, day)).forEach(x => rows.push(lineRow(x.was, { op: 'remove' })));
     return { feed: m.feed, rows };
   }).filter(g => g.rows.length);
 }
-const dietTabs = cur => `<div class="az-tabs" role="tablist">${thumb(true)}${[['species', 'Species Wise'], ['diets', 'Diet Wise']].map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${cur === k}" onclick="homeTab('${k}')">${l}</button>`).join('')}</div>`;
+/* the Diet module's three tabs (owner, 26 Nov 2026: Help Desk moves into Diet; every request is raised and followed here) */
+const openReqs = () => D.requests.filter(r => isDiet(r) && visibleTo(r, me()) && isOpen(r) && (r.by === S.user || r.approver === S.user)).length;
+const dietTabs = cur => `<div class="az-tabs" role="tablist">${thumb(true)}${[['species', 'Species Wise'], ['diets', 'Diet Wise'], ['requests', 'Requests']].map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${cur === k}" onclick="homeTab('${k}')">${l}${k === 'requests' && openReqs() ? `<span class="tabn">${openReqs()}</span>` : ''}</button>`).join('')}</div>`;
 /* switching tabs keeps them pinned if they were, and shows the new list from its start */
 function homeTab(k) {
+  if (k === 'requests') { go('#/requests'); swapFx('.pane--home .list'); return; }
   const b = document.querySelector('.pane--home .pane__body'), r = b && b.querySelector('.reqsum, .dstats');
   if (b) b.scrollTop = Math.min(b.scrollTop, r ? r.offsetHeight : 0);
   S.land = k; go('#/diets'); swapFx('.pane--home .list');
@@ -149,7 +153,13 @@ function spHead(sp, close = '') {
   return `<div class="sphd">${close ? `<div class="sphd__bar"><button class="az-iconbtn" onclick="${close}" aria-label="Close">${I('close')}</button></div>` : ''}<span class="sphd__k">Species</span><b class="sphd__n">${esc(sp.name)}</b><i class="sphd__s">${esc(sp.sci)}</i>
     <div class="sphd__stats">${stats.map(([v, l]) => `<span><b>${v}</b><small>${l}</small></span>`).join('')}</div></div>`;
 }
+/* a species has two tabs (owner, 26 Nov 2026): its Diets, and its Version History (js/versions.js) */
+const spViewTabs = spId => `<div class="az-tabs sptabs" role="tablist">${thumb(true)}${[['diets', 'Diets'], ['hist', 'Version History']].map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${(S.spView || 'diets') === k}" onclick="S.spView='${k}';render()">${l}</button>`).join('')}</div>`;
 function speciesParts(spId, cur) {
+  if (S.spView === 'hist') return { chips: spViewTabs(spId), body: versionsTab(spId) };
+  const p = speciesParts0(spId, cur); return { chips: spViewTabs(spId) + p.chips, body: p.body };
+}
+function speciesParts0(spId, cur) {
   const l = lvlOf(spId);
   if (!slotsOf(spId).length) return { chips: '', body: `<div class="empty1"><div>No diet added for ${esc(species(spId).name)}${canRaise(me()) ? `<button class="az-btn empty1__btn" onclick="go('#/new?dept=diet&sp=${spId}&kind=new')">${I('add_circle')}Request A Diet</button>` : ''}</div></div>` };
   /* one line that scrolls sideways (owner, 19 Nov 2026: "make it horizontal scroll") */
@@ -287,7 +297,7 @@ function paneDiet(asgId, { cls = '', back = '', wide = isTab() } = {}) {
   const chg = ended(a) ? null : dietChanged(d), coming = ended(a) ? [] : dietComing(a);
   const groups = chg && (chg.h.lines || []).length ? markedGroups(d, chg.h, S.day, 'itemSheet') : dietGroups(d, S.day, 'itemSheet');
   const cards = (coming.length ? comingCard(coming) : '') + (chg ? changedCard(chg) : '');
-  const body = S.dTab === 'nu' ? nutriTab(d) : S.dTab === 'ap' ? appliedTo(a) : S.dTab === 'hi' ? historyTab(a, d) : cards + days + `<div class="dtable">${mealTable(groups, wide, S.day == null)}</div>` + notesBlock(d);
+  const body = S.dTab === 'nu' ? nutriTab(d) : S.dTab === 'ap' ? appliedTo(a) : S.dTab === 'hi' ? historyTab(a, d) : cards + days + `<div class="dtable">${mealTable(groups, wide, S.day == null, { bands: qBands(d) })}</div>` + notesBlock(d);
   const fab = S.dTab === 'ov' && canRaise(me()) && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="raisePick('${a.id}')">${I('edit_note')}<span class="dfab__t">Suggest A Change</span></button>` : '';
   return pane(cls + (fab ? ' has-fab' : ''), head + tabs, `<div class="body">${body}</div>`, '', `diet-${asgId}`).replace(/<\/section>$/, `${fab}</section>`);
 }
@@ -377,6 +387,7 @@ function dietInfoSheet(id) {
   openSheet(() => ({ title: 'Diet Info', body: `<div class="dinfo"><img src="${spPhoto(a.sp)}" alt=""><span><b>${esc(d.name)}</b><span>${esc(slotKind(a))} · ${esc(sp.name)}</span></span></div>
     <div class="rsec">${a.group ? r('location_on', 'For', `<b>${esc(sp.name)} ${a.group.kind === 'age' ? 'aged' : a.group.kind === 'sex' ? '·' : 'of'} ${esc(a.group.kind === 'sex' ? GROUP_WORD(a.group) : a.group.label)}</b>`) : ''}
       ${r('event', 'When', `<b>${esc(!a.start && !a.end ? 'All year' : slotWhen(a))}</b>`)}
+      ${r('scale', 'Amounts', `<b>${esc(qModeText(d))}</b>${d.qmode && d.qmode.mode !== 'sex' ? `<p>${esc(d.qmode.bands.map(b => b.label).join(' · '))}</p>` : ''}`)}
       ${others.length ? r('share', 'Shared With', others.map(o => { const oa = D.assigns.find(x => x.diet === d.id && x.sp === o.id && !ended(x)); return `<a class="lnk" href="#/diets/${o.id}/${oa.id}">${esc(o.name)}${I('chevron_right', 18)}</a>`; }).join('')) : ''}
       ${open.length ? r('assignment', open.length === 1 ? 'Open Request' : 'Open Requests', open.map(x => `<a class="lnk" href="#/requests/${x.id}">${x.id} · ${esc(stateOf(x).label)}</a>`).join('')) : ''}
       ${r('tag', 'Diet ID', `<p>${d.id}</p>`)}</div>` }));
@@ -390,7 +401,9 @@ function dietAnimalsSheet(id) {
 function itemSheet(dietId, f, it) {
   const d = diet(dietId), l = entryOf(d, f, it), x = item(it);
   const a = D.assigns.find(z => z.diet === dietId && location.hash.includes(z.id)) || D.assigns.find(z => z.diet === dietId), n = a ? followersOf(a).length : 0, total = toBase(l.qty, l.unit) * n;
-  openSheet(() => ({ title: `${esc(x.name)}${x.mix ? MIXTAG : ''}`, sub: `${I('schedule', 16)} ${bandText(feed(f))}`, body: `<div class="qcard"><span>Per animal</span><b>${qtyText(l.qty, l.unit)}</b>${n ? `<small>${plural(n, 'animal')} · ${qtyText(total, BASE[l.unit][0])} ${l.cad ? 'a feed' : 'a day'}</small>` : ''}</div>
+  const qb = qBands(d), qcard = qb && l.bq ? `<div class="qcard qcard--bands"><span>Per animal · ${esc(qb.by)}</span><span class="qbands">${qb.list.map((b, i) => `<span><small>${esc(b)}</small><b>${qtyText(l.bq[i], l.unit)}</b></span>`).join('')}</span></div>`
+    : `<div class="qcard"><span>Per animal</span><b>${qtyText(l.qty, l.unit)}</b>${n ? `<small>${plural(n, 'animal')} · ${qtyText(total, BASE[l.unit][0])} ${l.cad ? 'a feed' : 'a day'}</small>` : ''}</div>`;
+  openSheet(() => ({ title: `${esc(x.name)}${x.mix ? MIXTAG : ''}`, sub: `${I('schedule', 16)} ${bandText(feed(f))}`, body: `${qcard}
     <div class="mcard">${x.mix ? `<span class="mcard__k">Ingredients · per animal</span>${ingrChips(x, toBase(l.qty, l.unit))}`
       : `<span class="mcard__k">Preparation · Cut</span><b class="mcard__n">${esc(l.prep || 'As it comes')} · ${esc(l.cut || 'Whole')}</b>`}
       ${l.cad ? `<span class="mcard__k">Repeats</span><b class="mcard__n">${cadText(l.cad)}</b><span class="mcard__k">Next Feeds</span><span class="nextf">${nextFeeds(l, 3).map(s => `<span>${wday(s)} ${fmtDay(s)}</span>`).join('')}</span>`
@@ -398,7 +411,12 @@ function itemSheet(dietId, f, it) {
 }
 /* ---------- Diet per device ---------- */
 function vDiets(parts) {
-  const spId = parts[1] ? +parts[1] : null, asgId = parts[2] || null;
+  const spId = parts[1] ? +parts[1] : null, asgId = parts[2] === 'v' ? null : parts[2] || null;
+  /* View Diet of a version: the phone's own page; on the iPad it takes the species' place on the right, with Back to it */
+  if (parts[2] === 'v' && spId) {
+    if (isPhone()) return paneVersion(spId, +parts[3], { cls: 'pane--fill', back: `#/diets/${spId}` });
+    return paneDietHome({ cls: isLand() ? 'pane--w400' : 'pane--w340', cur: S.land === 'diets' ? null : spId }) + paneVersion(spId, +parts[3], { cls: 'pane--fill pane--dcol', back: `#/diets/${spId}` });
+  }
   if (isPhone()) {
     if (asgId) return paneDiet(asgId, { cls: 'pane--fill', back: '#/diets' });
     const home = paneDietHome({ cls: 'pane--fill' });

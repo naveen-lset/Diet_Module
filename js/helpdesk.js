@@ -6,10 +6,18 @@
 /* ---------- the list ---------- */
 /* sub: the chips under Approved (approved · in_progress · completed) and Closed (rejected · cancelled · deleted); 'all' for the tab counts */
 /* mine: only what waits on (or was decided by) this person, the Figma's "My Approvals" (Request Module, 25 Sep 2025) */
-const approvesAny = () => D.requests.some(r => r.approver === S.user && visibleTo(r, me()));
-function hdList(tab, deptId = S.rDept, sub = 'all', mine = S.rMine && approvesAny()) {
+/* (owner, 26 Nov 2026) Help Desk lives inside the Diet module now: only diet requests, and whose they are — My Requests (raised by me),
+   My Approvals (waiting on, or decided by, me) or All that I may see */
+const approvesAny = () => D.requests.some(r => isDiet(r) && r.approver === S.user && visibleTo(r, me()));
+const raisesAny = () => canRaise(me()) || D.requests.some(r => isDiet(r) && r.by === S.user);
+const WHO_OPTS = () => [...(raisesAny() ? [['mine', 'My Requests']] : []), ...(approvesAny() ? [['appr', 'My Approvals']] : []), ['all', 'All']];
+/* not chosen yet: My Requests when you have raised any, else My Approvals when some wait on you, else the first there is */
+const rWho = () => { const W = WHO_OPTS().map(o => o[0]); if (W.includes(S.rWho)) return S.rWho;
+  const has = k => D.requests.some(r => isDiet(r) && visibleTo(r, me()) && (k === 'mine' ? r.by === S.user : r.approver === S.user));
+  return W.find(k => k !== 'all' && has(k)) || W[0]; };
+function hdList(tab, deptId = 'diet', sub = 'all', who = rWho()) {
   const u = me(), q = S.rQ.trim().toLowerCase();
-  return D.requests.filter(r => visibleTo(r, u) && (!mine || r.approver === u.id) && (tab === 'all' || tabOf(r) === tab) && (!HDSUBS[tab] || sub === 'all' || r.state === sub) && (deptId === 'all' || r.dept === deptId) && (S.rPrio === 'all' || r.prio === S.rPrio)
+  return D.requests.filter(r => visibleTo(r, u) && isDiet(r) && (who === 'all' || (who === 'mine' ? r.by === u.id : r.approver === u.id)) && (tab === 'all' || tabOf(r) === tab) && (!HDSUBS[tab] || sub === 'all' || r.state === sub) && (S.rPrio === 'all' || r.prio === S.rPrio)
     && (!q || [r.id, r.title, r.text, dept(r.dept).name, isDiet(r) ? species(r.sp).name : ''].some(x => (x || '').toLowerCase().includes(q))))
     .sort((a, b) => (S.rSort === 'priority' ? PRIO_RANK[a.prio] - PRIO_RANK[b.prio] : 0) || (lastAt(a) < lastAt(b) ? 1 : -1));
 }
@@ -58,33 +66,32 @@ function hdCard(r, cur = false) {
     <span class="az-strip az-strip--${s.tone}">${I(s.icon, 20)}${esc(s.label)}<span class="az-strip__time">${stripTime(r)}</span></span></a>`;
 }
 function paneHelpDesk({ cls = '', cur = null } = {}) {
-  const deptsHere = DEPTS.filter(x => D.requests.some(r => r.dept === x.id && visibleTo(r, me())));
-  if (S.rDept !== 'all' && !deptsHere.some(x => x.id === S.rDept)) S.rDept = 'all';
   /* the phone has count tabs; the iPad has the same as one row of chips with counts, the selected one dark (Hospital iPad, 22 Sep 2026) */
   /* (owner, 20 Nov 2026: "no spacing, no animation at all") each row's highlight slides to the one tapped: a line under the count tabs, a dark
      pill under the chips; the cards then come in from the side the tap moved to (hdSet) */
   const tabs = isPhone() ? `<div class="az-counttabs az-counttabs--fit hdtabs" role="tablist">${thumb(true)}${HDTABS.map(([k, l]) => `<button class="az-counttab" role="tab" aria-selected="${S.rTab === k}" onclick="hdSet({rTab:'${k}',rSub:'all'})"><span class="az-counttab__in"><b>${hdList(k).length}</b><span>${l}</span></span></button>`).join('')}</div>`
     : `<div class="az-chips hdstat hdpills" role="tablist" aria-label="Status">${thumb()}${HDTABS.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S.rTab === k}" onclick="hdSet({rTab:'${k}',rSub:'all'})">${l} - ${hdList(k).length}</button>`).join('')}</div>`;
-  /* My Approvals | All (Figma Request Module, 25 Sep 2025), for anyone who approves requests */
-  const mineChips = approvesAny() ? `<span class="hdscope hdpills" role="tablist" aria-label="Whose requests">${thumb()}${[[true, 'My Approvals'], [false, 'All']].map(([v, l]) => `<button class="az-chip" role="tab" aria-selected="${!!S.rMine === v}" onclick="hdSet({rMine:${v}})">${l} - ${hdList(S.rTab, S.rDept, S.rSub, v).length}</button>`).join('')}</span>` : '';
-  const chips = `<div class="az-chips hdchips hdpills" role="tablist" aria-label="Department">${thumb()}${[{ id: 'all', name: 'All' }, ...deptsHere].map(x => `<button class="az-chip" role="tab" aria-selected="${S.rDept === x.id}" onclick="hdSet({rDept:'${x.id}'})">${x.name} - ${hdList(S.rTab, x.id, S.rSub).length}</button>`).join('')}</div>`;
+  /* whose requests: My Requests · My Approvals · All (only the ones this person has) */
+  const W = WHO_OPTS(), who = rWho();
+  const whoChips = W.length > 1 ? `<div class="az-chips hdchips hdpills" role="tablist" aria-label="Whose requests">${thumb()}${W.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${who === k}" onclick="hdSet({rWho:'${k}'})">${l}</button>`).join('')}</div>` : '';
   const search = S.rSearch ? `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="hd-q" placeholder="Search requests" value="${esc(S.rQ)}" oninput="S.rQ=this.value;render()" aria-label="Search requests"></label></div>` : '';
   /* under Approved (as the Help Desk app: All · Approved · In progress · Completed) and Closed (All · Rejected · Canceled · Deleted), each with its count; a chip with nothing in it is left out */
-  const subOpts = (HDSUBS[S.rTab] || []).filter(([k]) => k === 'all' || k === S.rSub || hdList(S.rTab, S.rDept, k).length);
-  const subs = subOpts.length > 2 ? `<div class="az-chips az-chips--sub hdpills" role="tablist" aria-label="${HDTABS.find(x => x[0] === S.rTab)[1]} requests">${thumb()}${subOpts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S.rSub === k}" onclick="hdSet({rSub:'${k}'})">${l} - ${hdList(S.rTab, S.rDept, k).length}</button>`).join('')}</div>` : '';
-  const list = hdList(S.rTab, S.rDept, S.rSub), filt = S.rPrio !== 'all';
-  const tools = `<span class="hdtools">${iconBtn('swap_vert', `Sort: ${S.rSort === 'priority' ? 'priority' : 'newest'}`, "S.rSort=S.rSort==='priority'?'newest':'priority';render();toast('Sorted by '+(S.rSort==='priority'?'priority':'newest'))")}<button class="az-iconbtn${filt ? ' on' : ''}" onclick="hdFilterSheet()" aria-label="Filter">${I('tune')}</button></span>`;
-  /* the phone: the chips on their own line, then Requests (n); the iPad: the chips share the line with sort and filter */
-  const count = isPhone() || !mineChips ? `${mineChips ? `<div class="hdscope-row">${mineChips}</div>` : ''}<p class="az-countline">Requests (${list.length})${tools}</p>` : `<p class="az-countline hdscope-line">${mineChips}${tools}</p>`;
-  const body = `<div class="body">${subs}${count}${list.length ? `<div class="list list--16 hdlist">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1('No requests here')}</div>${isPhone() ? `<a class="az-fab" href="#/new" aria-label="New request">${I('add_circle', 32)}</a>` : `<a class="az-fab az-fab--pill az-fab--no-nav" href="#/new">${I('add_circle')}New Request</a>`}`;
-  return pane(cls, topbar({ back: '#/home', title: 'Help Desk', end: whoBtn(), actions: iconBtn('search', 'Search requests', "S.rSearch=!S.rSearch;S.rQ='';render();setTimeout(()=>{const i=document.getElementById('hd-q');if(i)i.focus()},30)") }) + search + chips + tabs, body, '', 'hd');
+  const subOpts = (HDSUBS[S.rTab] || []).filter(([k]) => k === 'all' || k === S.rSub || hdList(S.rTab, 'diet', k).length);
+  const subs = subOpts.length > 2 ? `<div class="az-chips az-chips--sub hdpills" role="tablist" aria-label="${HDTABS.find(x => x[0] === S.rTab)[1]} requests">${thumb()}${subOpts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S.rSub === k}" onclick="hdSet({rSub:'${k}'})">${l} - ${hdList(S.rTab, 'diet', k).length}</button>`).join('')}</div>` : '';
+  const list = hdList(S.rTab, 'diet', S.rSub), filt = S.rPrio !== 'all';
+  const tools = `<span class="hdtools">${iconBtn('search', 'Search requests', "S.rSearch=!S.rSearch;S.rQ='';render();setTimeout(()=>{const i=document.getElementById('hd-q');if(i)i.focus()},30)")}${iconBtn('swap_vert', `Sort: ${S.rSort === 'priority' ? 'priority' : 'newest'}`, "S.rSort=S.rSort==='priority'?'newest':'priority';render();toast('Sorted by '+(S.rSort==='priority'?'priority':'newest'))")}<button class="az-iconbtn${filt ? ' on' : ''}" onclick="hdFilterSheet()" aria-label="Filter">${I('tune')}</button></span>`;
+  const count = `<p class="az-countline">Requests (${list.length})${tools}</p>`;
+  const fab = canRaise(me()) ? (isPhone() ? `<a class="az-fab az-fab--pill" href="#/new?dept=diet">${I('add_circle')}New Request</a>` : `<a class="az-fab az-fab--pill az-fab--no-nav" href="#/new?dept=diet">${I('add_circle')}New Request</a>`) : '';
+  const body = `<div class="body">${subs}${count}${list.length ? `<div class="list list--16 hdlist">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1(who === 'mine' ? 'You have no requests here' : 'No requests here')}</div>${fab}`;
+  /* the Diet module's own top bar and tabs: Species Wise · Diet Wise · Requests */
+  return pane(`${cls} pane--home${fab ? ' has-fab' : ''}`, topbar({ back: '#/home', title: 'Diet', site: true, end: whoBtn() }) + dietTabs('requests') + search + whoChips + tabs, body, '', 'hd');
 }
 /* a tab, a department, a sub-status or My Approvals | All: the cards come in from the side the highlight moved to */
-const HD_ORDER = { rTab: () => HDTABS.map(x => x[0]), rDept: () => ['all', ...DEPTS.map(x => x.id)], rSub: () => (HDSUBS[S.rTab] || []).map(x => x[0]), rMine: () => [true, false] };
+const HD_ORDER = { rTab: () => HDTABS.map(x => x[0]), rWho: () => WHO_OPTS().map(x => x[0]), rSub: () => (HDSUBS[S.rTab] || []).map(x => x[0]) };
 function hdSet(o) {
   let dir = 'hd-rise';
-  for (const [k, v] of Object.entries(o)) if (HD_ORDER[k] && S[k] !== v) { const ord = HD_ORDER[k](), a = ord.indexOf(k === 'rMine' ? !!S[k] : S[k]), b = ord.indexOf(v); if (a > -1 && b > -1) dir = b > a ? 'hd-fwd' : 'hd-back'; break; }
-  const same = Object.entries(o).every(([k, v]) => (k === 'rMine' ? !!S[k] : S[k]) === v); Object.assign(S, o);
+  for (const [k, v] of Object.entries(o)) if (HD_ORDER[k] && S[k] !== v) { const ord = HD_ORDER[k](), a = ord.indexOf(k === 'rWho' ? rWho() : S[k]), b = ord.indexOf(v); if (a > -1 && b > -1) dir = b > a ? 'hd-fwd' : 'hd-back'; break; }
+  const same = Object.entries(o).every(([k, v]) => (k === 'rWho' ? rWho() : S[k]) === v); Object.assign(S, o);
   go('#/requests'); if (!same) setTimeout(() => playFx($('.hdlist'), dir), 0);
 }
 function hdFilterSheet() { optionSheet('Priority', [['all', 'All Priorities'], ...Object.entries(PRIO).map(([k, [, l]]) => [k, l, PRI_TEXT[k]])], S.rPrio, 'pickRPrio'); }
