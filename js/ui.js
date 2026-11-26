@@ -5,7 +5,7 @@ const S = {
   user: 'u-hydar', frame: 'phone', site: 'all',
   land: 'species', spTab: 'all', spCls: 'all', dCert: 'all', fold: {}, spQ: '', dKind: 'all', dQ: '', lvl: {}, animAll: false, spView: 'diets', spHLvl: 'all', anim: 'with', aQ: '', day: null, dTab: 'items',
   hView: 'date', hWeek: 0, hDay: null, hType: 'all', hLvl: 'all', hBack: '#/history',
-  rTab: 'pending', rSub: 'all', rDept: 'all', rMine: false, rSort: 'newest', rPrio: 'all', rSearch: false, rQ: '', back: '#/requests', draft: null,
+  rTab: 'pending', rSub: 'all', rDept: 'diet', rWho: null, rSort: 'newest', rPrio: 'all', rSearch: false, rQ: '', back: '#/requests', draft: null,
 };
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -188,11 +188,11 @@ function lineRow(l, c = null) {
 }
 function lineRow0(l, c = null) {
   const nm = id => esc(item(id).name);
-  if (!c) return { cls: '', name: nm(l.item), gar: esc(garText(l)), day: lineDays(l), mask: l.days ?? EVERY_DAY, cad: l.cad || null, amt: qtyText(l.qty, l.unit), line: l };
+  if (!c) return { cls: '', name: nm(l.item), gar: esc(garText(l)), day: lineDays(l), mask: l.days ?? EVERY_DAY, cad: l.cad || null, amt: qtyText(l.qty, l.unit), amts: l.bq ? l.bq.map(q => qtyText(q, l.unit)) : null, line: l };
   if (c.op === 'add') return { cls: 'chg', name: nm(c.to) + NEW, gar: esc(garText(c)), day: lineDays(c), mask: c.days ?? EVERY_DAY, cad: c.cad || null, amt: qtyText(c.qty, c.unit), line: { ...c, item: c.to } };
   if (c.op === 'remove') return { cls: 'stop', name: `<span class="gone">${nm(l.item)}</span>${STOPPED}`, gar: `<span class="gone">${esc(garText(l))}</span>`, day: lineDays(l), mask: l.days ?? EVERY_DAY, cad: l.cad || null, amt: `<span class="gone">${qtyText(l.qty, l.unit)}</span>`, line: l };
-  const x = lineDiff(l, c);
-  return { cls: 'chg', name: nm(c.to), nameWas: x.item ? wasM(nm(l.item)) : '', gar: esc(garText(c)), garWas: x.prep || x.cut ? wasM(esc(garText(l)) || 'plain') : '',
+  const x = lineDiff(l, c), bw = l.bq && x.amount ? l.bq : null, bn = c.bq || (l.bq && scaleBq(l, c));
+  return { cls: 'chg', amts: bn ? bn.map((q, i) => qtyText(q, c.unit) + (bw ? wasM(qtyText(bw[i], l.unit)) : '')) : null, name: nm(c.to), nameWas: x.item ? wasM(nm(l.item)) : '', gar: esc(garText(c)), garWas: x.prep || x.cut ? wasM(esc(garText(l)) || 'plain') : '',
     day: lineDays(c) + (x.days ? wasM(lineDays(l)) : ''), mask: c.days ?? EVERY_DAY, cad: c.cad || null, amt: qtyText(c.qty, c.unit) + (x.amount ? wasM(qtyText(l.qty, l.unit)) : ''), line: { ...c, item: c.to } };
 }
 /* a history line { op, was, now } as a request-style change */
@@ -211,11 +211,15 @@ const linesView = (groups, { act = false } = {}) => mealTable(groups, isLand(), 
    On the phone the time sits on top of its items. showDays: off when one day is picked. A tap on an item opens the line.
    Change marks as the Kitchen: a changed line is yellow with what it was under it, a stopped one red and struck through.
    act: a last column of actions; add: f => the js for "+ Add item" under each time (the request form) */
-function mealTable(groups, wide = false, showDays = true, { act = false, add = null } = {}) {
+/* bands: a diet given by sex, age or weight (qBands) has one amount column per band, under one "Daily Amt · By Age (years)" head */
+function mealTable(groups, wide = false, showDays = true, { act = false, add = null, bands = null } = {}) {
   if (!groups.length) return `<div class="nodiet">Nothing to feed on this day</div>`;
-  const cols = (wide ? 1 : 0) + (showDays ? 1 : 0) + 2 + (act ? 1 : 0), still = ' onclick="event.stopPropagation()"';
+  /* a phone or a narrow pane with band columns has no room for a Day column: the day goes under the item's name */
+  const dayIn = !!bands && !wide && showDays; if (dayIn) showDays = false;
+  const nb = bands ? bands.list.length : 1, cols = (wide ? 1 : 0) + (showDays ? 1 : 0) + 1 + nb + (act ? 1 : 0), still = ' onclick="event.stopPropagation()"';
+  const amtCells = r => bands ? (r.amts && r.amts.length === nb ? r.amts.map(t => `<td class="mtab__q mtab__q--b">${t}</td>`).join('') : `<td class="mtab__q mtab__q--b" colspan="${nb}">${r.amt}</td>`) : `<td class="mtab__q">${r.amt}</td>`;
   const itemCell = r => { const x = item(r.line.item);
-    return `<b>${r.name}</b>${x && x.mix ? `<span class="mtab__s">· ${plural(x.mix.length, 'item')}</span>${ingrChips(x)}` : r.gar ? `<span class="mtab__s mtab__s--i">(${r.gar})</span>` : ''}${r.nameWas || ''}${r.garWas || ''}`; };
+    return `<b>${r.name}</b>${dayIn ? `<span class="mtab__dd">${r.day}</span>` : ''}${x && x.mix ? `<span class="mtab__s">· ${plural(x.mix.length, 'item')}</span>${ingrChips(x)}` : r.gar ? `<span class="mtab__s mtab__s--i">(${r.gar})</span>` : ''}${r.nameWas || ''}${r.garWas || ''}`; };
   const body = groups.map(g => {
     const rows = g.rows.map((r, i) => {
       let run = 1;
@@ -223,12 +227,15 @@ function mealTable(groups, wide = false, showDays = true, { act = false, add = n
       const time = wide && i === 0 ? `<td class="mtab__t" rowspan="${g.rows.length + (add ? 1 : 0)}"${still}>${bandText(feed(g.feed))}</td>` : '';
       const day = showDays && (i === 0 || g.rows[i - 1].day !== r.day) ? `<td class="mtab__d" rowspan="${run}"${still}>${r.day}</td>` : '';
       const tap = r.click ? ` class="tap${r.cls ? ' ' + r.cls : ''}" onclick="${r.click}" tabindex="0" onkeydown="if(event.key==='Enter'){${r.click}}"` : r.cls ? ` class="${r.cls}"` : '';
-      return `<tr${tap}>${time}${day}<td class="mtab__i">${itemCell(r)}</td><td class="mtab__q">${r.amt}</td>${act ? `<td class="mtab__a">${r.act || ''}</td>` : ''}</tr>`;
+      return `<tr${tap}>${time}${day}<td class="mtab__i">${itemCell(r)}</td>${amtCells(r)}${act ? `<td class="mtab__a">${r.act || ''}</td>` : ''}</tr>`;
     }).join('');
     const more = add ? `<tr class="mtab__add"><td colspan="${cols - (wide ? 1 : 0)}"><button onclick="${add(g.feed)}">${I('add', 20)}Add item</button></td></tr>` : '';
     return (wide ? '' : `<tr class="mtab__band"><td colspan="${cols}"><span>${I('schedule', 18)}${bandText(feed(g.feed))}</span></td></tr>`) + rows + more;
   }).join('');
-  return `<div class="mtab-wrap"><table class="mtab${wide ? ' mtab--wide' : ''}"><thead><tr>${wide ? '<th>Time</th>' : ''}${showDays ? '<th>Day</th>' : ''}<th>Item</th><th>Daily Amt</th>${act ? '<th></th>' : ''}</tr></thead><tbody>${body}</tbody></table></div>`;
+  const rs = bands ? ' rowspan="2"' : '';
+  const head = bands ? `<tr>${wide ? `<th${rs}>Time</th>` : ''}${showDays ? `<th${rs}>Day</th>` : ''}<th${rs}>Item</th><th class="mtab__bh" colspan="${nb}">Daily Amt · ${esc(bands.by)}</th>${act ? `<th${rs}></th>` : ''}</tr><tr class="mtab__bands">${bands.list.map(b => `<th>${esc(b)}</th>`).join('')}</tr>`
+    : `<tr>${wide ? '<th>Time</th>' : ''}${showDays ? '<th>Day</th>' : ''}<th>Item</th><th>Daily Amt</th>${act ? '<th></th>' : ''}</tr>`;
+  return `<div class="mtab-wrap${bands ? ' mtab-wrap--bands' : ''}"><table class="mtab${wide ? ' mtab--wide' : ''}${bands ? ` mtab--b${nb}` : ''}"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 /* a mix's parts as the Kitchen table's chips: the item and its share, then its preparation and cut */
 const ingrChips = (x, per = null) => `<span class="ingr">${x.mix.map(p => `<span><b>${esc(item(p.item).name)} · ${per ? qtyText(per * p.pct / 100, 'g') : p.pct + '%'}</b><small>${esc([p.prep, p.cut].filter(Boolean).join(' · '))}</small></span>`).join('')}</span>`;

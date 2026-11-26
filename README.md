@@ -65,6 +65,7 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
 │   ├── ui.js             State, top bar, sheets, diet tables, cards, in-place redraw (morph)
 │   ├── diets.js          Diet module screens
 │   ├── history.js        A diet's change history
+│   ├── versions.js       A species' Version History (v1, v2 … for the whole species) and View Diet
 │   ├── helpdesk.js       Help Desk list, request facts, the request page (boxes), status bar, Activity
 │   ├── form.js           New Request (and Edit): the departments' forms and the diet request types
 │   ├── suggest.js        Diet change: Suggest a change (anybody), Review request, Save it as; the species (scope picker), diet and reason search sheets
@@ -90,7 +91,8 @@ The controls above the device frame (Frame · Viewing as · Home · Reset demo d
 | `#/home` | Antz Home |
 | `#/diets/...` | Diet module |
 | `#/history/...` | A diet change, opened from a diet's history |
-| `#/requests/...` | Help Desk list and request details |
+| `#/diets/:species/v/:n` | View Diet: the diet as it read in version n of the species |
+| `#/requests/...` | Requests, the third tab of Diet (My Requests · My Approvals · All) and request details |
 | `#/new` | Help Desk › New Request |
 
 ## Development notes

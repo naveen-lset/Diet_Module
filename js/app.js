@@ -2,7 +2,7 @@
 // Home › Modules › Diet opens #/diets (and #/history); Home › Modules › Help Desk opens #/requests (and #/new). No bottom navigation:
 // each module goes back to Home from its first screen. URL options: ?f=phone|portrait|landscape, ?as=hydar|suresh|manoj, ?fill.
 
-const STORE = 'antz-diet-module-v15';   // bump whenever the demo data changes (v15: animals go by AID in the seed titles; v14: diet requests end at approval, which applies them; requests in words; v13: the diet history says who updated it in the kitchen; v12: diet requests — the Biologist raises, the Dietician approves, the Kitchen updates; v11: Help Desk In progress and Completed, the team's Job in charge; v10: requests say how long and can be for many places; v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
+const STORE = 'antz-diet-module-v16';   // bump whenever the demo data changes (v16: amounts by sex, age or weight bands; v15: animals go by AID in the seed titles; v14: diet requests end at approval, which applies them; requests in words; v13: the diet history says who updated it in the kitchen; v12: diet requests — the Biologist raises, the Dietician approves, the Kitchen updates; v11: Help Desk In progress and Completed, the team's Job in charge; v10: requests say how long and can be for many places; v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
 const AS = { kiran: 'u-kiran', hydar: 'u-hydar', suresh: 'u-suresh', manoj: 'u-manoj' };
 const FRAMES = { phone: 'phone', portrait: 'tab-p', landscape: 'tab-l' };
 function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: TODAY, D, S: { user: S.user, frame: S.frame, site: S.site } })); } catch (e) {} }
@@ -27,7 +27,8 @@ function view() {
     case 'requests': return { html: vHelpDesk(parts) };
     /* a diet change is suggested on the diet itself (js/suggest.js); other departments keep the New Request form */
     case 'suggest': return { html: paneSuggest(q) };
-    case 'new': { const e = q.get('edit') && by('requests', q.get('edit')); return { html: q.get('dept') === 'diet' || (e && isDiet(e)) ? paneSuggest(q) : paneForm(q) }; }
+    /* every request is a diet request now (Help Desk lives in the Diet module): a New Request without a department is Diet's */
+    case 'new': { if (!q.get('dept') && !q.get('edit') && !q.get('clone')) q.set('dept', 'diet'); const e = q.get('edit') && by('requests', q.get('edit')); return { html: q.get('dept') === 'diet' || (e && isDiet(e)) ? paneSuggest(q) : paneForm(q) }; }
     default: return { home: true };
   }
 }
@@ -40,10 +41,10 @@ function baseView() {
 /* the Antz Home, loaded once and kept, so coming back finds it as it was */
 function showHome(on) {
   const fr = $('#homefr');
-  if (on && !fr.src) fr.src = 'home/index.html?v=5';
+  if (on && !fr.src) fr.src = 'home/index.html?v=6';
   fr.hidden = !on; $('#app').hidden = on;
 }
-addEventListener('message', e => { if (e.data && e.data.antzWho) { whoSheet(); return; } const r = e.data && e.data.antzOpen; if (r === 'diets' || r === 'requests') { if (r === 'requests') { S.rDept = 'all'; S.rTab = 'pending'; S.rSub = 'all'; } go('#/' + r); } });
+addEventListener('message', e => { if (e.data && e.data.antzWho) { whoSheet(); return; } const r = e.data && e.data.antzOpen; if (r === 'diets' || r === 'requests') { if (r === 'requests') { S.rTab = 'pending'; S.rSub = 'all'; } go('#/' + r); } });
 /* the app's own back trail: Back returns to the screen you came from, even after a reload, a shared link or inside the hub viewer */
 const TRAIL = [];
 /* a sheet is never a place Back returns to (design system: a sheet works "without leaving the page"). Leaving the phone's species
@@ -128,7 +129,7 @@ function whoSheet(firstTime = false) {
 }
 function pickWho(id) { try { localStorage.setItem(WHO_KEY, id); } catch (e) {} closeAll(); if (S.user !== id) setUser(id); }
 /* where only a Biologist can go on: switch to Kiran and carry on */
-function asBiologist(then) { try { localStorage.setItem(WHO_KEY, 'u-kiran'); } catch (e) {} S.user = 'u-kiran'; S.draft = null; SG = null; S.rDept = 'all'; closeAll(); storeSave(); toast(`Viewing as ${user('u-kiran').name}, ${user('u-kiran').title}`); go(then); }
+function asBiologist(then) { try { localStorage.setItem(WHO_KEY, 'u-kiran'); } catch (e) {} S.user = 'u-kiran'; S.draft = null; SG = null; S.rDept = 'diet'; S.rWho = null; closeAll(); storeSave(); toast(`Viewing as ${user('u-kiran').name}, ${user('u-kiran').title}`); go(then); }
 const whoBtn = () => document.body.classList.contains('fill') ? `<button class="whobtn" onclick="whoSheet()" aria-label="Viewing as ${esc(me().name)}. Switch person" title="Switch person">${avatar(me().name)}</button>` : '';
 function askWhoOnce() {
   if (askWhoOnce.done || !document.body.classList.contains('fill') || new URLSearchParams(location.search).get('as')) return;
@@ -136,7 +137,7 @@ function askWhoOnce() {
   if (!had) setTimeout(() => { if (!SH.length) whoSheet(true); }, 500);
 }
 function setFrame(f) { S.frame = f; closeAll(); storeSave(); fit(); }
-function setUser(id) { S.user = id; S.draft = null; S.rDept = 'all'; closeAll(); storeSave(); if (['new', 'suggest'].includes(route()[0])) { SG = null; go('#/requests'); } else render(); toast(`Viewing as ${user(id).name}, ${user(id).title}`); }
+function setUser(id) { S.user = id; S.draft = null; S.rDept = 'diet'; S.rWho = null; closeAll(); storeSave(); if (['new', 'suggest'].includes(route()[0])) { SG = null; go('#/requests'); } else render(); toast(`Viewing as ${user(id).name}, ${user(id).title}`); }
 /* the frame: scaled to fit the window on a desktop; on a real phone or iPad (or ?fill) it is the screen */
 function fit() {
   const dev = $('.device'), slot = $('.device-slot'), q = new URLSearchParams(location.search);

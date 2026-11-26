@@ -176,6 +176,12 @@ function qtyText(q, u) {
   if (v >= 1000) return `${round(v / 1000).toLocaleString('en-IN')} ${b === 'g' ? 'kg' : 'ltr'}`;
   return `${round(v).toLocaleString('en-IN')} ${b}`;
 }
+/* a diet's amount basis (Kitchen & Diet quantity_mode): null for Standard; else the column heads and what they go by */
+const QM_BY = { sex: 'By Sex', age: 'By Age', weight: 'By Weight' };
+const qBands = d => d && d.qmode ? { mode: d.qmode.mode, by: `${QM_BY[d.qmode.mode]}${d.qmode.unit ? ` (${d.qmode.unit})` : ''}`, list: d.qmode.bands.map(b => b.label) } : null;
+const qModeText = d => d && d.qmode ? { sex: 'Sex based · Male and Female amounts', age: `Age based · ${d.qmode.bands.length} age bands`, weight: `Weight based · ${d.qmode.bands.length} weight bands` }[d.qmode.mode] : 'Standard · one amount for every animal';
+/* a changed line in a banded diet keeps its bands in the same proportion: the new amount over the old one */
+const scaleBq = (was, now) => was && was.bq ? was.bq.map(q => { const v = toBase(q, was.unit) * toBase(now.qty, now.unit) / (toBase(was.qty, was.unit) || 1) / BASE[now.unit][1]; return bandQty(v, now.unit, 1); }) : null;
 const stockText = it => qtyText(it.stock, it.stockUnit);
 const entryOf = (d, feedId, itemId) => { const m = d && d.meals.find(x => x.feed === feedId); return m && m.items.find(i => i.item === itemId); };
 /* grams of a line as fed (ml as g, pieces by their weight) */

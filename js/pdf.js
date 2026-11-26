@@ -10,19 +10,19 @@ const ddmmyy = s => { const [y, m, d] = s.slice(0, 10).split('-'); return `${d}-
 
 /* one A4 page of the diet */
 function dietPdfPage(a) {
-  const d = diet(a.diet), sp = species(a.sp), groups = dietGroups(d), [, state] = dietStatus(a);
+  const d = diet(a.diet), sp = species(a.sp), groups = dietGroups(d), [, state] = dietStatus(a), qb = qBands(d);
   const rows = groups.map(g => g.rows.map((r, i) => {
     let run = 1; while (i + run < g.rows.length && g.rows[i + run].day === r.day) run++;
     const x = item(r.line.item), parts = x && x.mix ? `<span class="pdfp__mix">${x.mix.map(p => `${esc(item(p.item).name)} ${p.pct}%`).join(' · ')}</span>` : '';
     return `<tr>${i === 0 ? `<td class="pdfp__time" rowspan="${g.rows.length}">${bandText(feed(g.feed))}</td>` : ''}${i === 0 || g.rows[i - 1].day !== r.day ? `<td class="pdfp__day" rowspan="${run}">${r.day}</td>` : ''}
-      <td class="pdfp__item"><b>${r.name.replace(MIXTAG, '')}</b>${r.gar ? ` <i>(${r.gar})</i>` : ''}${parts}</td><td class="pdfp__amt">${r.amt}</td></tr>`;
+      <td class="pdfp__item"><b>${r.name.replace(MIXTAG, '')}</b>${r.gar ? ` <i>(${r.gar})</i>` : ''}${parts}</td><td class="pdfp__amt">${qb && r.amts ? r.amts.map((t, k) => `${esc(qb.list[k])}: ${t}`).join('<br>') : r.amt}</td></tr>`;
   }).join('')).join('');
   const notes = [['Kitchen note', d.note], ['Site note', d.site], ['Remark', d.remark], ['Change Reason', [d.reason, d.remarks].filter(Boolean).join('. ')]].filter(n => n[1]);
   const foot = [d.id, slotKind(a), state, useText(a), `Created ${ddmmyy(d.made.at)}`, d.cert ? `Certified by ${user(d.cert.by).name}` : 'Not certified', `Antz Kitchen · generated ${ddmmyy(TODAY)}`].join(' · ');
   return `<div class="pdfp">
     <div class="pdfp__head"><img src="${spPhoto(sp.id)}" alt=""><span><b>${esc(sp.name)}</b><i>${esc(sp.sci)}</i></span></div>
     <h1 class="pdfp__title">Diet – ${esc(d.name)}</h1>
-    <table class="pdfp__tbl"><thead><tr><th>Time</th><th>Day</th><th>Item</th><th>Daily amt</th></tr></thead><tbody>${rows}</tbody></table>
+    <table class="pdfp__tbl"><thead><tr><th>Time</th><th>Day</th><th>Item</th><th>Daily amt${qb ? ` · ${esc(qb.by)}` : ''}</th></tr></thead><tbody>${rows}</tbody></table>
     ${notes.length ? `<div class="pdfp__notes">${notes.map(([k, v]) => `<p><b>${k}:</b> ${esc(v)}</p>`).join('')}</div>` : ''}
     <div class="pdfp__foot"><span>${esc(foot)}</span><span>Page 1 of 1</span></div></div>`;
 }
