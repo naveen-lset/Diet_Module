@@ -219,7 +219,8 @@ const linesView = (groups, { act = false } = {}) => mealTable(groups, isLand(), 
 function mealTable(groups, wide = false, showDays = true, { act = false, add = null, bands = null } = {}) {
   if (!groups.length) return `<div class="nodiet">Nothing to feed on this day</div>`;
   /* a phone or a narrow pane with band columns has no room for a Day column: the day goes under the item's name */
-  const dayIn = !!bands && !wide && showDays; if (dayIn) showDays = false;
+  /* (owner, 27 Nov 2026: "for Full Week show the days right") the days keep their own column, after the pinned Item column on the phone */
+  const dayIn = false, dayAfter = !!bands && !wide && showDays;
   const nb = bands ? bands.list.length : 1, cols = (wide ? 1 : 0) + (showDays ? 1 : 0) + 1 + nb + (act ? 1 : 0), still = ' onclick="event.stopPropagation()"';
   const amtCells = r => bands ? (r.amts && r.amts.length === nb ? r.amts.map(t => `<td class="mtab__q mtab__q--b">${t}</td>`).join('') : `<td class="mtab__q mtab__q--b" colspan="${nb}">${r.amt}</td>`) : `<td class="mtab__q">${r.amt}</td>`;
   const itemCell = r => { const x = item(r.line.item);
@@ -231,7 +232,7 @@ function mealTable(groups, wide = false, showDays = true, { act = false, add = n
       const time = wide && i === 0 ? `<td class="mtab__t" rowspan="${g.rows.length + (add ? 1 : 0)}"${still}>${bandText(feed(g.feed))}</td>` : '';
       const day = showDays && (i === 0 || g.rows[i - 1].day !== r.day) ? `<td class="mtab__d" rowspan="${run}"${still}>${r.day}</td>` : '';
       const tap = r.click ? ` class="tap${r.cls ? ' ' + r.cls : ''}" onclick="${r.click}" tabindex="0" onkeydown="if(event.key==='Enter'){${r.click}}"` : r.cls ? ` class="${r.cls}"` : '';
-      return `<tr${tap}>${time}${day}<td class="mtab__i">${itemCell(r)}</td>${amtCells(r)}${act ? `<td class="mtab__a">${r.act || ''}</td>` : ''}</tr>`;
+      return `<tr${tap}>${time}${dayAfter ? '' : day}<td class="mtab__i">${itemCell(r)}</td>${dayAfter ? day : ''}${amtCells(r)}${act ? `<td class="mtab__a">${r.act || ''}</td>` : ''}</tr>`;
     }).join('');
     const more = add ? `<tr class="mtab__add"><td colspan="${cols - (wide ? 1 : 0)}"><button onclick="${add(g.feed)}">${I('add', 20)}Add item</button></td></tr>` : '';
     return (wide ? '' : `<tr class="mtab__band"><td colspan="${cols}"><span>${I('schedule', 18)}${bandText(feed(g.feed))}</span></td></tr>`) + rows + more;
@@ -241,7 +242,7 @@ function mealTable(groups, wide = false, showDays = true, { act = false, add = n
   const pin = !!bands && !wide;
   const hint = pin ? `<p class="mtab-hint"><span>Daily Amt · ${esc(bands.by)}</span></p>` : '';
   const rs = bands ? ' rowspan="2"' : '';
-  const head = pin ? `<tr>${showDays ? '<th>Day</th>' : ''}<th class="mtab__ih">Item</th>${bands.list.map(b => `<th class="mtab__bt">${esc(b)}</th>`).join('')}${act ? '<th></th>' : ''}</tr>`
+  const head = pin ? `<tr><th class="mtab__ih">Item</th>${showDays ? '<th>Day</th>' : ''}${bands.list.map(b => `<th class="mtab__bt">${esc(b)}</th>`).join('')}${act ? '<th></th>' : ''}</tr>`
     : bands ? `<tr>${wide ? `<th${rs}>Time</th>` : ''}${showDays ? `<th${rs}>Day</th>` : ''}<th class="mtab__ih"${rs}>Item</th><th class="mtab__bh" colspan="${nb}">Daily Amt · ${esc(bands.by)}</th>${act ? `<th${rs}></th>` : ''}</tr><tr class="mtab__bands">${bands.list.map(b => `<th>${esc(b)}</th>`).join('')}</tr>`
     : `<tr>${wide ? '<th>Time</th>' : ''}${showDays ? '<th>Day</th>' : ''}<th>Item</th><th>Daily Amt</th>${act ? '<th></th>' : ''}</tr>`;
   return `${hint}<div class="mtab-wrap${bands ? ' mtab-wrap--bands' : ''}${pin ? ' mtab-wrap--pin' : ''}"><table class="mtab${wide ? ' mtab--wide' : ''}${bands ? ` mtab--b${nb}` : ''}"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
@@ -275,6 +276,9 @@ function speciesRow(sp, { end = '', href, current = false, sub = '', big = false
   return `<a class="sprow${big ? ' sprow--big' : ''} pick" href="${href}"${current ? ' aria-current="true"' : ''}>${spThumb(sp)}<span class="sprow__t"><b>${esc(sp.name)}</b><span class="sub sci">${esc(sp.sci)}</span>${sub ? `<span class="meta">${sub}</span>` : ''}</span>${end}</a>`;
 }
 /* a diet's state today: fed now, not fed by anyone now, starting later, or ended */
+/* (owner, 27 Nov 2026: "remove the Inactive chip, show only the active part") a status chip shows only for a diet in use, starting later or ended */
+/* (owner, 27 Nov 2026) and no "Starts 1 Dec": the dates beside the kind say it already. Only Currently Active (or Ended) shows */
+const statusPill = a => { const [t, l] = dietStatus(a); return l === 'Inactive' || l.startsWith('Starts') ? '' : pill(t, l); };
 function dietStatus(a) {
   if (ended(a)) return ['neutral', 'Ended'];
   if (isNow(a)) return ['positive', 'Currently Active'];
@@ -284,7 +288,7 @@ function dietStatus(a) {
 /* a diet in a species' list: the Diet wise row (avatar, name, kind and when) with its state and its animals (audit, 2 Nov: one diet card) */
 function dietCard(a, { current = false } = {}) {
   const d = diet(a.diet), [tone, label] = dietStatus(a);
-  return `<a class="sprow dietrow pick${ended(a) ? ' dietrow--ended' : ''}" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b>${kindLine(a)}<span class="dfoot"><span class="dfoot__tags">${pill(tone, label)}${!d.cert ? pill('negative', 'Not Certified') : ''}</span></span></span></a>`;
+  return `<a class="sprow dietrow pick${ended(a) ? ' dietrow--ended' : ''}" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b>${kindLine(a)}<span class="dfoot"><span class="dfoot__tags">${statusPill(a)}${!d.cert ? pill('negative', 'Not Certified') : ''}</span></span></span></a>`;
 }
 /* one diet set at a place, as a row of its card */
 function placeDietRow(a, current) {
