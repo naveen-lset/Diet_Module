@@ -40,25 +40,25 @@
 .pdfv__page{width:794px;margin:0 auto;box-shadow:0 2px 10px rgba(0,0,0,.35);cursor:zoom-in}
 .pdfv__page.full{cursor:zoom-out}
 /* the page itself: print type, not the app's */
-.pdfp{min-height:1123px;background:#fff;color:#222;padding:44px 48px 28px;display:flex;flex-direction:column;font:13px/1.4 Helvetica,Arial,sans-serif}
+.pdfp{min-height:1123px;background:#fff;color:#222;padding:40px 48px 28px;display:flex;flex-direction:column;font:11px/1.4 Helvetica,Arial,sans-serif}
 .pdfp__head{display:flex;align-items:center;gap:24px}
-.pdfp__head img{width:150px;height:112px;object-fit:cover;border-radius:4px;flex:none}
+.pdfp__head img{width:112px;height:84px;object-fit:cover;border-radius:4px;flex:none}
 .pdfp__head span{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px}
-.pdfp__head b{font-size:22px;line-height:1.25}
-.pdfp__head i{font-size:14px;color:#555}
-.pdfp__title{font-size:17px;font-weight:700;margin:22px 0 10px}
-.pdfp__tbl{width:100%;border-collapse:collapse;font-size:12.5px}
-.pdfp__tbl th{background:#C1D3D0;text-align:left;padding:7px 8px;border:1px solid #9FB2AE;font-weight:700}
+.pdfp__head b{font-size:16px;line-height:1.25}
+.pdfp__head i{font-size:11px;color:#555}
+.pdfp__title{font-size:13px;font-weight:700;margin:18px 0 8px}
+.pdfp__tbl{width:100%;border-collapse:collapse;font-size:11px}
+.pdfp__tbl th{background:#C1D3D0;text-align:left;padding:5px 6px;border:1px solid #9FB2AE;font-weight:700}
 .pdfp__tbl th:last-child,.pdfp__amt{text-align:center}
-.pdfp__tbl td{border:1px solid #B8C5C2;padding:7px 8px;vertical-align:middle}
-.pdfp__time{width:104px;font-weight:700}
-.pdfp__day{width:84px}
-.pdfp__amt{width:92px;white-space:nowrap;font-weight:700}
+.pdfp__tbl td{border:1px solid #B8C5C2;padding:4px 6px;vertical-align:middle;line-height:1.35}
+.pdfp__time{width:84px;font-weight:700}
+.pdfp__day{width:72px}
+.pdfp__amt{width:96px;white-space:nowrap;font-weight:600}
 .pdfp__item i{color:#555}
-.pdfp__mix{display:block;margin-top:3px;font-size:11.5px;color:#555}
-.pdfp__notes{margin-top:16px;display:flex;flex-direction:column;gap:6px;font-size:12.5px}
+.pdfp__mix{display:block;margin-top:2px;font-size:10px;color:#555}
+.pdfp__notes{margin-top:12px;display:flex;flex-direction:column;gap:4px;font-size:11px}
 .pdfp__notes p{margin:0}
-.pdfp__foot{margin-top:auto;padding-top:10px;border-top:1px solid #ccc;display:flex;justify-content:space-between;gap:16px;font-size:10px;color:#666}
+.pdfp__foot{margin-top:auto;padding-top:10px;border-top:1px solid #ccc;display:flex;justify-content:space-between;gap:16px;font-size:9px;color:#666}
 .pdfp__foot span:last-child{white-space:nowrap}
 
 /* ---------- Applied to as a species list (owner, 18 Nov): a card per species, its places under it ---------- */
