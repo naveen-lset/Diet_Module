@@ -131,7 +131,7 @@ function whoSheet(firstTime = false) {
 }
 function pickWho(id) { try { localStorage.setItem(WHO_KEY, id); } catch (e) {} closeAll(); if (S.user !== id) setUser(id); }
 /* where only a Biologist can go on: switch to Kiran and carry on */
-function asBiologist(then) { try { localStorage.setItem(WHO_KEY, 'u-kiran'); } catch (e) {} S.user = 'u-kiran'; S.draft = null; SG = null; S.rDept = 'diet'; S.rWho = null; closeAll(); storeSave(); toast(`Viewing as ${user('u-kiran').name}, ${user('u-kiran').title}`); go(then); }
+function asBiologist(then) { try { localStorage.setItem(WHO_KEY, 'u-kiran'); } catch (e) {} S.user = 'u-kiran'; S.draft = null; SG = null; APK = null; S.rDept = 'diet'; S.rWho = null; closeAll(); storeSave(); toast(`Viewing as ${user('u-kiran').name}, ${user('u-kiran').title}`); go(then); }
 const whoBtn = () => document.body.classList.contains('fill') ? `<button class="whobtn" onclick="whoSheet()" aria-label="Viewing as ${esc(me().name)}. Switch person" title="Switch person">${avatar(me().name)}</button>` : '';
 function askWhoOnce() {
   if (askWhoOnce.done || !document.body.classList.contains('fill') || new URLSearchParams(location.search).get('as')) return;
@@ -139,7 +139,7 @@ function askWhoOnce() {
   if (!had) setTimeout(() => { if (!SH.length) whoSheet(true); }, 500);
 }
 function setFrame(f) { S.frame = f; closeAll(); storeSave(); fit(); }
-function setUser(id) { S.user = id; S.landWas = null; S.land = onTeam({ dept: 'diet' }, user(id)) ? 'requests' : 'species'; S.draft = null; S.rDept = 'diet'; S.rWho = null; closeAll(); storeSave(); if (['new', 'suggest'].includes(route()[0])) { SG = null; go('#/requests'); } else render(); toast(`Viewing as ${user(id).name}, ${user(id).title}`); }
+function setUser(id) { S.user = id; S.landWas = null; S.land = onTeam({ dept: 'diet' }, user(id)) ? 'requests' : 'species'; S.draft = null; S.rDept = 'diet'; S.rWho = null; closeAll(); storeSave(); APK = null; if (['new', 'suggest', 'applyto'].includes(route()[0])) { SG = null; go('#/requests'); } else render(); toast(`Viewing as ${user(id).name}, ${user(id).title}`); }
 /* the frame: scaled to fit the window on a desktop; on a real phone or iPad (or ?fill) it is the screen */
 function fit() {
   const dev = $('.device'), slot = $('.device-slot'), q = new URLSearchParams(location.search);

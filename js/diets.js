@@ -114,7 +114,7 @@ function homeTab(k) {
 /* one diet in the Diet wise list: a diet avatar, its name, its kind, how many species get it, and its ID */
 function dietRow(a, current) {
   const d = diet(a.diet), n = new Set(usesOf(d.id).map(u => u.sp)).size;
-  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="kline">${ktag(slotKind(a))}${recentlyChanged(d.id) ? pill('pending', 'Changed') : ''}</span><span class="dfoot"><span class="dfoot__n">${n} species</span><span class="did">${esc(d.id)}</span></span></span></a>`;
+  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="kline">${ktag(slotKind(a))}<span class="ktag ktag--sp">${plural(n, 'species', 'species')}</span>${recentlyChanged(d.id) ? pill('pending', 'Changed') : ''}</span><span class="dfoot"><span class="did">${esc(d.id)}</span></span></span></a>`;
 }
 /* the list's own toggle, at the top of the list and as wide as its cards: certification (and, for species, no diet); it scrolls with the list */
 const listToggle = (key, opts) => `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Certification">${thumb()}${opts.map(([k, l]) => `<button role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l}</button>`).join('')}</div></div>`;
@@ -239,7 +239,7 @@ function certCard(d) {
   const btns = (cert = true) => `<div class="dcert__btns"><button class="az-btn az-btn--outline az-btn--compact" onclick="askChangesSheet('${d.id}')">Ask For Changes</button>${cert ? `<button class="az-btn az-btn--compact" onclick="certifyDiet('${d.id}')">${I('verified', 20)}Certify</button>` : ''}</div>`;
   let ic, tone, t, sub, act = '';
   if (d.cert) { const me_ = d.cert.by === S.user; ic = 'verified'; tone = 'ok'; t = me_ ? 'Certified by You' : `Certified by ${esc(user(d.cert.by).name)}`; sub = `${esc(user(d.cert.by).title)} · ${fmtDayY(d.cert.at)}`;
-    if (mine) act = `<button class="lnk dcert__edit" onclick="askChangesSheet('${d.id}')">${I('edit', 18)}Edit</button>`; }
+    /* (owner, 27 Nov 2026) no Edit for the Dietitian: a certified diet just says who certified it */ }
   else if (rv && rv.state === 'asked') { ic = 'hourglass_top'; tone = 'wait'; t = mine ? 'Changes asked · with the web team' : 'Not certified yet'; sub = mine ? 'They answer here once it is updated and applied' : 'The Dietitian certifies it'; }
   else if (rv && rv.state === 'updated') { ic = 'mark_chat_unread'; tone = 'wait'; t = mine ? 'Updated by the web team · certify it' : 'Not certified yet'; sub = mine ? 'Check the answer below, then certify or ask again' : 'The Dietitian certifies it'; }
   else { ic = 'gpp_maybe'; tone = 'wait'; t = mine ? 'New from the web · certify it' : 'Not certified yet'; sub = mine ? made : 'The Dietitian certifies it'; }
@@ -257,7 +257,12 @@ function askChanges() { const d = diet(ACH.id); d.cert = null; d.review = { stat
 function webReply() { const d = D.diets.find(x => x.review && x.review.state === 'asked'); if (!d) return toast('No diet is waiting on the web team');
   d.review.comments.push({ by: 'u-narendra', at: nowStamp(), text: 'Updated and applied on the web. Please check and certify.' }); d.review.state = 'updated'; storeSave(); toast(`Web team answered · ${d.name}`); render(); }
 
-/* the notes under the table, as the web: Kitchen Note, Site Note; then Remark (highlighted) and Change Reason */
+/* the three notes (owner, 27 Nov 2026): a Notes icon in the Diet Details top bar opens them in a bottom sheet; nothing under the table */
+const NOTE_KINDS = [['note', 'Kitchen Note', 'soup_kitchen'], ['site', 'Site Note', 'location_on'], ['remark', 'Remark', 'campaign']];
+const hasNotes = d => NOTE_KINDS.some(([k]) => d[k]);
+function notesSheet(id) { openSheet(() => { const d = diet(id);
+  return { title: 'Notes', sub: esc(d.name), bottom: true, body: `<div class="nsheet">${NOTE_KINDS.filter(([k]) => d[k]).map(([k, l, ic]) => `<div class="nsheet__r${k === 'remark' ? ' nsheet__r--remark' : ''}">${I(ic, 20)}<span><b>${l}</b><p>${esc(d[k])}</p></span></div>`).join('')}</div>` }; }); }
+/* the notes under the table, as the web: Kitchen Note, Site Note; then Remark (highlighted) and Change Reason (not shown since 27 Nov 2026) */
 function notesBlock(d) {
   const rows = [['Kitchen Note', esc(d.note)], ['Site Note', esc(d.site)]].filter(r => r[1]);
   const why = d.reason ? `${esc(d.reason)}${d.remarks ? `<i>${esc(d.remarks)}</i>` : ''}` : '';
@@ -338,7 +343,7 @@ function paneDiet(asgId, { cls = '', back = '', wide = isTab() } = {}) {
   if (S.dTabFor !== asgId) { S.dTab = 'ov'; S.dTabFor = asgId; }
   /* Back returns to the screen the diet was opened from; `back` is where to go when there is none (a link, a reload) */
   const lead = back ? `<button class="az-iconbtn" onclick="goBack('${back}')" aria-label="Back">${I('arrow_back')}</button>` : '';
-  const head = `<div class="dhead dhead--doodle">${doodleSvg()}<div class="dhead__bar">${lead}<b>Diet Details</b>${iconBtn('picture_as_pdf', 'Diet PDF', `dietPdf('${a.id}')`)}${iconBtn('info', 'Diet Info', `dietInfoSheet('${a.id}')`)}</div>
+  const head = `<div class="dhead dhead--doodle">${doodleSvg()}<div class="dhead__bar">${lead}<b>Diet Details</b>${iconBtn('picture_as_pdf', 'Diet PDF', `dietPdf('${a.id}')`)}${hasNotes(d) ? iconBtn('sticky_note_2', 'Notes', `notesSheet('${d.id}')`) : ''}${iconBtn('info', 'Diet Info', `dietInfoSheet('${a.id}')`)}</div>
     <div class="dhead__card"><span class="davatar">${I('restaurant')}</span><span class="dhead__t"><span class="dhead__name">${esc(d.name)}</span><span class="dhead__sub">Diet type : <b>${esc(slotKind(a))}${a.group ? ` · ${esc(a.group.label)}` : ''}</b>${when ? ` · ${esc(when)}` : ''}</span>
     ${statusPill(a) ? `<span class="dhead__tags">${statusPill(a)}</span>` : ''}</span></div></div>`;
   const tabs = `<div class="az-tabs dtabs" role="tablist">${thumb(true)}${DTABS.map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${S.dTab === k}" onclick="S.dTab='${k}';render()">${l}</button>`).join('')}</div>`;
@@ -348,7 +353,7 @@ function paneDiet(asgId, { cls = '', back = '', wide = isTab() } = {}) {
   const groups = chg && (chg.h.lines || []).length ? markedGroups(d, chg.h, S.day, 'itemSheet') : dietGroups(d, S.day, 'itemSheet');
   /* (owner, 27 Nov 2026) nobody sees request cards on a diet: requests live in Requests; the diet shows only its certification */
   const cards = certCard(d);
-  const body = S.dTab === 'nu' ? nutriTab(d) : S.dTab === 'ap' ? appliedTo(a) : S.dTab === 'hi' ? historyTab(a, d) : cards + days + `<div class="dtable">${mealTable(groups, wide, S.day == null, { bands: qBands(d) })}</div>` + notesBlock(d);
+  const body = S.dTab === 'nu' ? nutriTab(d) : S.dTab === 'ap' ? appliedTo(a) : S.dTab === 'hi' ? historyTab(a, d) : cards + days + `<div class="dtable">${mealTable(groups, wide, S.day == null, { bands: qBands(d) })}</div>`;
   const fab = S.dTab === 'ov' && canRaise(me()) && !isKitchen() && !isDietitian() && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="raisePick('${a.id}')">${I('add_circle')}<span class="dfab__t">Raise Request</span></button>` : '';
   return pane(cls + (fab ? ' has-fab' : ''), head + tabs, `<div class="body">${body}</div>`, '', `diet-${asgId}`).replace(/<\/section>$/, `${fab}</section>`);
 }
@@ -379,9 +384,11 @@ function appliedTo(a) {
     animal: x => { const an = by('animals', x.ref), sx = SEXT[an.sex] || 'UD', pth = pathOf(x);
       return `<button class="apc acs" ${tap(x)}><span class="acs__p"><img src="${spPhoto(x.sp)}" alt="" loading="lazy"><span class="acs__sex acs__sex--${sx}">${sx}</span></span><span class="acs__d"><b>AID: ${an.id}</b><span>${esc(an.name ? `${an.name} · ${sp(x).name}` : sp(x).name)}</span><span>Encl: ${esc(by('enclosures', an.enc).name)}</span><span>Site: ${esc(by('sites', pth.site).name)}</span>${n(x) ? '' : '<span class="acs__off">Not on it now</span>'}${when(x)}</span>${I('chevron_right', 20)}</button>`; } };
   const GROUPS = [['species', 'Species'], ['site', 'Sites'], ['section', 'Sections'], ['enclosure', 'Enclosures'], ['animal', 'Animals']];
-  /* (owner, 27 Nov 2026) no "Applied To · 1 species · 5 animals" line: the tab says it; the groups start at once */
-  return `<div class="apg-wrap">` + GROUPS.map(([lv, t]) => { const xs = uses.filter(u => u.level === lv); if (!xs.length) return '';
-      return `<section class="apg"><p class="apg__h">${t} <span>${xs.length}</span></p><div class="apg__list">${xs.map(lv === 'site' || lv === 'section' ? card.place : card[lv]).join('')}</div></section>`; }).join('') + `</div>`;
+  /* (owner, 27 Nov 2026, review of rev 37) only the species: one card each, with how many of its animals eat this diet; no time band or dates
+     (the Diet Details page says them). A tap opens the animals */
+  const spCards = sps.map(id => { const xs = uses.filter(u => u.sp === id), x = xs.find(u => u.level === 'species') || xs[0], cnt = xs.reduce((t, u) => t + n(u), 0);
+    return `<button class="apc acs" ${tap(x)}><span class="acs__p"><img src="${spPhoto(id)}" alt="" loading="lazy"></span><span class="acs__d"><b>${esc(species(id).name)}</b><i>${esc(species(id).sci)}</i><span>${cnt ? plural(cnt, 'animal') + ' on this diet' : 'No animals on it now'}</span></span>${I('chevron_right', 20)}</button>`; });
+  return `<div class="apg-wrap"><section class="apg"><p class="apg__h">Species <span>${sps.length}</span></p><div class="apg__list">${spCards.join('')}</div></section></div>`;
 }
 /* Raise request from a diet set at several places asks which place first (audit, 2 Nov) */
 function raisePick(id) {
@@ -391,12 +398,13 @@ function raisePick(id) {
     body: uses.map(x => `<button class="az-option" onclick="closeAll();S.draft=null;go('#/new?dept=diet&asg=${x.id}')"><span>${esc(useText(x))}<small>${esc([pathNamed(x), plural(followersOf(x).length, 'animal')].filter(Boolean).join(' · '))}</small></span>${I('chevron_right')}</button>`).join('') }));
 }
 /* Nutrition: energy as one big number, then each group as Diet Info had it, with the calcium to phosphorus ratio under the minerals */
+const NUTRI_IC = { Macros: 'nutrition', Minerals: 'diamond', Vitamins: 'pill' };   /* owner, 27 Nov 2026: an icon for each group */
 function nutriTab(d) {
   const nut = nutrition(d), e = nut.find(x => x.name === 'Energy'), ca = nut.find(x => x.name === 'Calcium'), p = nut.find(x => x.name === 'Phosphorus');
   const groups = [...new Set(nut.map(x => x.group))], rows = g => nut.filter(x => x.group === g && x !== e).map(x => `<div class="nutri__r${x.v ? '' : ' zero'}"><span>${x.name}</span><b>${nutriText(x)}</b></div>`).join('')
     + (g === 'Minerals' && ca && p && p.v ? `<div class="nutri__r"><span>Calcium : Phosphorus</span><b>${(ca.v / p.v).toFixed(2)} : 1</b></div>` : '');
   return (e ? `<div class="nbig"><span class="nbig__ic">${I('bolt', 24, true)}</span><span><b>${nutriText(e)}</b><small>per animal, per day</small></span></div>` : '')
-    + groups.map(g => rows(g) ? `<div class="nutri"><div class="nutri__h">${g}</div><div class="nutri__rows">${rows(g)}</div></div>` : '').join('');
+    + groups.map(g => rows(g) ? `<div class="nutri"><div class="nutri__h">${I(NUTRI_IC[g] || 'science', 20)}${g}</div><div class="nutri__rows">${rows(g)}</div></div>` : '').join('');
 }
 /* History as a stepper (owner, 2 Nov, from their reference): one white card, the steps oldest first on one line. Done steps are filled with a
    tick, the latest is a ring with a dot (where the diet is now), steps still to come are empty rings: a missing certification, the end of a dated diet.
@@ -446,16 +454,16 @@ function reqNow(r) {
     default: return esc(stateOf(r).label);
   }
 }
-/* Figma "Diet Info": the diet with its species' photo, then when, sharing, open requests and its ID (nutrition, places and history have their tabs) */
+/* Figma "Diet Info" (owner, 27 Nov 2026): the diet, then Created, Shared Species (a count), When, Amounts and the Diet ID; nothing else */
 function dietInfoSheet(id) {
   const a = by('assigns', id), d = diet(a.diet), sp = species(a.sp), others = sharedWith(d.id, a.sp), open = openOnSlot(a).filter(r => visibleTo(r, me()));
   const r = (icon, k, v) => `<div class="rsec__r">${I(icon)}<span class="t"><span>${k}</span>${v}</span></div>`;
   openSheet(() => ({ title: 'Diet Info', body: `<div class="dinfo"><img src="${spPhoto(a.sp)}" alt=""><span><b>${esc(d.name)}</b><span>${esc(slotKind(a))} · ${esc(sp.name)}</span></span></div>
-    <div class="rsec">${a.group ? r('location_on', 'For', `<b>${esc(sp.name)} ${a.group.kind === 'age' ? 'aged' : a.group.kind === 'sex' ? '·' : 'of'} ${esc(a.group.kind === 'sex' ? GROUP_WORD(a.group) : a.group.label)}</b>`) : ''}
+    <div class="rsec">${r('calendar_add_on', 'Created', `<b>${d.made ? fmtDayY(d.made.at) : '—'}</b>${d.made ? `<p>by ${esc(user(d.made.by).name)}</p>` : ''}`)}
+      ${r('pets', 'Shared Species', `<b>${plural(new Set(dietUses(d.id).map(x => x.sp)).size, 'species', 'species')}</b>`)}
       ${r('event', 'When', `<b>${esc(!a.start && !a.end ? 'All year' : slotWhen(a))}</b>`)}
       ${r('scale', 'Amounts', `<b>${esc(qModeText(d))}</b>${d.qmode && d.qmode.mode !== 'sex' ? `<p>${esc(d.qmode.bands.map(b => b.label).join(' · '))}</p>` : ''}`)}
-      ${others.length ? r('share', 'Shared With', others.map(o => { const oa = D.assigns.find(x => x.diet === d.id && x.sp === o.id && !ended(x)); return `<a class="lnk" href="#/diets/${o.id}/${oa.id}">${esc(o.name)}${I('chevron_right', 18)}</a>`; }).join('')) : ''}
-      ${open.length ? r('assignment', open.length === 1 ? 'Open Request' : 'Open Requests', open.map(x => `<a class="lnk" href="#/requests/${x.id}">${x.id} · ${esc(stateOf(x).label)}</a>`).join('')) : ''}
+
       ${r('tag', 'Diet ID', `<p>${d.id}</p>`)}</div>` }));
 }
 /* Figma "Animals using this Diet": the diet and its count, then the animals */
