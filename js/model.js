@@ -317,7 +317,8 @@ const lastAt = r => r.events[r.events.length - 1].at;
    and the kitchen side follows, that's all"): anyone raises; the Dietician approves; approving applies it; the kitchen works from the diet as it now is */
 const isApprover = u => u.role === 'dietician';
 /* (owner, 27 Nov 2026) the kitchen does not raise requests: it updates the diets it is told about */
-const canRaise = u => !!u && !onTeam({ dept: 'diet' }, u);
+/* (owner, 27 Nov 2026) nor does the Dietitian: she approves requests and certifies diets; the requester raises them */
+const canRaise = u => !!u && !onTeam({ dept: 'diet' }, u) && !isApprover(u);
 /* the department's team does the approved work: for Diet, the Kitchen Head and the Kitchen Operator */
 const onTeam = (r, u) => { const x = dept(r.dept); return (x.team || [x.head]).includes(u.id); };
 /* the requester, or whoever raised it for them (owner, 20 Nov 2026: "Requester also I can change") */
