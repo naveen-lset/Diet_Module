@@ -72,6 +72,6 @@ function kitchenParts(cur = null) {
   const list = (k === 'todo' ? todo : done).sort((a, b) => (PRIO_RANK[a.prio] - PRIO_RANK[b.prio]) || (lastAt(a) < lastAt(b) ? 1 : -1));
   const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="hd-q" placeholder="Search request, diet or ID" value="${esc(S.rQ)}" oninput="S.rQ=this.value;render()" aria-label="Search requests"></label></div>`;
   const seg = `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Kitchen">${thumb()}${[['todo', `To Update - ${todo.length}`], ['done', `Done - ${done.length}`]].map(([v, l]) => `<button role="tab" aria-selected="${k === v}" onclick="S.kTab='${v}';render();swapFx('.pane .list')">${l}</button>`).join('')}</div></div>`;
-  const body = `<div class="body">${seg}<p class="az-countline lcount">${plural(list.length, 'request')}</p>${list.length ? `<div class="list list--16 hdlist">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1(k === 'todo' ? 'Nothing to update in the kitchen' : 'Nothing updated yet')}</div>`;
+  const body = `<div class="body">${seg}<p class="az-countline lcount">${countText(list.length, 'request')}</p>${list.length ? `<div class="list list--16 hdlist">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1(k === 'todo' ? 'Nothing to update in the kitchen' : 'Nothing updated yet')}</div>`;
   return { search, body };
 }
