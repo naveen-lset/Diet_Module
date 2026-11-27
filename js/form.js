@@ -678,10 +678,12 @@ function submitDraft() {
    - Diet request: said in words for the kitchen (skip a feed, an extra feed, medicine with food …); the diet itself stays as it is;
    - Diet change: the diet's configuration (change item values, another diet, a new diet); approving it changes the diet.
    Anybody can raise either; the Dietician approves; approving applies it, and the kitchen works from the diet as it now is */
-const DGROUPS = [['request', 'Diet Request', 'Skip a feed, extra feed, medicine with food', 'chat'], ['change', 'Diet Change', 'Change item values, another diet or a new diet', 'tune']];
+const DGROUPS = [['request', 'Diet Request', 'Skip a feed, additional feed, diet change', 'chat'], ['change', 'Diet Change', 'Change item values, another diet or a new diet', 'tune']];
 const DTYPES = [
   ['skip', 'skip', 'Skip A Feed', 'Fasting, a vet procedure or a transfer', 'no_meals', 'request'],
-  ['extra', 'extra', 'Extra Feed', 'Treats, enrichment or an event', 'cookie', 'request'],
+  ['extra', 'extra', 'Additional Feed', 'Treats, enrichment or an event', 'cookie', 'request'],
+  /* (owner, 27 Nov 2026) Diet Change: the species and the text box, nothing else; the Dietitian works out the change */
+  ['dchange', 'dchange', 'Diet Change', 'Say what has to change in the species\' diet', 'tune', 'request'],
   ['medicine', 'medicine', 'Medicine With Food', 'Mix a medicine into a feed', 'medication', 'request'],
   ['quality', 'quality', 'Food Quality', 'Spoiled, wrong cut or wrong amount', 'report', 'request'],
   ['other', 'other', 'Something Else', 'Anything else for the diet team', 'more_horiz', 'request'],
@@ -696,8 +698,8 @@ const dtOfKind = k => DTYPES.find(x => x[1] === (k === 'ask' ? 'new' : k));
 const dgOf = k => DGROUPS.find(x => x[0] === k);
 /* the dietician who approves: the Diet head, or the next approver when the head raises it */
 const dietApprover = () => S.user === dept('diet').head ? DIET_APPROVERS.find(id => id !== S.user && user(id).role === 'dietician') || DIET_APPROVERS.find(id => id !== S.user) : dept('diet').head;
-const JOB_KINDS = ['ask', 'extra', 'medicine', 'quality', 'other'];
-Object.assign(KIND, { ask: ['New diet', 'add_circle'], extra: ['Extra feed', 'cookie'], medicine: ['Medicine with food', 'medication'], quality: ['Food quality', 'report'], other: ['Something else', 'more_horiz'] });
+const JOB_KINDS = ['ask', 'extra', 'medicine', 'quality', 'other', 'dchange'];
+Object.assign(KIND, { ask: ['New diet', 'add_circle'], extra: ['Additional feed', 'cookie'], dchange: ['Diet change', 'tune'], medicine: ['Medicine with food', 'medication'], quality: ['Food quality', 'report'], other: ['Something else', 'more_horiz'] });
 /* one icon per request type everywhere (owner, 20 Nov 2026: "see all the icons"): the request page's tile uses the type's own icon from Select Request Type */
 DTYPES.forEach(x => { if (KIND[x[1]]) KIND[x[1]] = [KIND[x[1]][0], x[4]]; });
 /* a request that changes a diet (the rules engine); the others are said in words for the kitchen */
@@ -719,7 +721,7 @@ function dfRows(d) {
   }
 }
 /* what the details box asks for, by type */
-const DT_HINT = { change: 'Why the food has to change, for example weight loss', move: 'Why they should move to this diet, and anything the kitchen should know', skip: 'Why the feed is skipped, for example a vet procedure', extra: 'Which food, how much and why', medicine: 'Which medicine, the dose and how to mix it', quality: 'What was wrong, and with which food', other: 'What the diet team should do', newdiet: 'What the new diet is for' };
+const DT_HINT = { change: 'Why the food has to change, for example weight loss', move: 'Why they should move to this diet, and anything the kitchen should know', skip: 'Why the feed is skipped, for example a vet procedure', extra: 'Which food, how much and why', medicine: 'Which medicine, the dose and how to mix it', quality: 'What was wrong, and with which food', other: 'What the diet team should do', dchange: 'What has to change in their diet, and why', newdiet: 'What the new diet is for' };
 /* choice chips: the picked one shows a tick; a day chip says its date, a feed chip its clock (owner, 18 Nov: "other things also some work") */
 const dchips = (opts, on, js, icon = '') => `<div class="sg-chips dchips">${opts.map(([v, l, sub]) => `<button class="az-chip" aria-selected="${on(v)}" onclick="${js(v)}">${on(v) ? I('check', 18) : icon ? I(icon, 18) : ''}<span>${esc(l)}${sub ? `<small>${esc(sub)}</small>` : ''}</span></button>`).join('')}</div>`;
 const dayOpt = (n, l) => [n, l, `${wday(addDays(TODAY, n))} ${+addDays(TODAY, n).slice(8)} ${MON[+addDays(TODAY, n).slice(5, 7) - 1]}`];
@@ -808,7 +810,8 @@ function dfAuto(d) {
     case 'end': return d.ends.length ? `End ${diet(by('assigns', d.ends[0]).diet).name} early` : '';
     case 'skip': { const ds = skipDays(d), on = ds.length > 1 ? `on ${datesText(ds)}` : dayText(ds[0] || d.date);
       return d.feeds === 'all' ? `No feed ${on} · ${p}` : d.feeds.length ? `Skip the ${d.feeds.map(f => feed(f).from).join(' and ')} feed ${on} · ${p}` : ''; }
-    case 'extra': return `Extra feed for ${p}`;
+    case 'extra': return `Additional feed for ${p}`;
+    case 'dchange': return `Diet change for ${p}`;
     case 'medicine': return `Medicine with food for ${p}`;
     case 'quality': return `Food quality issue · ${p}`;
     default: return '';
@@ -821,6 +824,7 @@ function dfErr(d) {
   if (!d.dgroup) return 'Choose a diet request or a diet change';
   if (!d.dtype) return 'Choose the type';
   if (!d.targets[0]) return 'Choose who it is for';
+  if (DT_ON.includes(d.dtype) && d.targets[0].level !== DT_LEVEL(d.dtype)) return DT_LEVEL(d.dtype) === 'enclosure' ? 'Choose the enclosure' : 'Choose the species';
   const k = d.dtype, kind = dfKind(d), words = dtOf(k)[5] === 'request';
   if (k === 'change') { if (!d.base) return 'They have no diet to change'; if (!d.changes.length) return 'Change a food'; if (!d.how) return 'Choose how long'; }
   if (k === 'newdiet' && d.base && !d.how) return 'Choose how long';
@@ -943,7 +947,7 @@ function dietForm(d) {
   if (!dt) return out.join('');
   /* (owner, 27 Nov 2026) Describe Your Request comes right after the type, for every type */
   out.push(descSec(d));
-  out.push(section('pets', 'Diet Applies To', t ? forPick(d) : select('', '', 'dfWho()', { placeholder: 'Choose an animal, a place or the species', id: 'f-sp', icon: 'search' }), true));
+  out.push(section('pets', 'Diet Applies To', t ? forPick(d) : select('', '', 'dfWho()', { placeholder: DT_LEVEL(d.dtype) === 'enclosure' ? 'Choose the species, then the enclosure' : 'Choose the species', id: 'f-sp', icon: 'search' }), true));
   if (t) out.push(dtypeFields(d));
   /* a Diet request is said in words: one box, left empty for the requester (owner, 27 Nov 2026: no Title, nothing filled in by itself).
      The request's title in the lists is still made from what is asked (dfAuto), or from the first words of the box */
@@ -971,7 +975,10 @@ function setFormPrio(k) { S.draft.prio = k; render(); playFx($('.prio-hd'), 'pop
 let DTQ = '';
 function dtypeSheet() { DTQ = ''; openSheet(dtypeHtml); }
 /* (owner, 27 Nov 2026) four types to choose: Skip A Feed, Extra Feed, Medicine With Food, Another Diet; the rest is said in words */
-const DT_ON = ['skip', 'extra', 'medicine', 'change', 'move'];   /* owner, 27 Nov 2026: Change Item Values back, with its food editor */
+const DT_ON = ['skip', 'extra', 'dchange'];   /* owner, 27 Nov 2026 (review of rev 37): only Skip A Feed, Additional Feed and Diet Change */
+/* what each type applies to (same review): Skip and Additional Feed an enclosure of a species; Diet Change the species */
+const DT_LV = k => ['skip', 'extra'].includes(k) ? ['sp', 'enc'] : ['sp'];
+const DT_LEVEL = k => ['skip', 'extra'].includes(k) ? 'enclosure' : 'species';
 function dtypeHtml() {
   const d = S.draft, q = DTQ.trim().toLowerCase();
   const grp = g => { const xs = DTYPES.filter(x => DT_ON.includes(x[0]) && x[5] === g[0] && (!q || `${x[2]} ${x[3]}`.toLowerCase().includes(q)));
@@ -984,13 +991,15 @@ function dfType(k) {
   const d = S.draft;
   if (d.dtype !== k) Object.assign(d, { dtype: k, changes: [], diet: null, ends: [], f: {}, reason: null, titleEdited: false, title: '', name: '', how: k === 'move' ? 'once' : null, feeds: 'all', date: addDays(TODAY, 1), dates: [addDays(TODAY, 1)], dmode: 'one', stop: addDays(TODAY, 1) });
   if (k) d.dgroup = dtOf(k)[5];
+  /* a pick made for another type (a species for Diet Change, an enclosure for a feed) is kept only when it fits this one; its species is kept for the picker */
+  if (k && d.targets[0] && d.targets[0].level !== DT_LEVEL(k)) { d.spPre = d.targets[0].sp; d.targets = []; d.base = null; }
   if (d.targets[0]) { const e = dfEat(d)[0]; d.base = e ? e.diet.id : null; }
   /* the type sheet moves on to Select Species in the same sheet (a step forward), rather than closing and opening another */
   if (k && !d.targets[0] && SH.length) { render(); drawOverlay.dir = 'fwd'; dfWho(); return; }
   closeAll(); render(); if (k && !d.targets[0]) setTimeout(dfWho, 120);
 }
 /* For (owner, 19 Nov 2026): the species sheet with search, not a page */
-function dfWho() { applyPick('dfPickT', S.draft.targets[0] || null); }
+function dfWho() { const d = S.draft; applyPick('dfPickT', d.targets[0] || (d.spPre ? { sp: d.spPre, level: 'species', ref: null } : null), DT_LV(d.dtype)); }
 function dfPickT(sp, level, ref) { if (S.draft && !S.draft.blocked) dfPick({ sp, level, ref }); }
 function dfWhoDone() { const t = S.draft.pick.sel; S.draft.pick = null; dfPick(t); }
 function dfPick(t) { const d = S.draft; d.targets = [{ sp: t.sp, level: t.level, ref: t.ref ?? null }]; d.site = sgSite(d.targets[0]); const e = dfEat(d)[0]; d.base = e ? e.diet.id : null; d.changes = []; d.diet = null; d.ends = []; closeAll(); render(); }

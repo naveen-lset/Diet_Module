@@ -2779,3 +2779,15 @@ body,.pane,.spsheet__body,.tab .main,.tab .main[class],.spsheet__body:has(.vlist
 .ap-ac.is-open .ap-ac__small{display:none}
 .ap-ac.is-open .ap-ac__big{display:block}
 .ap-sel .az-ac{background:var(--white)}
+/* (owner, 27 Nov 2026, review of rev 37) the species count on a Diet Wise card, the same chip as its kind */
+.ktag--sp{background:var(--neutral05);color:var(--OnSurfaceVariant)}
+/* the Notes sheet: Kitchen Note, Site Note and Remark, each with its icon; the Remark on the notes tint */
+.nsheet{display:flex;flex-direction:column;gap:8px}
+.nsheet__r{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:var(--r-8);background:var(--white);border:1px solid var(--neutral05)}
+.nsheet__r > .az-i{flex:none;color:var(--OnSurfaceVariant);margin-top:1px}
+.nsheet__r b{display:block;font:var(--t-body-title);color:var(--neutralPrimary)}
+.nsheet__r p{margin:2px 0 0;font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant);white-space:pre-wrap}
+.nsheet__r--remark{background:var(--notes);border-color:transparent}
+/* Nutrition: an icon before each group's name */
+.nutri__h{display:flex;align-items:center;gap:8px}
+.nutri__h > .az-i{color:var(--Primary)}
