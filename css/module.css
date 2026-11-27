@@ -1755,7 +1755,6 @@ button.step{cursor:pointer}
 .dtsel b{font:var(--t-minor-medium);color:var(--OnSurfaceVariant)}
 .dtsel small{font:var(--t-body-regular);color:var(--neutralSecondary)}
 .dtsel__ic{width:40px;height:40px;border-radius:var(--r-8);background:var(--displaybgSecondary);color:var(--OnPrimaryContainer);display:grid;place-items:center;flex:none}
-.dt-h{display:flex;align-items:baseline;gap:8px}.dt-h small{font:var(--t-subtext-regular);color:var(--neutralSecondary)}
 .forpick{position:relative}
 .forpick__b{display:block;width:100%;text-align:left;cursor:pointer}
 .forpick .forcard{padding-right:48px}
@@ -1843,7 +1842,7 @@ button.step{cursor:pointer}
 .sh-swap{animation:shswap .3s var(--ease-sheet)}
 
 /* ---- Select Species: A to Z under pinned letters; a species' places as pinned tabs, the list right under them ---- */
-.pk-gh{position:sticky;top:0;z-index:1;margin:0 -16px;padding:8px 18px 6px;background:var(--Background);font:var(--t-body-medium);color:var(--neutralSecondary)}
+.pk-gh{position:sticky;top:0;z-index:1;box-shadow:0 -2px 0 var(--Background);margin:0 -16px;padding:8px 18px 6px;background:var(--Background);font:var(--t-body-medium);color:var(--neutralSecondary)}
 .pk-gh--l{font:600 13px/18px var(--font);letter-spacing:.4px;color:var(--OnPrimaryContainer)}
 .pk-sp,.pk-g{display:flex;flex-direction:column;gap:8px}
 .pk-sp{gap:4px}
@@ -1860,15 +1859,17 @@ button.step{cursor:pointer}
 .pk-f > .az-chip{position:relative;z-index:1;flex:none;background:var(--white);color:var(--OnPrimaryContainer);transition:color .22s,background-color .22s}
 .pk-f > .az-chip[aria-selected="true"]{background:transparent!important;color:var(--white)}
 .pk-f > .hl{background:var(--OnPrimaryContainer);border-radius:var(--r-full);transition:left .34s var(--ease-sheet),width .34s var(--ease-sheet),top .34s var(--ease-sheet),opacity .15s}
-.pk-top{position:sticky;top:0;z-index:3;display:flex;flex-direction:column;gap:10px;margin:-16px -16px 0;padding:16px 16px 10px;background:var(--Background)}
+.pk-top{position:sticky;top:-16px;z-index:3;display:flex;flex-direction:column;gap:10px;margin:-16px -16px 0;padding:16px 16px 10px;background:var(--Background);box-shadow:0 -2px 0 var(--Background)}
+/* (owner, 27 Nov 2026: the list showed between the header and the search when scrolled) the search is pinned to the very top of the
+   scrolling body (top:-16px undoes its padding); the 2px band covers the sub-pixel seam under the header */
 .pk-top + .pk-pane .pk-gh{top:0}
-.pk-lv{position:sticky;top:0;z-index:2;display:flex;gap:8px;height:60px;box-sizing:border-box;align-items:center;margin:-16px -16px 0;padding:0 16px;background:var(--Background);overflow-x:auto;scrollbar-width:none}
+.pk-lv{position:sticky;top:-16px;z-index:2;box-shadow:0 -2px 0 var(--Background);display:flex;gap:8px;height:60px;box-sizing:border-box;align-items:center;margin:-16px -16px 0;padding:0 16px;background:var(--Background);overflow-x:auto;scrollbar-width:none}
 .pk-lv::-webkit-scrollbar{display:none}
 .pk-lv > .hl{background:var(--OnPrimaryContainer);border-radius:var(--r-full)}
 .pk-lv__c{position:relative;z-index:1;flex:none;display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 14px 0 10px;border-radius:var(--r-full);background:var(--white);color:var(--OnPrimaryContainer);font:var(--t-body-medium);cursor:pointer;transition:color .2s,background-color .2s}
 .pk-lv__c[aria-selected="true"]{background:transparent;color:var(--white)}
 .pk-pane{display:flex;flex-direction:column;gap:12px;padding-top:4px}
-.pk-pane .pk-gh{top:60px}
+.pk-pane .pk-gh{top:44px}
 .pk-dn{font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
 .selcard{border-color:transparent}
 .selcard .az-photo{border-radius:var(--r-8)}
@@ -2429,11 +2430,8 @@ button.step{cursor:pointer}
 .spsheet__body:has(.vlist2),.pane__body:has(.vlist2){background:var(--displaybgSecondary)}
 .body:has(> .vlist2){padding:16px 16px 40px}
 .vlist2{display:flex;flex-direction:column;gap:12px;margin-top:16px}
-.vc2{background:var(--white);border-radius:var(--r-12);padding:16px;display:flex;flex-direction:column}
-.vc2.cur{box-shadow:inset 0 0 0 2px var(--Primary)}
 .vc2__h{display:flex;align-items:center;gap:10px}
 .vc2__n{display:inline-grid;place-items:center;min-width:36px;height:24px;padding:0 8px;border-radius:var(--r-8);background:var(--displaybgSecondary);color:var(--OnPrimaryContainer);font:600 13px/24px var(--font)}
-.vc2.cur .vc2__n{background:var(--OnPrimaryContainer);color:var(--white)}
 .vc2__k{flex:1;font:var(--t-body-medium);color:var(--OnSurfaceVariant)}
 .vc2__d{margin-top:10px;font:var(--t-minor-medium);color:var(--neutralPrimary)}
 .vc2__rows{display:flex;flex-direction:column;margin-top:12px;border-top:1px solid var(--neutral05)}
@@ -2449,19 +2447,206 @@ button.step{cursor:pointer}
 .vc2__f .lnk{display:inline-flex;align-items:center}
 
 /* Version History = option A (owner, 26 Nov 2026): days, the version line on the left, a white card each, on the page colour */
-.spsheet__body:has(.tl2),.pane__body:has(.tl2){background:var(--displaybgSecondary)}
-.body:has(> .tl2){padding:16px 16px 40px}
-.tl2 .vday{margin:20px 0 12px}
-.tl2 .vday::after{background:var(--OutlineVariant);opacity:.6}
-.tl2 .tv{grid-template-columns:40px 1fr;gap:12px;padding-bottom:12px}
-.tl2 .tv::before{left:19px;top:30px;bottom:0;background:var(--OutlineVariant)}
-.tl2 > .tv:has(+ .vday)::before{bottom:-36px}
-.tl2 > .tv:last-child::before{display:none}
-.tl2 .tv__n{width:40px;height:28px;border-radius:var(--r-8);background:var(--white);box-shadow:none;color:var(--OnPrimaryContainer)}
-.tl2 .tv.cur .tv__n{background:var(--OnPrimaryContainer);color:var(--white)}
-.tl2 .vc2{padding:14px 16px;min-width:0}
-.tl2 .vc2__d{margin-top:6px}
-.tl2 .vc2__rows{margin-top:10px}
-.tl2 .vr{padding:10px 0;gap:10px}
-.tl2 .vc2__f{margin-top:8px}
-.tl2 > .tv:has(+ .vday)::before{bottom:0}
+
+/* ---------- Version History (owner, 27 Nov 2026: option A, "cards on one dotted rail"; the design system's History component) ----------
+   the page is the app's background (#EFF5F2); one dotted line on the left runs through every day and every version: a calendar icon beside
+   each day, a 36 px round dot tinted by what happened beside each card (created amber, changed teal, ended coral, as History says) */
+.spsheet__body:has(.vh3),.pane__body:has(.vh3){background:var(--Background)}
+.body:has(> .vh3){padding:16px 16px 40px}
+.vh3{display:flex;flex-direction:column;margin-top:8px}
+.vh3 > *{position:relative}
+.vh3 > *::before{content:"";position:absolute;left:17px;top:0;bottom:0;border-left:2px dotted rgba(31,81,91,.35)}
+.vh3 > :first-child::before{top:18px}
+.vh3 > :last-child::before{bottom:auto;height:18px}
+.vh3__day{display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:center;padding:8px 0 12px;font:600 12px/16px var(--font);letter-spacing:.04em;text-transform:uppercase;color:var(--neutralSecondary)}
+.vh3__day:not(:first-child){padding-top:12px}
+.vh3__ic{position:relative;z-index:1;justify-self:center;display:grid;place-items:center;width:28px;height:28px;background:var(--Background);color:var(--OnPrimaryContainer)}
+.vh3__it{display:grid;grid-template-columns:36px 1fr;gap:12px;padding-bottom:12px}
+.vh3__dot{position:relative;z-index:1;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--displaybgSecondary);color:var(--OnPrimaryContainer);box-shadow:0 0 0 4px var(--Background)}
+.vh3__dot--created{background:#FFF6C5;color:#8A6D00}
+.vh3__dot--ended{background:#FEE7E2;color:var(--Tertiary)}
+.vh3__c{min-width:0;background:var(--white);border-radius:var(--r-12);padding:14px 16px 12px}
+.vh3__c.cur{box-shadow:inset 0 0 0 1.5px var(--Primary)}
+.vh3__h{display:flex;align-items:center;gap:8px}
+.vh3__v{padding:2px 6px;border-radius:var(--r-4);background:var(--displaybgPrimary);color:var(--OnPrimaryContainer);font:600 12px/16px var(--font)}
+.vh3__c.cur .vh3__v{background:var(--OnPrimaryContainer);color:var(--white)}
+.vh3__k{flex:1;min-width:0;font:400 13px/18px var(--font);color:var(--neutralSecondary)}
+.vh3__n{display:block;margin-top:8px;font:500 16px/22px var(--font);color:var(--neutralPrimary)}
+.vh3__id{display:block;margin-top:2px;font:400 12px/16px var(--font);color:var(--neutralSecondary)}
+.vh3__w{margin:8px 0 0;font:400 14px/20px var(--font);color:var(--OnSurfaceVariant)}
+.vh3__p{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--neutral05)}
+.vh3__p b{min-width:0;font:500 14px/20px var(--font);color:var(--neutralPrimary)}
+.vh3__p b span{font-weight:400;color:var(--neutralSecondary)}
+.vh3 time{flex:none;font:400 12px/16px var(--font);color:var(--neutralSecondary);white-space:nowrap}
+.vh3__ok{display:flex;align-items:flex-start;gap:8px;margin-top:8px;font:400 13px/18px var(--font);color:var(--OnSurfaceVariant)}
+.vh3__ok > .az-i{flex:none;color:var(--OnSurface)}
+.vh3__ok.no > .az-i{color:var(--moderateSecondary)}
+.vh3__ok > span:not(.az-i){flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.vh3__ok b{font:500 13px/18px var(--font);color:var(--OnSurfaceVariant)}
+.vh3__ok small{font:400 12px/16px var(--font);color:var(--neutralSecondary)}
+.vh3__ok time{line-height:18px}
+.vh3__f{display:flex;justify-content:flex-end;margin-top:8px}
+.vh3__f .lnk{display:inline-flex;align-items:center}
+.az-tablet .vh3__c{padding:16px 20px 14px}
+
+/* Diet Details with many groups (owner, 27 Nov 2026: option 2) — the phone pins the Item column and the group amounts slide under it */
+.mtab-hint{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 2px 8px;font:var(--t-body-medium);color:var(--OnPrimaryContainer)}
+.mtab-hint__s{display:inline-flex;align-items:center;gap:4px;font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.mtab-wrap--pin .mtab__bt{text-align:right;padding-left:8px;padding-right:8px}
+.mtab-wrap--pin{overscroll-behavior-x:contain;scrollbar-width:none}
+.mtab-wrap--pin::-webkit-scrollbar{display:none}
+.mtab-wrap--pin .mtab__i,.mtab-wrap--pin .mtab__ih{position:sticky;left:0;z-index:2;min-width:116px;max-width:140px;background:var(--white)}
+.mtab-wrap--pin .mtab__ih{z-index:3;background:#C1D3D0}
+/* the pinned column draws its own edges: a line on the right, and its colour to the left so nothing shows past it while sliding */
+.mtab-wrap--pin :is(.mtab__i,.mtab__ih)::after{content:"";position:absolute;top:0;bottom:0;right:-1px;width:1px;background:var(--SurfaceVariant)}
+.mtab-wrap--pin .mtab__ih::after{background:#B3C7C3}
+.mtab-wrap--pin :is(.mtab__i,.mtab__ih)::before{content:"";position:absolute;top:0;bottom:0;left:-6px;width:6px;background:inherit}
+.mtab-wrap--pin .mtab__i{border-right:0}
+.mtab-wrap--pin .mtab__q--b{min-width:64px}
+.mtab-wrap--pin .mtab__band td > span{position:sticky;left:12px;width:max-content}
+.mtab-wrap--pin tr.chg > .mtab__i{background:#FFF8D4}
+
+/* ---------- Request Module, as the Antz Mobile Figma (owner, 27 Nov 2026) ---------- */
+/* the priority flag: 52 × 34, the notch 7.5 px deep on the left; "!" and "!!!" 24/600 white */
+.az-flag{clip-path:polygon(7.5px 50%,0 0,100% 0,100% 100%,0 100%);padding-left:7.5px;font:600 24px/1 var(--font);letter-spacing:0}
+.az-flag--img{display:block;clip-path:none;padding:0;background:none}
+/* the request card: icon tile + ID (20/500) + flag; "Type • Name" 12/600 teal • age 12 grey; description 14 three lines; attachments | fact */
+.hdcard{gap:12px;box-shadow:0 2px 2px rgba(0,0,0,.1)}
+.hdcard__top{display:flex;align-items:center;gap:12px;padding:16px 0 0 16px;border-bottom:0}
+.hdcard__ic{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:var(--r-4);background:var(--OnSecondaryContainer);color:var(--white)}
+.hdcard__id{flex:1;min-width:0;font:500 20px/24px var(--font);color:var(--OnSecondaryContainer)}
+.hdcard__body{display:flex;flex-direction:column;gap:12px;padding:0 16px}
+.hdcard__by{display:block;font:400 12px/16px var(--font);color:var(--neutralSecondary);margin:0}
+.hdcard__by b{font:600 12px/16px var(--font);color:var(--OnPrimaryContainer)}
+.hdcard__d{font:400 14px/20px var(--font);color:var(--OnSurfaceVariant);-webkit-line-clamp:3}
+.hdcard__more{margin-top:-12px;font:400 12px/16px var(--font);color:var(--Secondary)}
+.hdcard__facts{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:0}
+.hdcard .hdcard__facts > .hdcard__files,.hdcard__files{display:inline-flex;flex-direction:row;align-items:center;gap:8px;font:400 14px/20px var(--font);color:var(--OnSurfaceVariant);margin:0}
+.hdcard__fact{display:flex;flex-direction:column;gap:2px;min-width:0;text-align:right}
+.hdcard__facts > .hdcard__fact:only-child{text-align:left}
+.hdcard__fact small{font:500 10px/12px var(--font);color:var(--neutralSecondary)}
+.hdcard__fact b{font:600 14px/18px var(--font);color:var(--OnSurfaceVariant)}
+.hdcard .az-strip{margin:0 2px 2px}
+
+/* the request page, as the Figma's Req Details (Comment Input UI, 1 Sep 2025) */
+.rq2-pane > .az-topbar .az-topbar__title{flex:1;text-align:center;font:500 20px/24px var(--font)}
+.rq2-pane .pane__body{background:var(--white)}
+.rq2-hd{display:flex;flex-direction:column;background:var(--OnPrimaryContainer);color:var(--white)}
+.rq2-dept{display:flex;align-items:center;gap:12px;padding:16px 0 12px 16px}
+.rq2-dept b{min-width:0;font:600 16px/20px var(--font);color:var(--white)}
+.rq2-ic{flex:none;display:grid;place-items:center;width:32px;height:32px;border-radius:var(--r-4);background:rgba(255,255,255,.25);color:var(--white)}
+.rq2-time{margin:0;padding:0 16px 4px;font:400 12px/16px var(--font);color:var(--white)}
+.rq2-user{display:flex;align-items:center;gap:4px;padding:4px 16px 12px;font:400 12px/16px var(--font);color:var(--white)}
+.rq2-user .az-avatar{width:30px;height:30px;font:600 12px/1 var(--font);background:var(--Secondary);color:var(--white)}
+.rq2-user > span:not(.az-avatar){margin-right:4px}
+.rq2-act{display:grid;place-items:center;width:28px;height:28px;margin-left:4px;border-radius:50%;background:rgba(0,0,0,.2);color:var(--white);cursor:pointer}
+.rq2{display:flex;flex-direction:column;background:var(--Background)}
+.rq2-low{padding:12px 16px 0}
+.rq2-row{display:flex;gap:12px;align-items:flex-start;padding:16px;border-top:1px solid var(--neutral05);background:var(--Background)}
+.rq2-row > .az-i{flex:none;color:var(--neutralPrimary)}
+.rq2-row__b{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.rq2-row__h{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:20px}
+.rq2-row__h > b{font:500 14px/20px var(--font);letter-spacing:.1px;color:var(--neutralPrimary)}
+.rq2-row__h .lnk{font:500 14px/20px var(--font);color:var(--OnSurface)}
+.rq2-row__v{font:400 16px/22px var(--font);color:var(--OnSurfaceVariant);min-width:0}
+.rq2-row__v p{margin:0}
+.rq2-row__v .v{font:400 16px/22px var(--font);color:var(--OnSurfaceVariant)}
+.rq2-row__v .rperson{padding:0;gap:4px;align-items:flex-start}
+.rq2-row__v .rperson .az-avatar{width:24px;height:24px;font:600 12px/1 var(--font);background:var(--Outline);color:var(--white)}
+.rq2-row__v .rperson b{font:500 14px/20px var(--font);color:var(--OnSurfaceVariant)}
+.rq2-row__v .rperson .grow > span{font:400 12px/16px var(--font);color:var(--OnSurfaceVariant)}
+.rq2-row__v .forcard{background:var(--white)}
+.rq2-extra{padding:16px;border-top:1px solid var(--neutral05)}
+.rq2-actsec{background:var(--white);border-top:1px solid var(--neutral05);padding-bottom:24px}
+.rq2-acth{display:flex;align-items:center;gap:8px;padding:16px;color:var(--OnSurfaceVariant)}
+.rq2-acth b{font:500 20px/24px var(--font);color:var(--OnSurfaceVariant)}
+.rq2-acth .act-fbtn{font:600 14px/20px var(--font);color:var(--OnPrimaryContainer)}
+.rq2-actsec .act-comp{padding:0 16px 12px}
+.rq2-actsec .acts{padding:4px 16px 0}
+.tab .rq2-dept,.tab .rq2-row,.tab .rq2-acth{padding-left:20px;padding-right:20px}
+.tab .rq2-dept{padding-right:0}
+/* the Filter screen (Figma: Request Module "Filters", Housing "Filter (n)") */
+.az-sheet__body:has(> .fs){padding:0;overflow:hidden;display:flex}
+.fs{flex:1;display:flex;min-height:60vh;align-self:stretch}
+.fs-rail{flex:none;width:162px;display:flex;flex-direction:column;background:var(--Background);overflow-y:auto}
+.fs-tab{display:flex;align-items:center;gap:8px;min-height:40px;padding:12px 16px;text-align:left;font:600 14px/16px var(--font);color:var(--OnPrimaryContainer);background:transparent;cursor:pointer}
+.fs-tab span{flex:1;min-width:0}
+.fs-tab b{font:500 12px/16px var(--font);color:var(--OnPrimaryContainer)}
+.fs-tab[aria-selected="true"]{background:var(--white)}
+.fs-pane{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px;padding:16px;overflow-y:auto;background:var(--white)}
+.fs-q{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;border:1px solid var(--OutlineVariant);border-radius:var(--r-8);color:var(--neutralSecondary)}
+.fs-q input{flex:1;min-width:0;border:0;outline:0;background:none;font:400 14px/20px var(--font);color:var(--OnSurfaceVariant)}
+.fs-list{display:flex;flex-direction:column;gap:4px}
+.fs-opt{display:flex;align-items:center;gap:8px;min-height:36px;text-align:left;font:400 14px/18px var(--font);color:var(--OnSurfaceVariant);background:none;cursor:pointer}
+.fs-opt > .az-i{flex:none;color:var(--Outline)}
+.fs-opt[aria-checked="true"] > .az-i{color:var(--Primary)}
+.fs-none{margin:8px 0;font:var(--t-body-regular);color:var(--neutralSecondary)}
+.az-sheet__foot:has(.fs-n){align-items:center;gap:8px}
+.fs-n{flex:1;min-width:0;white-space:nowrap;font:400 14px/20px var(--font);color:var(--OnSurfaceVariant)}
+.fs-n b{font-weight:500}
+.az-sheet__foot .fs-clear,.az-sheet__foot .fs-apply{flex:none;width:auto;min-width:0;height:40px;padding:0 16px;border-radius:var(--r-8)}
+.az-sheet__foot .fs-clear{font:500 14px/1 var(--font);color:var(--OnPrimaryContainer);border-color:var(--OutlineVariant)}
+.az-sheet__foot .fs-apply{font:600 16px/1 var(--font)}
+/* the filter button: dark green with how many are on (Figma Animal List) */
+.fs-btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;width:auto;min-width:40px;padding:0 10px}
+.fs-btn b{font:600 14px/1 var(--font)}
+.fs-on{display:flex;flex-wrap:wrap;gap:8px;margin:-4px 0 12px}
+.rq2-row__v .rperson__acts{display:none}
+/* Applied To (owner, 27 Nov 2026): one group per level, the Antz Mobile Figma's cards */
+.apg{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.apg__h{margin:0 2px;font:600 14px/20px var(--font);color:var(--OnPrimaryContainer)}
+.apg__h span{font-weight:400;color:var(--neutralSecondary)}
+.apg__list{display:flex;flex-direction:column;gap:12px}
+.apc{display:block;width:100%;text-align:left;cursor:pointer;background:none;padding:0}
+.apc__k{display:inline-block;margin-top:2px;font:400 12px/16px var(--font)!important;color:var(--neutralSecondary)}
+.apc__n{flex:none;align-self:center;margin-left:auto;padding-right:6px;font:600 20px/24px var(--font);color:var(--OnSurface)}
+.apc__n--off{font:500 12px/16px var(--font);color:var(--neutralSecondary)}
+.apc--animal .az-animal{background:var(--white);padding:12px;box-shadow:0 1px 1px rgba(0,0,0,.08)}
+/* a site or a section: the Housing Section card */
+.apc--place{position:relative;border-radius:var(--r-8);overflow:hidden;box-shadow:0 1px 1px rgba(0,0,0,.1);background:var(--white)}
+.apc__img{position:absolute;left:0;right:0;top:0;height:116px;background:var(--OnPrimaryContainer);overflow:hidden}
+.apc__img img{width:100%;height:100%;object-fit:cover;opacity:.6;mix-blend-mode:hard-light}
+.apc__top{position:relative;display:flex;flex-direction:column;justify-content:space-between;height:116px;padding:14px 16px 12px;color:var(--white)}
+.apc__top > b{font:600 24px/28px var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.apc__stats{display:flex;justify-content:space-between}
+.apc__stats span{display:flex;flex-direction:column;font:400 12px/16px var(--font);color:var(--Surface)}
+.apc__stats span:nth-child(2){align-items:center}.apc__stats span:nth-child(3){align-items:flex-end}
+.apc__stats b{font:500 24px/28px var(--font);color:var(--white)}
+.apc__foot{display:flex;align-items:center;gap:6px;padding:14px 12px;background:var(--OnBackground);font:400 14px/20px var(--font);color:var(--neutralPrimary)}
+.apc__foot .apc__k{margin:0 4px 0 0}
+/* an enclosure: the Housing enclosure row */
+.apc--encl{display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:var(--white);box-shadow:0 1px 1px rgba(0,0,0,.08)}
+.apc__dot{flex:none;width:44px;height:44px;border-radius:50%;overflow:hidden}
+.apc__dot img{width:100%;height:100%;object-fit:cover}
+.apc__d{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;color:var(--OnSurfaceVariant)}
+.apc__d b{font:600 16px/20px var(--font)}
+.apc__d small{font:400 12px/16px var(--font)}
+.empty1__img{display:block;width:150px;height:150px;object-fit:contain;margin:0 auto 12px}
+.empty1__t{font:500 16px/24px var(--font);color:var(--OnSurfaceVariant)}
+.empty1 small{margin-top:4px!important;font:400 14px/20px var(--font)!important}
+.apc__n{display:flex;flex-direction:column;align-items:center}.apc__n small{font:400 12px/16px var(--font);color:var(--neutralSecondary)}
+/* the bell (Figma Requests header: a red count on the bell) */
+.bellbtn{position:relative}
+.bell__n{position:absolute;top:2px;right:0;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--Error);color:var(--white);font:600 11px/18px var(--font);text-align:center}
+.bell__dot{display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:50%;background:var(--Error);vertical-align:1px}
+/* Item Not In Stock */
+.ns-seg{width:100%}
+.ns-list{max-height:260px;overflow-y:auto}
+.ns-days{flex-wrap:wrap}
+.ns-sub{display:block;margin-top:8px;font:var(--t-subtext-regular);color:var(--neutralSecondary)}
+.ns-say{display:flex;gap:8px;align-items:flex-start;margin:0;padding:10px 12px;border-radius:var(--r-8);background:var(--displaybgPrimary);font:var(--t-body-regular);line-height:20px;color:var(--OnSurfaceVariant)}
+.ns-say .az-i{flex:none;color:var(--OnPrimaryContainer);margin-top:1px}
+.az-statusbar__actions .az-btn{white-space:nowrap;min-width:0}
+
+/* the Figma's Animal Card For Selection (Animal Card Redesign, 38280:31009) */
+.acs{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r-12);background:var(--white);box-shadow:0 4px 14px rgba(0,0,0,.08);overflow:hidden}
+.acs > .az-i{flex:none;color:var(--neutralSecondary);margin-right:4px}
+.acs__p{position:relative;flex:none;width:84px;height:84px;border-radius:var(--r-8);overflow:hidden}
+.acs__p img{width:100%;height:100%;object-fit:cover}
+.acs__sex{position:absolute;left:4px;top:4px;display:grid;place-items:center;min-width:24px;height:24px;padding:0 4px;border-radius:6px;background:var(--Secondary);color:var(--white);font:500 10px/1 var(--font)}
+.acs__sex--F{background:var(--Tertiary)}.acs__sex--UD{background:var(--Error)}
+.acs__d{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;font:500 14px/17px var(--font);letter-spacing:.1px;color:var(--OnSurfaceVariant)}
+.acs__d > *{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acs__d b{font:600 14px/17px var(--font);letter-spacing:0;color:var(--OnPrimaryContainer)}
+.acs__d i{font:italic 400 14px/17px var(--font);color:var(--neutralSecondary)}
+.acs__off{color:var(--neutralSecondary)}
