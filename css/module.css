@@ -2702,3 +2702,12 @@ button.step{cursor:pointer}
 .ap-n{flex:1;min-width:0;font:400 14px/20px var(--font);color:var(--OnSurfaceVariant)}
 .az-sheet__foot .ap-n + .az-btn{flex:none;width:auto;padding:0 28px}
 .dcert__btns .az-btn{white-space:nowrap}
+/* the request page on white (owner, 27 Nov 2026: "make the background white, or show the important parts as containers"): the rows on
+   white; who it is for and when sit in a soft box on the page colour */
+.rq2,.rq2-row{background:var(--white)}
+.rq2-row__v .forcard{background:var(--Background);box-shadow:none}
+.rq2-row__v .whn{padding:12px 12px 2px;border-radius:var(--r-8);background:var(--Background)}
+.rq2-row__v .whn__r:last-child{border-bottom:0}
+.rq2-row__v .az-kvgrid{padding:12px;border-radius:var(--r-8);background:var(--Background)}
+/* on the white request page the status bar's rounded top read as a seam (owner, 27 Nov 2026: "see the top edges"): a straight top, one hairline, a soft shadow up */
+.rq2-pane .az-statusbar{border-radius:0;border-top:1px solid var(--neutral05);box-shadow:0 -4px 12px rgba(0,0,0,.05)}
