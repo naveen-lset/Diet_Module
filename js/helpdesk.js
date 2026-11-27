@@ -198,8 +198,8 @@ function reqFacts(r) {
 /* the diet-only parts after the rows: the new diet or the feeds (a skipped day), Save it as, what approving does, the diet now */
 function reqExtra(r) {
   if (!isDiet(r)) return '';
-  const [t, lines] = r.kind === 'items' ? ['', ''] : reqLines(r);
-  return (lines ? `<p class="secttl">${t}</p>${lines}` : '') + saveAsSec(r) + reqEffect(r) + reqDietNow(r);
+  /* (owner, 27 Nov 2026) the rows above say it all: no Feeds list, no When Approved; only the approver's Save It As stays */
+  return saveAsSec(r);
 }
 /* the Request page (owner, 20 Nov 2026: "check the Request Details from the Design Hub (Incident Reports, IR-26-0107), mix and give the best
    details page; the animation has to be perfect"). As the Hub's Incident record, on the Figma's Req Details: a dark head (the category and its

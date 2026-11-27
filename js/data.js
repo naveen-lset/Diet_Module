@@ -3,16 +3,16 @@
 
 /* people, as the Kitchen & Diet roles (antz_kitchen_backend prisma/migrations): the three "Viewing as" people first; the rest appear in the data */
 const USERS = [
-  { id: 'u-kiran', name: 'Kiran Rao', title: 'Biologist', role: 'biologist', roles: 'Biologist', place: 'Cow Land' },
+  { id: 'u-kiran', name: 'Kiran Rao', title: 'Biologist', role: 'biologist', roles: 'Biologist', place: 'Wetland Park' },
   { id: 'u-hydar', name: 'Aparna', title: 'Dietitian', role: 'dietician', roles: 'Diet Manager · Dietitian' },   /* owner, 27 Nov 2026: the approver is Aparna (Dietitian) */
   { id: 'u-suresh', name: 'Suresh Gowda', title: 'Kitchen Head', role: 'head', roles: 'Kitchen Head', place: 'Central Kitchen' },
   { id: 'u-manoj', name: 'Manoj Kumar', title: 'Kitchen Operator', role: 'viewer', roles: 'Kitchen Operator', place: 'Central Kitchen' },
   { id: 'u-amruth', name: 'Amruth Reddy', title: 'Dietitian', role: 'dietician', roles: 'Diet Manager · Dietitian' },
-  { id: 'u-narendra', name: 'Narendra M', title: 'Diet Manager', role: 'dietician', roles: 'Diet Manager' },
-  { id: 'u-raghav', name: 'Raghav N', title: 'Maintenance Head', role: 'other' },
-  { id: 'u-priya', name: 'Priya S', title: 'Procurement Head', role: 'other' },
-  { id: 'u-kavya', name: 'Kavya R', title: 'Horticulture Head', role: 'other' },
-  { id: 'u-arjun', name: 'Arjun P', title: 'IT Head', role: 'other' },
+  { id: 'u-narendra', name: 'Narendra Murthy', title: 'Diet Manager', role: 'dietician', roles: 'Diet Manager' },
+  { id: 'u-raghav', name: 'Raghav Nair', title: 'Maintenance Head', role: 'other' },
+  { id: 'u-priya', name: 'Priya Shah', title: 'Procurement Head', role: 'other' },
+  { id: 'u-kavya', name: 'Kavya Raman', title: 'Horticulture Head', role: 'other' },
+  { id: 'u-arjun', name: 'Arjun Pillai', title: 'IT Head', role: 'other' },
 ];
 /* Viewing as (owner, 27 Nov 2026): the Requester, the Approver (Aparna, Dietitian) and the Kitchen */
 const VIEWERS = ['u-kiran', 'u-hydar', 'u-suresh'];
@@ -348,6 +348,15 @@ const DEMO_SECTION_SITE = { 170: 29, 162: 47, 196: 57, 1899: 209, 902: 210, 903:
    species' own diet has animals on it */
 const DEMO_ENC_SECTION = { 14986: 170, 14993: 170, 15225: 170, 14907: 170, 14973: 178, 19990: 162, 19991: 162, 19992: 162, 15224: 196, 15229: 196, 15235: 196, 19981: 1899, 19994: 902,
   14915: 902, 19996: 903, 19993: 903, 19998: 904, 20001: 905, 15116: 178, 14897: 178, 14918: 164, 14908: 164, 15194: 164 };
+const DEMO_NAMES = {
+  sites: { 29: 'Green Valley Zoo', 47: 'Bird Conservation Centre', 57: 'Wetland Park', 209: 'Reptile Rescue Centre', 210: 'Bird Park', 211: 'Animal Hospital', 212: 'Primate World', 213: 'Night Safari', 214: 'Small Mammal House', 215: 'Tropical Zone' },
+  sections: { 162: 'Cassowary Paddocks', 164: 'Rainforest Walk', 170: 'Lovebird Aviary', 178: 'Marmoset Wing', 196: 'Coypu Marsh', 902: 'Ratite Run', 903: 'Quarantine Yard', 904: 'Primate House', 905: 'Nocturnal House', 1899: 'Tortoise Yard' },
+  enclosures: { 15224: 'Coypu Pond 1', 15225: 'Coypu Pond 2', 15229: 'Coypu Pond 6', 15235: 'Coypu Pond 12', 14973: 'Marmoset Cage 6', 14986: 'Lovebird Aviary 2', 14907: 'Tortoise Pen 1',
+    19981: 'Tortoise Yard 1', 14993: 'Polecat Den', 15194: 'Fish Tank 1', 14915: 'Chick Pen 1', 19990: 'Paddock A', 19991: 'Paddock B', 19992: 'Paddock C', 19993: 'Chick Pen 2',
+    19994: 'Ratite Run 1', 19996: 'Quarantine Pen 1', 15116: 'Marmoset Cage 12', 19998: 'Primate House 1', 20001: 'Nocturnal Room 1', 14897: 'Meerkat Mound', 14918: 'Iguana Glasshouse', 14908: 'Koi Pond' } };
+/* the same names in the seed's words (longest first, so "Lset Farm" goes before "Lset") */
+const DEMO_RENAME = [[/\bSherwood lovebirds\b/g, 'lovebirds in the aviary'], [/\bthe Sherwood flock\b/g, 'the aviary flock'], [/\bthe Ayodhya marmosets\b/g, 'the marmosets'], [/\bQ Pen 1\b/g, 'Quarantine Pen 1'], [/\bRil enclosure\b/g, 'Tortoise Yard 1'], [/\bCoypu 1\b/g, 'Coypu Pond 1'], [/\bSherwood\b/g, 'Lovebird Aviary'],
+  [/\bAyodhya\b/g, 'Marmoset Wing'], [/\bCONGO 2\b/g, 'Chick Pen 2'], [/\bCONGO 1\b/g, 'Chick Pen 1'], [/\bCongo 1\b/g, 'Chick Pen 1'], [/\bCongo\b/g, 'the chick pens'], [/\bLset Farm\b/g, 'Green Valley Zoo'], [/\bLset\b/g, 'Bird Conservation Centre'], [/\bCow Land\b/g, 'Wetland Park']];
 /* a species with too many in one enclosure keeps this many (the koi pond) */
 const DEMO_MAX = { 235859: 15 };
 
@@ -407,5 +416,11 @@ function SEED(t) {
     else Object.assign(h, what);
     return h;
   });
+  /* real-looking names for the demo (owner, 27 Nov 2026: "show proper data, I want to see how it looks with real data"): the masters'
+     test names (Lset, Antz Site, New rnr, SW 2, DANDELI…) become a zoo's names, in the places and in every text that names them */
+  const RN = DEMO_NAMES, ren = t => typeof t === 'string' ? DEMO_RENAME.reduce((x, [re, to]) => x.replace(re, to), t) : t;
+  sites.forEach(x => { x.name = RN.sites[x.id] || x.name; }); sections.forEach(x => { x.name = RN.sections[x.id] || x.name; }); enclosures.forEach(x => { x.name = RN.enclosures[x.id] || x.name; });
+  requests.forEach(r => { ['title', 'text', 'note'].forEach(k => { r[k] = ren(r[k]); }); (r.files || []).forEach(f => { f.name = ren(f.name); }); });
+  history.forEach(h => { h.remarks = ren(h.remarks); }); diets.forEach(d => { ['note', 'site', 'remark', 'remarks'].forEach(k => { d[k] = ren(d[k]); }); });
   return { users: USERS, feeds: FEEDS, sites, sections, enclosures, species, animals, items, diets, assigns, requests, history, seq: 522, dseq: 520, hseq: history.length };
 }
