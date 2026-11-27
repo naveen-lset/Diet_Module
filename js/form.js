@@ -991,7 +991,7 @@ function dfType(k) {
 }
 /* For (owner, 19 Nov 2026): the species sheet with search, not a page */
 function dfWho() { applyPick('dfPickT', S.draft.targets[0] || null); }
-function dfPickT(sp, level, ref) { dfPick({ sp, level, ref }); }
+function dfPickT(sp, level, ref) { if (S.draft && !S.draft.blocked) dfPick({ sp, level, ref }); }
 function dfWhoDone() { const t = S.draft.pick.sel; S.draft.pick = null; dfPick(t); }
 function dfPick(t) { const d = S.draft; d.targets = [{ sp: t.sp, level: t.level, ref: t.ref ?? null }]; d.site = sgSite(d.targets[0]); const e = dfEat(d)[0]; d.base = e ? e.diet.id : null; d.changes = []; d.diet = null; d.ends = []; closeAll(); render(); }
 /* the diet fields' sheets (owner, 19 Nov 2026: "Move diet also like a bottom sheet, I can search and select"); no animal counts */

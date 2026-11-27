@@ -7,9 +7,10 @@
 let APK = null;
 const APK_LV = [['sp', 'species', 'Species'], ['site', 'site', 'Site'], ['sec', 'section', 'Section'], ['enc', 'enclosure', 'Enclosure'], ['an', 'animal', 'Animal']];
 function applyPick(cb, cur = null) {
-  APK = { cb, sp: null, site: null, sec: null, enc: null, an: null, step: null, q: '', sq: '' };
+  const was = location.hash === '#/applyto' && APK ? { back: APK.back, pushed: APK.pushed } : null;   /* opened again on this page: keep the way back */
+  APK = { cb, sp: null, site: null, sec: null, enc: null, an: null, open: null, q: '', sq: '' };
   if (cur) { APK.sp = cur.sp; if (cur.level !== 'species') { const p = pathOf(cur); APK.site = p.site ?? null; APK.sec = cur.level === 'site' ? null : p.section ?? null; APK.enc = ['enclosure', 'animal'].includes(cur.level) ? p.enclosure ?? null : null; APK.an = cur.level === 'animal' ? cur.ref : null; } }
-  APK.back = location.hash; closeAll(); go('#/applyto');
+  Object.assign(APK, was || { back: location.hash, pushed: true }); closeAll(); go('#/applyto');
 }
 /* the animals under what is picked so far */
 const apAnimals = (upTo = 5) => D.animals.filter(a => { const p = pathOfAnimal(a);
@@ -24,7 +25,7 @@ function apOpts(k) {
 }
 const apName = (k, id) => k === 'sp' ? species(id).name : k === 'site' ? by('sites', id).name : k === 'sec' ? by('sections', id).name : k === 'enc' ? by('enclosures', id).name : animalName(by('animals', id));
 const apIc = o => o.photo ? `<span class="ap-ph"><img src="${o.photo}" alt="" loading="lazy"></span>` : `<span class="ap-ic">${I(o.icon, 20)}</span>`;
-function apSet(k, id) { const i = APK_LV.findIndex(x => x[0] === k); APK[k] = id; APK_LV.slice(i + 1).forEach(([x]) => { APK[x] = null; }); APK.sq = ''; closeAll(); render(); }
+function apSet(k, id) { if (APK[k] === id) { APK.sq = ''; closeAll(); return; } const i = APK_LV.findIndex(x => x[0] === k); APK[k] = id; APK_LV.slice(i + 1).forEach(([x]) => { APK[x] = null; }); APK.sq = ''; closeAll(); render(); }
 function apClear(k) { const i = APK_LV.findIndex(x => x[0] === k); APK_LV.slice(i).forEach(([x]) => { APK[x] = null; }); render(); }
 /* Search animal: by name or AID; a tap fills every level down to the animal */
 function apAnimal(id) { const a = by('animals', id), p = pathOfAnimal(a); Object.assign(APK, { sp: a.sp, site: p.site, sec: p.section, enc: a.enc, an: a.id, q: '' }); render(); }
@@ -36,8 +37,11 @@ function apTarget() {
   if (APK.site) return { sp: APK.sp, level: 'site', ref: APK.site };
   return { sp: APK.sp, level: 'species', ref: null };
 }
-function apDone() { const t = apTarget(); if (!t) return; const { cb, back } = APK; location.hash = back || '#/new?dept=diet'; setTimeout(() => window[cb](t.sp, t.level, t.ref), 0); }
-function apBack() { location.hash = (APK && APK.back) || '#/new?dept=diet'; }
+/* Done puts the pick on the form's draft now, then returns the way it came: history.back() drops the #/applyto entry, so the phone's
+   Back afterwards does not reopen this page (reached any other way, as a reload, it replaces itself with the form) */
+function apLeave() { const back = (APK && APK.back) || '#/new?dept=diet'; if (APK && APK.pushed && history.length > 1) history.back(); else location.replace(back); }
+function apDone() { const t = apTarget(); if (!t) return; window[APK.cb](t.sp, t.level, t.ref); apLeave(); }
+function apBack() { apLeave(); }
 /* the design system's parts (owner, 27 Nov 2026: animal-card, site-card, bottom-sheet pages of the Antz Library):
    an animal is the Animal card (photo 104, sex tag, expand corner; radio to choose; remove once picked); a species, site, section or
    enclosure is the Site card (48 thumbnail, name, one line under it; radio to choose; a picked card with ✕ in the page) */
@@ -46,15 +50,16 @@ const apAge = a => a.ageM == null ? '' : a.ageM >= 12 ? `${Math.floor(a.ageM / 1
 function animalCardDS(a, { control = 'radio', on = false, act = '', big = false } = {}) {
   const sp = species(a.sp), p = pathOfAnimal(a), ctl = control === 'radio' ? `<span class="az-ac-ctl"><span class="az-ac-radio${on ? ' is-on' : ''}" aria-hidden="true"></span></span>`
     : control === 'remove' ? `<span class="az-ac-ctl"><button type="button" class="az-ac-remove" onclick="event.stopPropagation();${act}" aria-label="Remove">${I('cancel', 24, true)}</button></span>` : '';
-  const exp = `<button type="button" class="az-ac-exp" onclick="event.stopPropagation();this.closest('.az-ac').classList.toggle('is-open')" aria-label="Expand card"><img src="assets/ds/expand.svg" width="16" height="16" alt=""></button>`;
-  const pick = control === 'radio' ? ` data-act="1" onclick="${act}"` : '';
-  return `<div class="az-ac ap-ac${on ? ' is-picked' : ''}"${pick}>
-    <div class="az-ac-row ap-ac__small"><span class="az-ac-ph"><img class="az-ac-ph__img" src="${spPhoto(a.sp)}" alt="">${apSexTag(a)}${exp}</span><span class="az-ac-b"><span class="az-ac-top"><span class="az-ac-l az-ac-l--aaid">AID: ${a.id}</span></span>${a.name ? `<span class="az-ac-l">Name: ${esc(a.name)}</span>` : ''}<span class="az-ac-l">${esc(sp.name)}</span><span class="az-ac-l az-ac-l--sci">${esc(sp.sci)}</span><span class="az-ac-l">Encl: ${esc(by('enclosures', a.enc).name)}</span></span>${ctl}</div>
-    <div class="ap-ac__big"><div class="az-ac-top-ph"><span class="az-ac-ph az-ac-ph--big"><img class="az-ac-ph__img" src="${spPhoto(a.sp)}" alt="">${apSexTag(a)}<span class="az-ac-strip"><span class="az-ac-strip__id">AID: ${a.id}</span><span class="az-ac-chips"><span class="az-ac-chip">${I('calendar_today', 12)}${apAge(a)}</span><span class="az-ac-chip az-ac-chip--w">${I('monitor_weight', 12)}${a.wt ? `${a.wt} kg` : '-- --'}</span></span></span>${exp.replace('Expand card', 'Collapse card')}</span></div>
+  const exp = `<button type="button" class="az-ac-exp" onclick="event.stopPropagation();const c=this.closest('.az-ac');c.classList.toggle('is-open');if(APK)APK.open=c.classList.contains('is-open')?${a.id}:null" aria-label="Expand card"><img src="assets/ds/expand.svg" width="16" height="16" alt=""></button>`;
+  const pick = control === 'radio' ? ` data-act="1" role="radio" tabindex="0" aria-checked="${on}" aria-label="${esc(animalName(a))}, AID ${a.id}" onclick="${act}" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();this.click()}"` : '';
+  const open = APK && APK.open === a.id ? ' is-open' : '';
+  return `<div class="az-ac ap-ac${on ? ' is-picked' : ''}${open}"${pick}>
+    <div class="az-ac-row ap-ac__small"><span class="az-ac-ph"><img class="az-ac-ph__img" src="${spPhoto(a.sp)}" alt="" loading="lazy">${apSexTag(a)}${exp}</span><span class="az-ac-b"><span class="az-ac-top"><span class="az-ac-l az-ac-l--aaid">AID: ${a.id}</span></span>${a.name ? `<span class="az-ac-l">Name: ${esc(a.name)}</span>` : ''}<span class="az-ac-l">${esc(sp.name)}</span><span class="az-ac-l az-ac-l--sci">${esc(sp.sci)}</span><span class="az-ac-l">Encl: ${esc(by('enclosures', a.enc).name)}</span></span>${ctl}</div>
+    <div class="ap-ac__big"><div class="az-ac-top-ph"><span class="az-ac-ph az-ac-ph--big"><img class="az-ac-ph__img" src="${spPhoto(a.sp)}" alt="" loading="lazy">${apSexTag(a)}<span class="az-ac-strip"><span class="az-ac-strip__id">AID: ${a.id}</span><span class="az-ac-chips"><span class="az-ac-chip">${I('calendar_today', 12)}${apAge(a)}</span><span class="az-ac-chip az-ac-chip--w">${I('monitor_weight', 12)}${a.wt ? `${a.wt} kg` : '-- --'}</span></span></span>${exp.replace('Expand card', 'Collapse card')}</span></div>
       <div class="az-ac-row az-ac-row--big"><span class="az-ac-b az-ac-b--big"><span class="az-ac-d"><b>Species:</b> ${esc(sp.name)}</span><span class="az-ac-d"><b>Sci. Name:</b> <i>${esc(sp.sci)}</i></span><span class="az-ac-d"><b>Enclosure:</b> ${esc(by('enclosures', a.enc).name)}</span><span class="az-ac-d"><b>Section:</b> ${esc(by('sections', p.section).name)}</span><span class="az-ac-d"><b>Site:</b> ${esc(by('sites', p.site).name)}</span></span>${ctl}</div></div></div>`;
 }
 const siteCardDS = ({ thumb, icon, name, sub, on = false, act = '', picked = false, remove = '' }) => {
-  const th = thumb ? `<img class="az-site__thumb" src="${thumb}" alt="">` : `<span class="az-site__thumb ap-site__ic">${I(icon, 22)}</span>`;
+  const th = thumb ? `<img class="az-site__thumb" src="${thumb}" alt="" loading="lazy">` : `<span class="az-site__thumb ap-site__ic">${I(icon, 22)}</span>`;
   return picked ? `<div class="az-site az-site--picked ap-site">${th}<div class="ap-site__t"><div class="az-site__name">${esc(name)}</div>${sub ? `<div class="az-site__sub">${sub}</div>` : ''}</div><button type="button" class="ap-site__x" onclick="${remove}" aria-label="Remove ${esc(name)}">${I('cancel', 24, true)}</button></div>`
     : `<button type="button" class="az-site ap-site" role="radio" aria-checked="${on}" onclick="${act}">${th}<div class="ap-site__t"><div class="az-site__name">${esc(name)}</div>${sub ? `<div class="az-site__sub">${sub}</div>` : ''}</div>${I(on ? 'radio_button_checked' : 'radio_button_unchecked', 24)}</button>`;
 };
@@ -65,7 +70,7 @@ function apSheet(k) { APK.sq = ''; APK.tmp = APK[k]; openSheet(() => {
   const row = o => k === 'an' ? animalCardDS(by('animals', o.id), { on: APK.tmp === o.id, act: `APK.tmp=${o.id};redrawSheet()` })
     : siteCardDS({ thumb: o.photo, icon: o.icon, name: o.name, sub: [o.sub, ...(o.chips || [])].filter(Boolean).map(esc).join(' · '), on: APK.tmp === o.id, act: `APK.tmp=${o.id};redrawSheet()` });
   return { title: `Select ${l}`, bottom: true, tall: true,
-    body: `${pkSearch('ap-sq', APK.sq, 'Search', 'APK.sq=this.value;redrawSheet()')}<div class="ap-list${k === 'an' ? ' ap-list--ac' : ''}">${os.map(row).join('') || `<p class="sg-none">No ${l.toLowerCase()} by that name</p>`}</div>`,
+    body: `${pkSearch('ap-sq', APK.sq, 'Search', 'APK.sq=this.value;redrawSheet()')}<div class="ap-list${k === 'an' ? ' ap-list--ac' : ''}" role="radiogroup" aria-label="${l}">${os.map(row).join('') || `<p class="sg-none">No ${l.toLowerCase()} by that name</p>`}</div>`,
     foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Cancel</button><button class="az-btn"${APK.tmp == null ? ' disabled' : ''} onclick="apSet('${k}',APK.tmp)">Select</button>` }; });
 }
 /* the page */
