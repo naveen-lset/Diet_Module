@@ -163,7 +163,7 @@ function sgEditor() {
   const t = SG.t, ls = sgEat(), d = sgDiet(), many = ls.length > 1 && !SG.edit;
   const chg = SG.edit || SG.form ? '' : `<button class="lnk" onclick="sgWho()">Change</button>`;
   const who = `<div class="az-field"><span class="az-label">For</span><div class="az-picked sg-pk">${spThumb(species(t.sp))}<span class="grow"><b>${esc(sgName(t))}</b><span>${esc(t.level === 'species' ? sgWhere(t) : `${species(t.sp).name} · ${sgWhere(t)}`)}</span></span>${chg}</div></div>`;
-  if (!d) return `<section class="az-section">${who}<p class="sg-none">No diet here yet. Ask ${esc(first(user(dept('diet').head).name))}, the dietician, to add one.</p></section>`;
+  if (!d) return `<section class="az-section">${who}<p class="sg-none sg-hint">No diet here yet. Ask ${esc(first(user(dept('diet').head).name))}, the dietician, to add one.</p></section>`;
   const dietF = `<div class="az-field"><span class="az-label">${SG.kind === 'new' ? 'A new diet from' : many ? 'Diet To Change' : 'Diet'}</span><div class="az-picked sg-pk"><span class="davatar davatar--s">${I('restaurant', 20)}</span><span class="grow"><b>${esc(d.name)}</b><span>${esc([KINDTYPE[d.type], many ? `They eat ${ls.length} diets` : ''].filter(Boolean).join(' · '))}</span></span>${many ? `<button class="lnk" onclick="sgDietSheet()">Switch</button>` : ''}</div></div>`;
   const off = !!SG.skip, skipped = f => off && (SG.skip.feeds === 'all' || SG.skip.feeds.includes(f));
   /* (owner, 26 Nov 2026: "remove the More Food, Less Food chips and all") no quick buttons: the change is made on the table itself */
@@ -580,7 +580,7 @@ function spPickHtml() {
   else if (PK.lvl === 'animal') {
     const q = PK.aq.trim().toLowerCase(), list = all.filter(a => !q || animalName(a).toLowerCase().includes(q) || String(a.id).includes(q) || by('enclosures', a.enc).name.toLowerCase().includes(q)).sort((a, b) => by('enclosures', a.enc).name.localeCompare(by('enclosures', b.enc).name, undefined, { numeric: true }) || a.id - b.id);
     const gs = []; list.slice(0, 150).forEach(a => { const h = esc(by('enclosures', a.enc).name), t = { sp: s.id, level: 'animal', ref: a.id }, card = selCard(go1(t), a, s, isOn(t)); (gs.length && gs[gs.length - 1][0] === h) ? gs[gs.length - 1][1] += card : gs.push([h, card]); });
-    pane = pkSearch('pk-aq', PK.aq, 'Search AID, name or enclosure', 'PK.aq=this.value;redrawSheet()') + (list.length ? pkGroups(gs) + (list.length > 150 ? '<p class="sg-none">Search to find the others</p>' : '') : '<p class="sg-none">No animal by that name or number</p>');
+    pane = pkSearch('pk-aq', PK.aq, 'Search AID, name or enclosure', 'PK.aq=this.value;redrawSheet()') + (list.length ? pkGroups(gs) + (list.length > 150 ? '<p class="sg-none sg-hint">Search to find the others</p>' : '') : '<p class="sg-none">No animal by that name or number</p>');
   } else {
     const lvl = PK.lvl, q = PK.aq.trim().toLowerCase(), refs = ids(lvl).filter(id => !q || placeOf(lvl, id).name.toLowerCase().includes(q)).sort((a, b) => placeOf(lvl, a).name.localeCompare(placeOf(lvl, b).name, undefined, { numeric: true }));
     const head = id => { const p = pathOf({ sp: s.id, level: lvl, ref: id }); return lvl === 'section' ? esc(siteN(p.site)) : lvl === 'enclosure' ? `${esc(siteN(p.site))} › ${esc(secN(p.section))}` : ''; };
