@@ -2,7 +2,7 @@
 // Home › Modules › Diet opens #/diets (and #/history); Home › Modules › Help Desk opens #/requests (and #/new). No bottom navigation:
 // each module goes back to Home from its first screen. URL options: ?f=phone|portrait|landscape, ?as=hydar|suresh|manoj, ?fill.
 
-const STORE = 'antz-diet-module-v18';   // bump whenever the demo data changes (v18: the tortoise age diet has six age groups; v17: 10 sites, 10 sections, 20 enclosures, about 100 animals; v16: amounts by sex, age or weight bands; v15: animals go by AID in the seed titles; v14: diet requests end at approval, which applies them; requests in words; v13: the diet history says who updated it in the kitchen; v12: diet requests — the Biologist raises, the Dietician approves, the Kitchen updates; v11: Help Desk In progress and Completed, the team's Job in charge; v10: requests say how long and can be for many places; v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
+const STORE = 'antz-diet-module-v19';   // bump whenever the demo data changes (v19: diets wait for the Dietitian's certification, with comments; v18: the tortoise age diet has six age groups; v17: 10 sites, 10 sections, 20 enclosures, about 100 animals; v16: amounts by sex, age or weight bands; v15: animals go by AID in the seed titles; v14: diet requests end at approval, which applies them; requests in words; v13: the diet history says who updated it in the kitchen; v12: diet requests — the Biologist raises, the Dietician approves, the Kitchen updates; v11: Help Desk In progress and Completed, the team's Job in charge; v10: requests say how long and can be for many places; v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
 const AS = { kiran: 'u-kiran', aparna: 'u-hydar', hydar: 'u-hydar', suresh: 'u-suresh', manoj: 'u-manoj' };
 const FRAMES = { phone: 'phone', portrait: 'tab-p', landscape: 'tab-l' };
 function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: TODAY, D, S: { user: S.user, frame: S.frame, site: S.site } })); } catch (e) {} }
@@ -100,6 +100,7 @@ function drawStage() {
   $('#stage-bar').innerHTML = `<b class="cap">Prototype controls</b>
     <span class="stage__grp">Frame ${[['phone', 'Phone'], ['tab-p', 'iPad portrait'], ['tab-l', 'iPad landscape']].map(([k, l]) => opt(S.frame === k, l, `setFrame('${k}')`)).join(' · ')}</span>
     <span class="stage__grp">Viewing as ${VIEWERS.map(id => opt(S.user === id, `${user(id).name} (${VIEW_ROLE[id]})`, `setUser('${id}')`)).join(' · ')}</span>
+    ${D.diets.some(x => x.review && x.review.state === 'asked') ? `<span class="stage__grp">Web team ${opt(false, 'Answer: updated and applied', 'webReply()')}</span>` : ''}
     <span class="stage__grp">${opt(false, 'Home', "go('#/home')")} · ${opt(false, 'Reset demo data', 'resetData()')} · ${opt(figmaOpen, 'Copy to Figma', 'copyToFigma()')}</span>`;
 }
 /* Copy to Figma: Figma's own capture script, loaded on first use. It copies the screen in the frame as Figma layers (paste with Cmd+V

@@ -7,7 +7,7 @@ const USERS = [
   { id: 'u-hydar', name: 'Aparna', title: 'Dietitian', role: 'dietician', roles: 'Diet Manager · Dietitian' },   /* owner, 27 Nov 2026: the approver is Aparna (Dietitian) */
   { id: 'u-suresh', name: 'Suresh Gowda', title: 'Kitchen Head', role: 'head', roles: 'Kitchen Head', place: 'Central Kitchen' },
   { id: 'u-manoj', name: 'Manoj Kumar', title: 'Kitchen Operator', role: 'viewer', roles: 'Kitchen Operator', place: 'Central Kitchen' },
-  { id: 'u-amruth', name: 'Amruth Reddy', title: 'Dietician', role: 'dietician', roles: 'Diet Manager · Dietician' },
+  { id: 'u-amruth', name: 'Amruth Reddy', title: 'Dietitian', role: 'dietician', roles: 'Diet Manager · Dietitian' },
   { id: 'u-narendra', name: 'Narendra M', title: 'Diet Manager', role: 'dietician', roles: 'Diet Manager' },
   { id: 'u-raghav', name: 'Raghav N', title: 'Maintenance Head', role: 'other' },
   { id: 'u-priya', name: 'Priya S', title: 'Procurement Head', role: 'other' },
@@ -382,6 +382,11 @@ function SEED(t) {
   diets.forEach(d => { const q = QMODES[d.id]; if (!q) return;
     d.qmode = { mode: q.mode, unit: q.unit || null, bands: q.bands.map(([label, from = null, to = null]) => ({ label, from, to })) };
     d.meals.forEach(m => m.items.forEach(l => { l.bq = q.share.map(x => bandQty(l.qty, l.unit, x)); })); });
+  /* certification (owner, 27 Nov 2026): a diet the web team sets up comes here uncertified; the Dietitian certifies it, or asks for changes
+     in comments; the web team answers in the comments once it is updated; she certifies it then. One diet waits with the web team's answer */
+  { const open = diets.filter(d => !d.cert); if (open[0]) open[0].review = { state: 'updated', comments: [
+      { by: 'u-hydar', at: `${addDays(t, -3)}T11:20`, text: 'Banana is too much for them. Make it 300 g, and add the evening greens.' },
+      { by: 'u-narendra', at: `${addDays(t, -1)}T16:05`, text: 'Updated on the web: banana 300 g, greens added to the evening feed. Please check and certify.' }] }; }
   const assigns = ASSIGN_RAW(t).map(([diet, sp, level, ref, start, end, req, recur, group], i) => ({ id: 'AS-' + (i + 1), diet, sp, level, ref: ref === 'CASS-PB1' ? OLD : ref, start: start || null, end: end || null, req: req || null, recur: !!recur, group: group || null }));
   /* a seed change names only what differs; the rest of the line is the diet's own */
   const encOf = Object.fromEntries(enclosures.map(e => [e.id, e])), secOf = Object.fromEntries(sections.map(x => [x.id, x]));

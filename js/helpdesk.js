@@ -158,7 +158,7 @@ function reqFacts(r) {
     add('for', 'pets', 'For', forCard(r), goLnk('See Animals', `animalsSheet('${r.id}')`));
     const open = s && !ended(s) && base ? `<a class="lnk" href="#/diets/${s.sp}/${s.id}">Open Diet${I('chevron_right', 18)}</a>` : '';
     /* what changes, as the review showed it before sending: Food | Was | Now, the old value struck through */
-    if (r.kind === 'items' && base && (r.changes || []).length) add('chg', 'tune', 'What Changes', `<span class="sub">${esc(base.name)}${s ? ` · Set for ${esc(whereSet(s))}` : ''}</span>${diffTable(r.changes, base)}`, open);
+    if (r.kind === 'items' && base && (r.changes || []).length) add('chg', 'tune', 'What Changes', `<span class="sub">${esc(base.name)}${s ? ` · Set for ${esc(whereSet(s))}` : ''}</span>${diffTable(r.changes, r.before ? { ...base, meals: r.before } : base)}`, open);
     if (r.kind === 'items' && r.base === 'many') add('chg', 'tune', 'What Changes', `<b>All their diets, changed by item</b>${(r.rules || []).map(u => `<p>${esc(ruleText(u))}</p>`).join('')}`);
     if (r.kind === 'new') add('diet', 'add_circle', 'New Diet', `<b>${esc(r.name || (planOf(r).ops.find(o => o.type === 'new') || {}).name || 'New diet')}</b><span class="sub">${r.base && diet(r.base) ? `From ${esc(diet(r.base).name)}` : 'Made from empty'}</span>`);
     if (r.kind === 'diet' && base) add('diet', 'restaurant', 'Instead Of', `<b>${esc(base.name)}</b>`);
@@ -318,7 +318,8 @@ function statusBar(r) {
 function sbLine(r) {
   const ap = user(r.approver), x = dept(r.dept), team = r.assignee ? [user(r.assignee)] : (x.team || [x.head]).map(user);
   const who = r.state === 'pending' || r.state === 'delayed' || r.state === 'subcheck' ? [ap] : ['approved', 'in_progress', 'waitstock'].includes(r.state) ? team : null;
-  const t = r.state === 'subcheck' && r.approver === S.user ? `Your turn: ${nextLine(r)}` : r.state === 'pending' ? (r.approver === S.user ? `Your turn to approve · ${esc(ap.title)}` : `Waiting for ${esc(ap.name)} · ${esc(ap.title)}`) : nextLine(r);
+  if ((r.state === 'pending' || r.state === 'delayed') && r.approver === S.user) return '';   /* owner, 27 Nov 2026: no "Your turn to approve" line */
+  const t = r.state === 'subcheck' && r.approver === S.user ? nextLine(r) : r.state === 'pending' ? (r.approver === S.user ? '' : `Waiting for ${esc(ap.name)} · ${esc(ap.title)}`) : nextLine(r);
   return `<span class="sb-who">${who ? `<span class="sb-avs">${who.slice(0, 3).map(u => avatar(u.name, '24')).join('')}</span>` : ''}<span>${t}</span></span>`;
 }
 const MENU_ACTS = ['assign', 'delay', 'edit', 'cancel'];

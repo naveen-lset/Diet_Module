@@ -403,7 +403,8 @@ function act(r, kind, uid, x = {}) {
   if (kind === 'approve' && isDiet(r) && planOf(r).block) throw new Error(planOf(r).block);
   const at = nowStamp(), ev = (k, extra = {}) => r.events.push({ kind: k, by: uid, at, ...extra });
   switch (kind) {
-    case 'approve': if (isDiet(r)) dietApply(r, at); ev('approved', { note: (x.note || '').trim() }); r.state = 'approved'; r.delay = null; break;
+    /* the diet as it was, kept at approval, so What Changes still shows Was → Now once the change is in the diet */
+    case 'approve': if (isDiet(r) && r.base && diet(r.base)) r.before = JSON.parse(JSON.stringify(diet(r.base).meals)); if (isDiet(r)) dietApply(r, at); ev('approved', { note: (x.note || '').trim() }); r.state = 'approved'; r.delay = null; break;
     case 'delay': ev('delayed', { until: x.until, reason: x.reason, note: (x.note || '').trim() }); r.state = 'delayed'; r.delay = { until: x.until, reason: x.reason, note: (x.note || '').trim() }; break;
     case 'reject': ev('rejected', { reason: x.reason.trim() }); r.state = 'rejected'; break;
     case 'cancel': ev('cancelled', { reason: x.reason.trim() }); r.state = 'cancelled'; break;
