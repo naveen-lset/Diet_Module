@@ -2,8 +2,8 @@
 // Home › Modules › Diet opens #/diets (and #/history); Home › Modules › Help Desk opens #/requests (and #/new). No bottom navigation:
 // each module goes back to Home from its first screen. URL options: ?f=phone|portrait|landscape, ?as=hydar|suresh|manoj, ?fill.
 
-const STORE = 'antz-diet-module-v16';   // bump whenever the demo data changes (v16: amounts by sex, age or weight bands; v15: animals go by AID in the seed titles; v14: diet requests end at approval, which applies them; requests in words; v13: the diet history says who updated it in the kitchen; v12: diet requests — the Biologist raises, the Dietician approves, the Kitchen updates; v11: Help Desk In progress and Completed, the team's Job in charge; v10: requests say how long and can be for many places; v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
-const AS = { kiran: 'u-kiran', hydar: 'u-hydar', suresh: 'u-suresh', manoj: 'u-manoj' };
+const STORE = 'antz-diet-module-v18';   // bump whenever the demo data changes (v18: the tortoise age diet has six age groups; v17: 10 sites, 10 sections, 20 enclosures, about 100 animals; v16: amounts by sex, age or weight bands; v15: animals go by AID in the seed titles; v14: diet requests end at approval, which applies them; requests in words; v13: the diet history says who updated it in the kitchen; v12: diet requests — the Biologist raises, the Dietician approves, the Kitchen updates; v11: Help Desk In progress and Completed, the team's Job in charge; v10: requests say how long and can be for many places; v9: diets know when they were made; v8: diets set at more than one level; v7: diets named Year Round Tortoise Diet and so on; v6: one cassowary chick; mixes, cadence, Age/Weight diets)
+const AS = { kiran: 'u-kiran', aparna: 'u-hydar', hydar: 'u-hydar', suresh: 'u-suresh', manoj: 'u-manoj' };
 const FRAMES = { phone: 'phone', portrait: 'tab-p', landscape: 'tab-l' };
 function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: TODAY, D, S: { user: S.user, frame: S.frame, site: S.site } })); } catch (e) {} }
 (function load() {
@@ -14,7 +14,7 @@ function storeSave() { try { localStorage.setItem(STORE, JSON.stringify({ day: T
   if (AS[q.get('as')]) S.user = AS[q.get('as')];
   if (FRAMES[q.get('f')]) S.frame = FRAMES[q.get('f')];
 })();
-function resetData() { try { localStorage.removeItem(STORE); } catch (e) {} Object.assign(S, { site: 'all', draft: null, rTab: 'pending', rSub: 'all', rDept: 'all', rPrio: 'all', rQ: '', rSearch: false, hWeek: 0, hDay: null, hType: 'all', lvl: {} }); useData(SEED(TODAY)); seedApprovals(); storeSave(); closeAll(); go('#/home'); toast('Demo data reset'); }
+function resetData() { try { localStorage.removeItem(STORE); } catch (e) {} Object.assign(S, { site: 'all', draft: null, rTab: 'pending', rSub: 'all', rDept: 'all', rPrio: 'all', rF: null, seen: {}, rQ: '', rSearch: false, hWeek: 0, hDay: null, hType: 'all', lvl: {} }); useData(SEED(TODAY)); seedApprovals(); storeSave(); closeAll(); go('#/home'); toast('Demo data reset'); }
 
 /* ---------- router and render ---------- */
 const route = () => (location.hash || '#/home').slice(2).split('?')[0].split('/');
@@ -62,7 +62,7 @@ function render() {
   const dev = $('.device');
   dev.className = `device ${S.frame} ${isTab() ? 'tab' : ''}`;
   const main = $('#main'), act = document.activeElement, fid = act && act.id && dev.contains(act) ? act.id : null, pos = fid ? act.selectionStart : null;
-  try { V = view(); } catch (e) { console.error(e); V = { html: pane('pane--fill', topbar({ back: '#/home', title: 'Something went wrong' }), empty1(esc(e.message))) }; }
+  try { V = view(); } catch (e) { console.error(e); V = { html: pane('pane--fill', topbar({ back: '#/home', title: 'Something went wrong' }), empty1(esc(e.message), '', 'sloth')) }; }
   showHome(!!V.home);
   if (V.home) S.homeY = 0;
   if (!V.home) {
@@ -99,7 +99,7 @@ function drawStage() {
   const opt = (on, label, js) => `<button class="stage__opt" aria-current="${on}" onclick="${js}">${label}</button>`;
   $('#stage-bar').innerHTML = `<b class="cap">Prototype controls</b>
     <span class="stage__grp">Frame ${[['phone', 'Phone'], ['tab-p', 'iPad portrait'], ['tab-l', 'iPad landscape']].map(([k, l]) => opt(S.frame === k, l, `setFrame('${k}')`)).join(' · ')}</span>
-    <span class="stage__grp">Viewing as ${VIEWERS.map(id => opt(S.user === id, `${user(id).name} (${user(id).title})`, `setUser('${id}')`)).join(' · ')}</span>
+    <span class="stage__grp">Viewing as ${VIEWERS.map(id => opt(S.user === id, `${user(id).name} (${VIEW_ROLE[id]})`, `setUser('${id}')`)).join(' · ')}</span>
     <span class="stage__grp">${opt(false, 'Home', "go('#/home')")} · ${opt(false, 'Reset demo data', 'resetData()')} · ${opt(figmaOpen, 'Copy to Figma', 'copyToFigma()')}</span>`;
 }
 /* Copy to Figma: Figma's own capture script, loaded on first use. It copies the screen in the frame as Figma layers (paste with Cmd+V
@@ -122,7 +122,7 @@ function copyToFigma() {
    the controls above the frame are gone, so the app asks once (remembered in this browser) and the Home avatar or the avatar in a module's top bar
    switches later. ?as= in the link still decides, and then nothing is asked */
 const WHO_KEY = 'antz-diet-module-who';
-const WHO_DOES = { 'u-kiran': 'Raises diet requests: Suggest a change and New Request', 'u-hydar': 'Approves diet requests and sees every diet', 'u-suresh': 'Updates the diet in the kitchen once it is approved', 'u-manoj': 'Updates the diet in the kitchen, and can approve' };
+const WHO_DOES = { 'u-kiran': 'Raises diet requests: Suggest a change and New Request', 'u-hydar': 'Approves diet requests (and the kitchen\'s substitutes); sees every diet', 'u-suresh': 'Is told when a diet changes, updates the items in the kitchen, or says an item is not in stock', 'u-manoj': 'Updates the diet in the kitchen' };
 function whoSheet(firstTime = false) {
   openSheet(() => ({ title: firstTime ? 'Who are you?' : 'View as', sub: 'Each role sees its own screens', bottom: true,
     body: `<div class="sg-list">${VIEWERS.map(id => { const u = user(id); return pkRow(`pickWho('${id}')`, avatar(u.name, '48'), esc(u.name), `<span class="who-role">${esc(u.title)}</span>${esc(WHO_DOES[id])}`, '', S.user === id); }).join('')}</div>` }));
@@ -137,7 +137,7 @@ function askWhoOnce() {
   if (!had) setTimeout(() => { if (!SH.length) whoSheet(true); }, 500);
 }
 function setFrame(f) { S.frame = f; closeAll(); storeSave(); fit(); }
-function setUser(id) { S.user = id; S.draft = null; S.rDept = 'diet'; S.rWho = null; closeAll(); storeSave(); if (['new', 'suggest'].includes(route()[0])) { SG = null; go('#/requests'); } else render(); toast(`Viewing as ${user(id).name}, ${user(id).title}`); }
+function setUser(id) { S.user = id; S.landWas = null; S.land = onTeam({ dept: 'diet' }, user(id)) ? 'requests' : 'species'; S.draft = null; S.rDept = 'diet'; S.rWho = null; closeAll(); storeSave(); if (['new', 'suggest'].includes(route()[0])) { SG = null; go('#/requests'); } else render(); toast(`Viewing as ${user(id).name}, ${user(id).title}`); }
 /* the frame: scaled to fit the window on a desktop; on a real phone or iPad (or ?fill) it is the screen */
 function fit() {
   const dev = $('.device'), slot = $('.device-slot'), q = new URLSearchParams(location.search);

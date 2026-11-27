@@ -4,7 +4,7 @@
 /* people, as the Kitchen & Diet roles (antz_kitchen_backend prisma/migrations): the three "Viewing as" people first; the rest appear in the data */
 const USERS = [
   { id: 'u-kiran', name: 'Kiran Rao', title: 'Biologist', role: 'biologist', roles: 'Biologist', place: 'Cow Land' },
-  { id: 'u-hydar', name: 'Hydar Ali', title: 'Dietician', role: 'dietician', roles: 'Diet Manager · Dietician' },
+  { id: 'u-hydar', name: 'Aparna', title: 'Dietitian', role: 'dietician', roles: 'Diet Manager · Dietitian' },   /* owner, 27 Nov 2026: the approver is Aparna (Dietitian) */
   { id: 'u-suresh', name: 'Suresh Gowda', title: 'Kitchen Head', role: 'head', roles: 'Kitchen Head', place: 'Central Kitchen' },
   { id: 'u-manoj', name: 'Manoj Kumar', title: 'Kitchen Operator', role: 'viewer', roles: 'Kitchen Operator', place: 'Central Kitchen' },
   { id: 'u-amruth', name: 'Amruth Reddy', title: 'Dietician', role: 'dietician', roles: 'Diet Manager · Dietician' },
@@ -14,7 +14,9 @@ const USERS = [
   { id: 'u-kavya', name: 'Kavya R', title: 'Horticulture Head', role: 'other' },
   { id: 'u-arjun', name: 'Arjun P', title: 'IT Head', role: 'other' },
 ];
-const VIEWERS = ['u-kiran', 'u-hydar', 'u-suresh', 'u-manoj'];
+/* Viewing as (owner, 27 Nov 2026): the Requester, the Approver (Aparna, Dietitian) and the Kitchen */
+const VIEWERS = ['u-kiran', 'u-hydar', 'u-suresh'];
+const VIEW_ROLE = { 'u-kiran': 'Requester', 'u-hydar': 'Approver · Dietitian', 'u-suresh': 'Kitchen' };
 /* diet requests (owner, 19 Nov 2026): anybody raises, the Dietician approves; approving applies it, and the kitchen works from the diet */
 const APPROVER = 'u-hydar';
 /* Help Desk departments: who approves by default; Diet requests need the Dietician permission.
@@ -328,21 +330,37 @@ const HISTORY_RAW = [
    share: each band's amount as a share of the diet line's own amount (demo) */
 const QMODES = {
   'D-310': { mode: 'sex', bands: [['Male'], ['Female']], share: [1.1, 0.9] },
-  'D-263': { mode: 'age', unit: 'years', bands: [['0–1 y', 0, 1], ['1–5 y', 1, 5], ['5+ y', 5, null]], share: [0.4, 0.7, 1] },
+  /* six age groups (owner, 27 Nov 2026: "if more age groups, how will you show"): the phone pins Item and slides the groups */
+  'D-263': { mode: 'age', unit: 'years', bands: [['0–1 y', 0, 1], ['1–3 y', 1, 3], ['3–5 y', 3, 5], ['5–10 y', 5, 10], ['10–20 y', 10, 20], ['20+ y', 20, null]], share: [0.3, 0.45, 0.6, 0.8, 1, 0.9] },
   'D-273': { mode: 'weight', unit: 'kg', bands: [['< 7 kg', 0, 7], ['7–9 kg', 7, 9], ['9+ kg', 9, null]], share: [0.8, 1, 1.2] },
 };
 /* a band's amount from the line's amount, rounded as a kitchen weighs it: 5 g or 5 ml, 0.05 kg or ltr, whole pieces (never under 1) */
 const bandQty = (qty, unit, share) => unit === 'pcs' ? Math.max(1, Math.round(qty * share)) : ['kg', 'ltr'].includes(unit) ? Math.round(qty * share * 20) / 20 : Math.max(5, Math.round(qty * share / 5) * 5);
 
+/* ---------- the demo's places (owner, 27 Nov 2026: "just for demo show 10 sites, 20 enclosures, animals 100") ----------
+   10 sites with one section each, 20 enclosures and about 100 animals. The masters keep every place; the demo keeps the sections and
+   enclosures the seed diets, history and requests name, puts each section under its own site, and leaves the rest out. */
+const DEMO_SITES = [[210, 'Bird Park'], [211, 'Vet Hospital'], [212, 'Primate World'], [213, 'Night Safari'], [214, 'Ayodhya Zone'], [215, 'Tropical Zone']];
+/* section → its site */
+const DEMO_SECTION_SITE = { 170: 29, 162: 47, 196: 57, 1899: 209, 902: 210, 903: 211, 904: 212, 905: 213, 178: 214, 164: 215 };
+/* enclosure → its section */
+const DEMO_ENC_SECTION = { 14986: 170, 14993: 170, 19990: 162, 19991: 162, 19992: 162, 15224: 196, 15229: 196, 15235: 196, 19981: 1899, 19994: 902,
+  14915: 902, 19996: 903, 19993: 903, 19998: 904, 20001: 905, 15116: 178, 14897: 178, 14918: 164, 14908: 164, 15194: 164 };
+/* a species with too many in one enclosure keeps this many (the koi pond) */
+const DEMO_MAX = { 235859: 15 };
+
 /* ---------- build the data set ---------- */
 let ITEM_ID = {};
 function SEED(t) {
-  const sites = M_SITES.map(([id, name]) => ({ id, name }));
-  const sections = M_SECTIONS.map(([id, name, site]) => ({ id, name, site }));
-  const enclosures = M_ENCLOSURES.map(([id, name, section, sp]) => ({ id, name, section, sp }));
+  const secSite = DEMO_SECTION_SITE, encSec = DEMO_ENC_SECTION;
+  const sites = [...M_SITES.filter(([id]) => Object.values(secSite).includes(id)), ...DEMO_SITES].map(([id, name]) => ({ id, name }));
+  const sections = M_SECTIONS.filter(([id]) => secSite[id]).map(([id, name]) => ({ id, name, site: secSite[id] }));
+  const enclosures = M_ENCLOSURES.filter(([id]) => encSec[id]).map(([id, name, , sp]) => ({ id, name, section: encSec[id], sp }));
   const species = M_SPECIES.map(([id, name, sci, cls]) => ({ id, name, sci, cls: cls[0].toUpperCase() + cls.slice(1) }));
   /* age in months and weight in kg, for the Age and Weight diets: adults by default; two cassowary chicks in Congo; coypu weights from 6 to 10 kg */
-  const animals = M_ANIMALS.map(([id, sp, enc, sex, name]) => ({ id, sp, enc, sex: sex.toUpperCase(), name, ageM: 24 + (id % 97) * 2, wt: sp === 135332 ? 6 + (id % 41) / 10 : null }));
+  const kept = {};
+  const animals = M_ANIMALS.filter(([, sp, enc]) => encSec[enc] && (kept[sp] = (kept[sp] || 0) + 1) <= (DEMO_MAX[sp] ?? Infinity))
+    .map(([id, sp, enc, sex, name]) => ({ id, sp, enc, sex: sex.toUpperCase(), name, ageM: 24 + (id % 97) * 2, wt: sp === 135332 ? 6 + (id % 41) / 10 : null }));
   animals.filter(a => a.enc === 14915).forEach((a, i) => { a.ageM = 5 + i * 2; });
   /* the oldest bird in Paddock B keeps a name, so its animal diet reads well */
   const old = animals.find(a => a.sp === 150254 && a.enc === 19991); old.name = old.name || 'Bramble'; const OLD = old.id;

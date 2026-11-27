@@ -40,7 +40,7 @@ function changeView(h) {
 }
 function paneChange(id, { cls = '' } = {}) {
   const h = by('history', id), back = `<button class="az-iconbtn" onclick="goBack('#/diets')" aria-label="Back">${I('arrow_back')}</button>`;
-  if (!h) return pane(cls, topbar({ lead: back, title: 'Change' }), empty1('Change not found'));
+  if (!h) return pane(cls, topbar({ lead: back, title: 'Change' }), empty1('Change not found', '', 'seal'));
   const v = changeView(h);
   return pane(cls, topbar({ lead: back, title: 'Change' }) + v.head, `<div class="body">${v.body}</div>`, '', `ch-${id}`);
 }

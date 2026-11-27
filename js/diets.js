@@ -76,7 +76,12 @@ function markedGroups(d, h, day, click) {
 }
 /* the Diet module's three tabs (owner, 26 Nov 2026: Help Desk moves into Diet; every request is raised and followed here) */
 const openReqs = () => D.requests.filter(r => isDiet(r) && visibleTo(r, me()) && isOpen(r) && (r.by === S.user || r.approver === S.user)).length;
-const dietTabs = cur => `<div class="az-tabs" role="tablist">${thumb(true)}${[['species', 'Species Wise'], ['diets', 'Diet Wise'], ['requests', 'Requests']].map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${cur === k}" onclick="homeTab('${k}')">${l}${k === 'requests' && openReqs() ? `<span class="tabn">${openReqs()}</span>` : ''}</button>`).join('')}</div>`;
+/* the kitchen's Diet (owner, 27 Nov 2026: "why does the kitchen want Species wise, Diet wise and all?"): two tabs — To Update, the approved
+   changes still to make (it opens here), and Diets, the diets to cook from, read-only. No stats, no Species wise, no approvals */
+const isKitchen = () => onTeam({ dept: 'diet' }, me());
+const kitTodoN = () => D.requests.filter(r => kitchenTodo(r) && visibleTo(r, me())).length;
+const recentlyChanged = id => D.history.some(h => h.diet === id && h.at.slice(0, 10) >= addDays(TODAY, -7) && (h.lines || []).length);
+const dietTabs = cur => `<div class="az-tabs" role="tablist">${thumb(true)}${(isKitchen() ? [['requests', 'To Update'], ['diets', 'Diets']] : [['species', 'Species Wise'], ['diets', 'Diet Wise'], ['requests', 'Requests']]).map(([k, l]) => `<button class="az-tab" role="tab" aria-selected="${cur === k}" onclick="homeTab('${k}')">${l}${k === 'requests' && (isKitchen() ? kitTodoN() : openReqs()) ? `<span class="tabn">${isKitchen() ? kitTodoN() : openReqs()}</span>` : ''}</button>`).join('')}</div>`;
 /* switching tabs keeps them pinned if they were, and shows the new list from its start */
 function homeTab(k) {
   if (k === 'requests') { S.land = 'requests'; go('#/requests'); swapFx('.pane--home .list'); return; }
@@ -88,25 +93,7 @@ function homeTab(k) {
 /* one diet in the Diet wise list: a diet avatar, its name, its kind, how many species get it, and its ID */
 function dietRow(a, current) {
   const d = diet(a.diet), n = new Set(usesOf(d.id).map(u => u.sp)).size;
-  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(tcase(slotKind(a)))}</span><span class="dfoot"><span class="dfoot__n">${n} species</span><span class="did">${esc(d.id)}</span></span></span></a>`;
-}
-/* the filters, in one sheet (the design system's Search and filter): Diet wise = kind + certification; Species wise = class + diet status */
-const FILTERS = {
-  diets: [['dKind', 'Kind', () => [['all', 'All Kinds'], ...KINDS.map(k => [k, tcase(k)])], v => dietsFor(v, S.dCert).length],
-    ['dCert', 'Certification', () => [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']], v => dietsFor(S.dKind, v).length]],
-  species: [['spCls', 'Class', () => [['all', 'All Classes'], ...CLASSES.map(c => [c, c]), ['Other', 'Other']], v => speciesFor(S.spTab, v).length],
-    ['spTab', 'Diet Status', () => [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified'], ['without', 'No Diet']], v => speciesFor(v, S.spCls).length]],
-};
-const activeFilters = tab => FILTERS[tab].filter(([k]) => S[k] !== 'all');
-function filterSheet() {
-  const tab = S.land, n = () => tab === 'diets' ? dietsFor(S.dKind).length : speciesFor(S.spTab).length;
-  openSheet(() => ({ title: 'Filter', form: true, body: FILTERS[tab].map(([k, label, opts, count]) => `<div class="az-field"><span class="az-label">${label}</span><div class="fopts">${opts().map(([v, l]) => {
-      const on = S[k] === v; return `<button class="fopt" role="radio" aria-checked="${on}" onclick="S.${k}='${v}';render();redrawSheet();swapFx('.pane .list')"><span>${esc(l)}</span><small>${count(v)}</small></button>`; }).join('')}</div></div>`).join(''),
-    foot: `<button class="az-btn az-btn--outline" onclick="${FILTERS[tab].map(([k]) => `S.${k}='all'`).join(';')};render();redrawSheet()">Clear</button><button class="az-btn" onclick="closeSheet()">Show ${plural(n(), tab === 'diets' ? 'diet' : 'species', tab === 'diets' ? 'diets' : 'species')}</button>` }));
-}
-function listHead(tab, n) {
-  const act = activeFilters(tab), name = (k, v) => FILTERS[tab].find(f => f[0] === k)[2]().find(o => o[0] === v)[1];
-  return `<div class="lhead"><span class="lhead__n">${plural(n, tab === 'diets' ? 'diet' : 'species', tab === 'diets' ? 'diets' : 'species')}</span>${act.map(([k]) => `<button class="fchip" onclick="S.${k}='all';render();swapFx('.pane .list')" aria-label="Remove filter ${esc(name(k, S[k]))}">${esc(name(k, S[k]))}${I('close', 16)}</button>`).join('')}</div>`;
+  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(tcase(slotKind(a)))}${recentlyChanged(d.id) ? ` ${pill('pending', 'Changed')}` : ''}</span><span class="dfoot"><span class="dfoot__n">${n} species</span><span class="did">${esc(d.id)}</span></span></span></a>`;
 }
 /* the list's own toggle, at the top of the list and as wide as its cards: certification (and, for species, no diet); it scrolls with the list */
 const listToggle = (key, opts) => `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Certification">${thumb()}${opts.map(([k, l]) => `<button role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l}</button>`).join('')}</div></div>`;
@@ -121,21 +108,22 @@ function dietStats() {
 }
 /* the page scrolls as one: the stats card, search and chips go up with the list; Diet Wise | Species Wise stays pinned under the top bar */
 function paneDietHome({ cls = '', cur = null } = {}) {
-  const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true, end: whoBtn() }), head = dietStats() + dietTabs(tab);   /* owner, 18 Nov: no request rows above the tabs (requests live in Help Desk); 20 Nov: the stats card goes there */
+  if (isKitchen() && S.land === 'species') S.land = 'requests';
+  const tab = S.land, top = topbar({ back: '#/home', title: 'Diet', site: true, end: bellBtn() + whoBtn() }), head = (isKitchen() ? '' : dietStats()) + dietTabs(tab);   /* owner, 18 Nov: no request rows above the tabs (requests live in Help Desk); 20 Nov: the stats card goes there */
   /* a New Request button on the landing page, on every tab (owner, 26 Nov 2026) */
   const fab = canRaise(me()) ? `<a class="az-fab az-fab--pill dfab${isPhone() ? '' : ' az-fab--no-nav'}" href="#/new?dept=diet">${I('add_circle')}<span class="dfab__t">New Request</span></a>` : '';
   const withFab = html => fab ? html.replace(/^<section class="pane /, '<section class="pane has-fab ').replace(/<\/section>$/, `${fab}</section>`) : html;
+  if (tab === 'requests' && isKitchen()) { const r = kitchenParts(cur); return withFab(pane(`${cls} pane--home`, top, head + r.search + r.body, '', 'home')); }
   if (tab === 'requests') { const r = reqHomeParts(cur); return withFab(pane(`${cls} pane--home`, top, head + r.search + r.chips + r.body, '', 'home')); }
-  /* the count of the list, its filters as removable chips, and the Filter button (the same line the Requests list has) */
-  const countLine = n => { const act = activeFilters(tab), name = (k, v) => FILTERS[tab].find(f => f[0] === k)[2]().find(o => o[0] === v)[1];
-    return `<p class="az-countline lcount"><span class="lcount__n">${plural(n, tab === 'diets' ? 'diet' : 'species', tab === 'diets' ? 'diets' : 'species')}</span>${act.map(([k]) => `<button class="fchip" onclick="S.${k}='all';render();swapFx('.pane .list')" aria-label="Remove filter ${esc(name(k, S[k]))}">${esc(name(k, S[k]))}${I('close', 16)}</button>`).join('')}<span class="hdtools"><button class="az-iconbtn${act.length ? ' on' : ''}" onclick="filterSheet()" aria-label="Filter">${I('tune')}</button></span></p>`; };
+  /* the count of the list (owner, 27 Nov 2026: the class chips and the status toggle are on the page already, so no Filter button and no sheet) */
+  const countLine = n => `<p class="az-countline lcount"><span class="lcount__n">${plural(n, tab === 'diets' ? 'diet' : 'species', tab === 'diets' ? 'diets' : 'species')}</span></p>`;
   const chips = (key, opts, count) => `<div class="az-chips" role="tablist">${opts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l} - ${count(k)}</button>`).join('')}</div>`;
   if (tab === 'diets') {
     const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species, place or ID" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label></div>`;
     const list = dietsFor(S.dKind), on = (by('assigns', cur) || {}).diet, rows = list.map(a => dietRow(a, !!cur && on === a.diet)).join('');
     const none = S.dQ.trim() && !dietsFor(S.dKind, 'all').length;
     return withFab(pane(`${cls} pane--home`, top, head + search + chips('dKind', [['all', 'All'], ...KINDS.map(k => [k, tcase(k)])], k => dietsFor(k).length)
-      + `<div class="body">${none ? '' : listToggle('dCert', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']]) + countLine(list.length)}<div class="list list--8">${rows || (none ? noMatch(S.dQ, "S.dQ=''") : empty1('No diet here'))}</div></div>`, '', 'home'));
+      + `<div class="body">${none ? '' : (isKitchen() ? '' : listToggle('dCert', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']])) + countLine(list.length)}<div class="list list--8">${rows || (none ? noMatch(S.dQ, "S.dQ=''") : empty1('No diet here', '', S.dKind !== 'all' ? 'seal' : 'meerkat'))}</div></div>`, '', 'home'));
   }
   const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="sp-q" placeholder="Search species or taxonomy ID" value="${esc(S.spQ)}" oninput="S.spQ=this.value;render()" aria-label="Search species"></label></div>`;
   const list = speciesFor(S.spTab), clsChips = chips('spCls', [['all', 'All'], ...CLASSES.map(c => [c, c]), ['Other', 'Other']], c => speciesFor(S.spTab, c).length);
@@ -143,12 +131,12 @@ function paneDietHome({ cls = '', cur = null } = {}) {
   const none = S.spQ.trim() && !speciesFor('all', 'all').length;
   const rows = list.length ? list.map(s => { const all = slotsOf(s.id).length;
     return speciesRow(s, { href: `#/diets/${s.id}`, current: cur === s.id, big: true,
-      end: `<span class="sprow__n${all ? '' : ' sprow__n--none'}"><b>${all ? activeDiets(s.id) : 0}</b><span>${all && activeDiets(s.id) === 1 ? 'Diet' : 'Diets'}</span></span>` }); }).join('') : none ? noMatch(S.spQ, "S.spQ=''") : empty1('No species here');
+      end: `<span class="sprow__n${all ? '' : ' sprow__n--none'}"><b>${all ? activeDiets(s.id) : 0}</b><span>${all && activeDiets(s.id) === 1 ? 'Diet' : 'Diets'}</span></span>` }); }).join('') : none ? noMatch(S.spQ, "S.spQ=''") : empty1('No species here', '', S.spCls !== 'all' || S.spTab !== 'all' ? 'seal' : 'meerkat');
   return withFab(pane(`${cls} pane--home`, top, head + search + clsChips + `<div class="body">${none ? '' : listToggle('spTab', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified'], ['without', 'No Diet']]) + countLine(list.length)}<div class="list list--8">${rows}</div></div>`, '', 'home'));
 }
 
 /* a search that finds nothing says so, with a way back (audit, 2 Nov) */
-const noMatch = (q, clear) => `<div class="empty1"><div>No match for “${esc(q.trim())}”<button class="az-btn az-btn--outline empty1__btn" onclick="${clear};render()">Clear Search</button></div></div>`;
+const noMatch = (q, clear) => `<div class="empty1"><div>${emptyArt('seal')}<span class="empty1__t">No match for “${esc(q.trim())}”</span><button class="az-btn az-btn--outline empty1__btn" onclick="${clear};render()">Clear Search</button></div></div>`;
 
 /* ---------- a species: its photo, facts, the level chips, then the diets or places of that level ---------- */
 const lvlOf = sp => { const l = S.lvl[sp] || 'species'; return levelsOf(sp).includes(l) ? l : 'species'; };
@@ -292,7 +280,7 @@ function doodleSvg() {
 const DTABS = [['ov', 'Overview'], ['nu', 'Nutrition'], ['ap', 'Applied To'], ['hi', 'History']];
 function paneDiet(asgId, { cls = '', back = '', wide = isTab() } = {}) {
   const a = by('assigns', asgId);
-  if (!a) return pane(cls, '', empty1('Diet not found'));
+  if (!a) return pane(cls, '', empty1('Diet not found', '', 'seal'));
   const d = diet(a.diet), [tone, state] = dietStatus(a), when = !ended(a) && !a.group ? slotWhen(a) : '';
   if (S.dTabFor !== asgId) { S.dTab = 'ov'; S.dTabFor = asgId; }
   /* Back returns to the screen the diet was opened from; `back` is where to go when there is none (a link, a reload) */
@@ -307,7 +295,7 @@ function paneDiet(asgId, { cls = '', back = '', wide = isTab() } = {}) {
   const groups = chg && (chg.h.lines || []).length ? markedGroups(d, chg.h, S.day, 'itemSheet') : dietGroups(d, S.day, 'itemSheet');
   const cards = (coming.length ? comingCard(coming) : '') + (chg ? changedCard(chg) : '');
   const body = S.dTab === 'nu' ? nutriTab(d) : S.dTab === 'ap' ? appliedTo(a) : S.dTab === 'hi' ? historyTab(a, d) : cards + days + `<div class="dtable">${mealTable(groups, wide, S.day == null, { bands: qBands(d) })}</div>` + notesBlock(d);
-  const fab = S.dTab === 'ov' && canRaise(me()) && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="raisePick('${a.id}')">${I('edit_note')}<span class="dfab__t">Suggest A Change</span></button>` : '';
+  const fab = S.dTab === 'ov' && canRaise(me()) && !isKitchen() && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="raisePick('${a.id}')">${I('edit_note')}<span class="dfab__t">Suggest A Change</span></button>` : '';
   return pane(cls + (fab ? ' has-fab' : ''), head + tabs, `<div class="body">${body}</div>`, '', `diet-${asgId}`).replace(/<\/section>$/, `${fab}</section>`);
 }
 /* where one diet is applied: every species, level and place it is set on, broad to narrow, each with the animals that eat it there */
@@ -317,14 +305,29 @@ const dietUses = id => D.assigns.filter(x => x.diet === id && !ended(x))
   .sort((x, y) => (y.sp === diet(id).sp) - (x.sp === diet(id).sp) || species(x.sp).name.localeCompare(species(y.sp).name) || LVL_RANK(x) - LVL_RANK(y));
 /* the places above a place, named by level: "Site: Lset · Section: Cassowary Paddock" */
 const pathNamed = x => { const p = pathOf(x); return ['site', 'section', 'enclosure'].filter(k => p[k] && LEVELS.indexOf(k) < LEVELS.indexOf(x.level)).map(k => `${LEVEL[k]}: ${placeOf(k, p[k]).name}`).join(' · '); };
-/* where one diet is applied, as a species list (owner, 18 Nov): each species with its photo, name and scientific name,
-   then the levels and places it is set on, each with the animals that eat it there (the count opens them) */
+/* where one diet is applied (owner, 27 Nov 2026: "show Species, Site, Enclosure, Animal as separate, proper cards; I am already in the diet"):
+   one group per level, broad to narrow, each place as its own card from the Antz Mobile Figma — the species and an animal as the design
+   system's Animal Card, a site or a section as the Housing Section card (photo, name, Animals · Species · Enclosures), an enclosure as the
+   Housing enclosure row (photo, name, where it is, the count in green). Every count is the animals that eat this diet there; a tap opens them */
 function appliedTo(a) {
   const d = diet(a.diet), uses = dietUses(d.id), n = x => followersOf(x).length, total = uses.reduce((t, x) => t + n(x), 0), sps = [...new Set(uses.map(x => x.sp))];
-  const row = x => { const more = [pathNamed(x), slotKind(x) !== slotKind(a) ? slotText(x) : ''].filter(Boolean).join(' · ');
-    return `<button class="apply__r" onclick="dietAnimalsSheet('${x.id}')"${x.id === a.id ? ' aria-current="true"' : ''}>${I(LVL_IC[x.level])}<span class="t"><b>${x.level === 'species' ? 'Species-wide' : `${LEVEL[x.level]} · ${esc(targetName(x))}`}</b>${more ? `<small>${esc(more)}</small>` : ''}</span><span class="apply__n">${plural(n(x), 'animal')}${I('chevron_right', 20)}</span></button>`; };
+  const tap = x => `onclick="dietAnimalsSheet('${x.id}')"${x.id === a.id ? ' aria-current="true"' : ''}`;
+  const when = x => slotKind(x) !== slotKind(a) ? `<span class="apc__k">${esc(slotText(x))}</span>` : '';
+  const sp = x => species(x.sp);
+  const card = {
+    /* the species and an animal: the Figma's Animal Card For Selection (Animal Card Redesign): photo 84, a teal tag line, then plain lines */
+    species: x => `<button class="apc acs" ${tap(x)}><span class="acs__p"><img src="${spPhoto(x.sp)}" alt="" loading="lazy"></span><span class="acs__d"><b>${x.group ? `${esc(GROUP_WORD(x.group))} Only` : 'Whole Species'}</b><span>${esc(sp(x).name)}</span><i>${esc(sp(x).sci)}</i><span>${n(x) ? plural(n(x), 'animal') + ' on this diet' : 'No animals on it now'}</span>${when(x)}</span>${I('chevron_right', 20)}</button>`,
+    place: x => { const an = tAnimals(x), encs = new Set(an.map(v => v.enc)).size, sps2 = new Set(an.map(v => v.sp)).size;
+      return `<button class="apc apc--place" ${tap(x)}><span class="apc__img"><img src="${spPhoto(x.sp)}" alt="" loading="lazy"></span><span class="apc__top"><b>${esc(targetName(x))}</b><span class="apc__stats"><span><b>${n(x)}</b>Animals</span><span><b>${sps2}</b>Species</span><span><b>${encs}</b>Enclosures</span></span></span>
+        <span class="apc__foot">${I(x.level === 'site' ? 'location_on' : 'grid_view', 20)}<span class="grow">${x.level === 'section' ? `Site: ${esc(by('sites', pathOf(x).site).name)} · ` : ''}${esc(sp(x).name)}</span>${when(x)}${I('chevron_right', 20)}</span></button>`; },
+    enclosure: x => { const p = pathOf(x);
+      return `<button class="apc apc--encl" ${tap(x)}><span class="apc__dot"><img src="${spPhoto(x.sp)}" alt="" loading="lazy"></span><span class="apc__d"><b>${esc(targetName(x))}</b><small>${esc(sp(x).name)}</small><small>Section: ${esc(by('sections', p.section).name)} · Site: ${esc(by('sites', p.site).name)}</small>${when(x)}</span><b class="apc__n">${n(x)}<small>Animals</small></b></button>`; },
+    animal: x => { const an = by('animals', x.ref), sx = SEXT[an.sex] || 'UD', pth = pathOf(x);
+      return `<button class="apc acs" ${tap(x)}><span class="acs__p"><img src="${spPhoto(x.sp)}" alt="" loading="lazy"><span class="acs__sex acs__sex--${sx}">${sx}</span></span><span class="acs__d"><b>AID: ${an.id}</b><span>${esc(an.name ? `${an.name} · ${sp(x).name}` : sp(x).name)}</span><span>Encl: ${esc(by('enclosures', an.enc).name)}</span><span>Site: ${esc(by('sites', pth.site).name)}</span>${n(x) ? '' : '<span class="acs__off">Not on it now</span>'}${when(x)}</span>${I('chevron_right', 20)}</button>`; } };
+  const GROUPS = [['species', 'Species'], ['site', 'Sites'], ['section', 'Sections'], ['enclosure', 'Enclosures'], ['animal', 'Animals']];
   return `<div class="apply__h apply__h--top"><b>Applied To</b><span>${plural(sps.length, 'species', 'species')} · ${plural(total, 'animal')}</span></div>`
-    + sps.map(sp => { const x = species(sp); return `<div class="apply apsp"><div class="apsp__h">${spThumb(x)}<span class="t"><b>${esc(x.name)}</b><i>${esc(x.sci)}</i></span></div>${uses.filter(u => u.sp === sp).map(row).join('')}</div>`; }).join('');
+    + GROUPS.map(([lv, t]) => { const xs = uses.filter(u => u.level === lv); if (!xs.length) return '';
+      return `<section class="apg"><p class="apg__h">${t} <span>${xs.length}</span></p><div class="apg__list">${xs.map(lv === 'site' || lv === 'section' ? card.place : card[lv]).join('')}</div></section>`; }).join('');
 }
 /* Raise request from a diet set at several places asks which place first (audit, 2 Nov) */
 function raisePick(id) {
@@ -420,7 +423,9 @@ function itemSheet(dietId, f, it) {
 }
 /* ---------- Diet per device ---------- */
 function vDiets(parts) {
-  if (S.land === 'requests') S.land = S.landWas || 'species';
+  /* the kitchen opens on To Update; the others leave Requests for the list they were on */
+  if (isKitchen() && !S.landWas) S.land = 'requests';
+  else if (S.land === 'requests' && !(isKitchen() && !parts[1])) S.land = S.landWas || (isKitchen() ? 'diets' : 'species');
   const spId = parts[1] ? +parts[1] : null, asgId = parts[2] === 'v' ? null : parts[2] || null;
   /* View Diet of a version: the phone's own page; on the iPad it takes the species' place on the right, with Back to it */
   if (parts[2] === 'v' && spId) {
@@ -439,7 +444,7 @@ function vDiets(parts) {
   if (a && a.sp === sp) S.lvl[sp] = a.level === 'species' || ended(a) ? 'species' : a.level;
   if (S.land === 'diets' && (!spId || a)) {
     const pickd = a || dietsFor(S.dKind)[0] || null;
-    return paneDietHome({ cls: isLand() ? 'pane--w400' : 'pane--w340', cur: pickd ? pickd.id : null }) + (pickd ? paneDiet(pickd.id, { cls: 'pane--fill pane--dcol', wide: isLand() }) : pane('pane--fill', '', empty1('No diet here'), '', 'dcol-none'));
+    return paneDietHome({ cls: isLand() ? 'pane--w400' : 'pane--w340', cur: pickd ? pickd.id : null }) + (pickd ? paneDiet(pickd.id, { cls: 'pane--fill pane--dcol', wide: isLand() }) : pane('pane--fill', '', empty1('No diet here', '', S.dKind !== 'all' ? 'seal' : 'meerkat'), '', 'dcol-none'));
   }
   return paneDietHome({ cls: isLand() ? 'pane--w400' : 'pane--w340', cur: S.land === 'diets' ? (a ? a.id : null) : sp })
     + (a ? paneDiet(a.id, { cls: 'pane--fill pane--dcol', wide: isLand(), back: `#/diets/${sp}` }) : paneSpecies(sp, { cls: 'pane--fill' }));
