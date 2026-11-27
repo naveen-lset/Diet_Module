@@ -20,7 +20,7 @@ function resetData() { try { localStorage.removeItem(STORE); } catch (e) {} Obje
 const route = () => (location.hash || '#/home').slice(2).split('?')[0].split('/');
 function view() {
   const parts = route(), q = new URLSearchParams(location.hash.split('?')[1] || '');
-  if (!['new', 'suggest'].includes(parts[0])) S.back = underSheet(location.hash) || location.hash || '#/home';
+  if (!['new', 'suggest', 'applyto'].includes(parts[0])) S.back = underSheet(location.hash) || location.hash || '#/home';
   switch (parts[0]) {
     case 'diets': { const v = vDiets(parts); return typeof v === 'string' ? { html: v } : v; }
     case 'history': { const v = vHistory(parts); return typeof v === 'string' ? { html: v } : v; }
@@ -28,6 +28,7 @@ function view() {
     /* a diet change is suggested on the diet itself (js/suggest.js); other departments keep the New Request form */
     case 'suggest': return { html: paneSuggest(q) };
     /* every request is a diet request now (Help Desk lives in the Diet module): a New Request without a department is Diet's */
+    case 'applyto': return { html: paneApplyTo() };
     case 'new': { if (!q.get('dept') && !q.get('edit') && !q.get('clone')) q.set('dept', 'diet'); const e = q.get('edit') && by('requests', q.get('edit')); return { html: q.get('dept') === 'diet' || (e && isDiet(e)) ? paneSuggest(q) : paneForm(q) }; }
     default: return { home: true };
   }
