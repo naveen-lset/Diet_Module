@@ -344,7 +344,9 @@ const DEMO_SITES = [[210, 'Bird Park'], [211, 'Vet Hospital'], [212, 'Primate Wo
 /* section → its site */
 const DEMO_SECTION_SITE = { 170: 29, 162: 47, 196: 57, 1899: 209, 902: 210, 903: 211, 904: 212, 905: 213, 178: 214, 164: 215 };
 /* enclosure → its section */
-const DEMO_ENC_SECTION = { 14986: 170, 14993: 170, 19990: 162, 19991: 162, 19992: 162, 15224: 196, 15229: 196, 15235: 196, 19981: 1899, 19994: 902,
+/* (owner, 27 Nov 2026: "all diets show Inactive") Coypu 2, CL 1 (a tortoise) and SW 1 (lovebirds) sit where no narrower diet is set, so each
+   species' own diet has animals on it */
+const DEMO_ENC_SECTION = { 14986: 170, 14993: 170, 15225: 170, 14907: 170, 14973: 178, 19990: 162, 19991: 162, 19992: 162, 15224: 196, 15229: 196, 15235: 196, 19981: 1899, 19994: 902,
   14915: 902, 19996: 903, 19993: 903, 19998: 904, 20001: 905, 15116: 178, 14897: 178, 14918: 164, 14908: 164, 15194: 164 };
 /* a species with too many in one enclosure keeps this many (the koi pond) */
 const DEMO_MAX = { 235859: 15 };
