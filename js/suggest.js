@@ -327,7 +327,7 @@ function paneSuggest(q) {
   /* New Request with Diet, and Edit Request, are the Help Desk form (form.js); this screen keeps Suggest A Change, Change food from that form, and the new-diet requests' editor */
   { const e = q.get('edit') && by('requests', q.get('edit')); if ((q.get('dept') === 'diet' && !q.get('form')) || (e && isDiet(e))) return paneForm(q); }
   const d = sgInit(q), top = topbar({ close: d.form ? 'sgFormBack(false)' : 'sgClose()', title: d.form ? (d.kind === 'new' ? 'New diet' : 'Change item values') : d.edit ? 'Edit Request' : 'Suggest A Change', actions: d.t && sgCount() ? iconBtn('restart_alt', 'Start Again', 'sgClear()') : '' });
-  if (!canRaise(me()) && !d.edit) return pane('pane--fill', top, `${empty1(`Biologists suggest diet changes. ${esc(me().title)}s see them in Help Desk.`)}<div class="who-cta"><button class="az-btn az-btn--outline" onclick="asBiologist('#/suggest')">${avatar(user('u-kiran').name, '24')}View as ${esc(user('u-kiran').name)}, Biologist</button></div>`, '', 'sg-no');
+  if (!canRaise(me()) && !d.edit) return pane('pane--fill', top, `${empty1(`Biologists suggest diet changes. ${esc(me().title)}s see them in Help Desk.`, '', 'sloth')}<div class="who-cta"><button class="az-btn az-btn--outline" onclick="asBiologist('#/suggest')">${avatar(user('u-kiran').name, '24')}View as ${esc(user('u-kiran').name)}, Biologist</button></div>`, '', 'sg-no');
   /* nobody chosen yet: one field to choose who, and the species sheet opens by itself the first time (owner, 19 Nov: a bottom sheet, not a page) */
   if (!d.t) { if (!d.askedWho) { d.askedWho = true; setTimeout(() => { if (SG && !SG.t && !SH.length) sgWho(); }, 120); }
     return pane('pane--fill sg-page', top, `<div class="body sg-body"><section class="az-section">${select('For', '', 'sgWho()', { req: true, placeholder: 'Select Species, enclosure or animal', id: 'sg-for' })}</section></div>`, '', 'sg-who'); }
@@ -369,10 +369,10 @@ let SGDONE = { note: '' };
 function dietDoneSheet(id) {
   const r = by('requests', id), job = !changesDiet(r); SGDONE = { note: '' };
   openSheet(() => { const sh = r.kind === 'skip' || job ? [] : stockCheck(r);
-    return { title: job ? 'Done?' : 'Diet updated?', sub: esc(r.title), bottom: true, form: true,
+    return { title: 'Items updated?', sub: esc(r.title), bottom: true, form: true,
       body: `<div class="sg-sum">${dietTrackLine(r)}${sh.map(x => `<div class="sg-sum__r">${I(x.status === 'ok' ? 'inventory_2' : 'warning', 18)}<span>${esc(x.item.name)}: ${x.status === 'ok' ? `in store, ${esc(x.need)} a day` : x.status === 'out' ? 'none in store' : `only ${esc(stockText(x.item))} in store`}</span></div>`).join('')}</div>
         <label class="az-field"><span class="az-label">Note (optional)</span><span class="az-input az-input--text az-textarea"><textarea id="dd-note" rows="2" placeholder="For example, from the evening feed" oninput="SGDONE.note=this.value">${esc(SGDONE.note)}</textarea></span></label>`,
-      foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button class="az-btn" onclick="doAct('${id}','complete',SGDONE)">${I('task_alt')}${job ? 'Done' : 'Diet updated'}</button>` }; });
+      foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button class="az-btn" onclick="doAct('${id}','complete',SGDONE)">${I('task_alt')}Items Updated</button>` }; });
 }
 const dietTrackLine = r => `<div class="sg-sum__r">${I('pets', 18)}<span>${esc(r.kind === 'skip' ? autoTitle(r) : !changesDiet(r) ? `${plural(animalsIn(r).length, 'animal')} · ${r.title}` : `${plural(animalsIn(r).length, 'animal')} · ${approvedWhen(r)}`)}</span></div>`;
 
@@ -487,6 +487,19 @@ function pkKind(k) { if (PK.kind === k) return; PK.kind = k; redrawSheet(); }
    search opens them in the sheet itself — Site, then that site's Sections, then that section's Enclosures; each narrows the next */
 function pkSite(v) { const s = v === 'all' ? 'all' : +v; if (PK.site === s) return; PK.site = s; PK.sec = 'all'; PK.enc = 'all'; redrawSheet(); }
 function pkSec(v) { const s = v === 'all' ? 'all' : +v; if (PK.sec === s) return; PK.sec = s; PK.enc = 'all'; if (s !== 'all') PK.site = by('sections', s).site; redrawSheet(); }
+/* Site · Section · Enclosure in the Filter screen (owner, 27 Nov 2026: the Figma's Filter component), as the next page of Select Species;
+   each narrows the next, and nothing changes until Apply */
+function pkFilter() {
+  const has = (k, id) => D.animals.some(a => pathOfAnimal(a)[k] === id), d = () => FS.draft;
+  const all = (v, l) => [[v, l]];
+  filterScreen({ push: true, apply: 'pkFilterApply', value: { site: String(PK.site), sec: String(PK.sec), enc: String(PK.enc) }, groups: [
+    { k: 'site', label: 'Site', dflt: 'all', search: true, opts: () => all('all', 'All Sites').concat(D.sites.filter(x => has('site', x.id)).map(x => [String(x.id), x.name])) },
+    { k: 'sec', label: 'Section', dflt: 'all', search: true, opts: () => all('all', 'All Sections').concat(D.sections.filter(x => (d().site === 'all' || x.site === +d().site) && has('section', x.id)).sort((a, b) => a.name.localeCompare(b.name)).map(x => [String(x.id), x.name])) },
+    { k: 'enc', label: 'Enclosure', dflt: 'all', search: true, opts: () => all('all', 'All Enclosures').concat(D.enclosures.filter(e => (d().sec === 'all' || e.section === +d().sec) && (d().site === 'all' || by('sections', e.section).site === +d().site) && D.animals.some(a => a.enc === e.id)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })).map(e => [String(e.id), e.name])) }],
+    count: x => { const keep = [PK.site, PK.sec, PK.enc]; Object.assign(PK, { site: x.site === 'all' ? 'all' : +x.site, sec: x.sec === 'all' ? 'all' : +x.sec, enc: x.enc === 'all' ? 'all' : +x.enc });
+      const n = D.species.filter(sp => D.animals.some(a => a.sp === sp.id && pkIn(a))).length; [PK.site, PK.sec, PK.enc] = keep; return n; } });
+}
+function pkFilterApply(x) { const n = v => v === 'all' ? 'all' : +v; Object.assign(PK, { site: n(x.site), sec: n(x.sec), enc: n(x.enc) }); redrawSheet(); }
 function pkEnc(v) { const s = v === 'all' ? 'all' : +v; if (PK.enc === s) return; PK.enc = s; redrawSheet(); }
 const pkFilterN = () => ['site', 'sec', 'enc'].filter(k => PK[k] !== 'all').length;
 /* does an animal sit inside the places filtered? */
@@ -516,19 +529,10 @@ function spPickHtml() {
     const kinds = [['all', 'All'], ['species', 'Species'], ['enclosure', 'Enclosures'], ['animal', 'Animals']];
     const sites = D.sites.filter(x => D.animals.some(a => pathOfAnimal(a).site === x.id));
     const chips = (label, opts, cur, fn) => `<div class="az-chips pk-f" role="tablist" aria-label="${label}">${thumb()}${opts.map(([v, l]) => `<button class="az-chip" role="tab" aria-selected="${cur === v}" onclick="${fn}('${v}')">${esc(l)}</button>`).join('')}</div>`;
-    /* the Filter panel, in the sheet: Site · Section (of the site picked) · Enclosure (of the section picked) */
-    const plain = (opts, cur, fn) => `<div class="az-chips pk-fc">${opts.map(([v, l]) => `<button class="az-chip" aria-selected="${cur === v}" onclick="${fn}('${v}')">${esc(l)}</button>`).join('')}</div>`;
-    const secs = D.sections.filter(x => (site === 'all' || x.site === site) && D.animals.some(a => pathOfAnimal(a).section === x.id)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-    const encs = PK.sec === 'all' ? [] : D.enclosures.filter(e => e.section === PK.sec && D.animals.some(a => a.enc === e.id)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-    const panel = PK.fOpen ? `<div class="pk-fp">
-        <p class="pk-fp__h">Site</p>${plain([['all', 'All Sites'], ...sites.map(x => [String(x.id), x.name])], String(site), 'pkSite')}
-        <p class="pk-fp__h">Section</p>${plain([['all', 'All Sections'], ...secs.map(x => [String(x.id), x.name])], String(PK.sec), 'pkSec')}
-        <p class="pk-fp__h">Enclosure</p>${PK.sec === 'all' ? '<p class="pk-fp__none">Choose a section first</p>' : plain([['all', 'All Enclosures'], ...encs.map(x => [String(x.id), x.name])], String(PK.enc), 'pkEnc')}
-        <div class="pk-fp__foot"><button class="lnk" onclick="PK.site='all';PK.sec='all';PK.enc='all';redrawSheet()">Clear</button><button class="az-btn az-btn--compact" onclick="PK.fOpen=false;redrawSheet()">Done</button></div></div>` : '';
     const on = [PK.site !== 'all' ? ['site', by('sites', PK.site).name] : null, PK.sec !== 'all' ? ['sec', by('sections', PK.sec).name] : null, PK.enc !== 'all' ? ['enc', by('enclosures', PK.enc).name] : null].filter(Boolean);
     const clearJs = k => k === 'site' ? "PK.site='all';PK.sec='all';PK.enc='all'" : k === 'sec' ? "PK.sec='all';PK.enc='all'" : "PK.enc='all'";
-    const active = on.length && !PK.fOpen ? `<div class="pk-on">${on.map(([k, l]) => `<button class="fchip" onclick="${clearJs(k)};redrawSheet()" aria-label="Remove filter ${esc(l)}">${esc(l)}${I('close', 16)}</button>`).join('')}</div>` : '';
-    const filters = chips('What to show', kinds, kind, 'pkKind') + active + panel;
+    const active = on.length ? `<div class="pk-on">${on.map(([k, l]) => `<button class="fchip" onclick="${clearJs(k)};redrawSheet()" aria-label="Remove filter ${esc(l)}">${esc(l)}${I('close', 16)}</button>`).join('')}</div>` : '';
+    const filters = chips('What to show', kinds, kind, 'pkKind') + active;
     /* every enclosure that holds animals, one row per species in it, grouped site › section */
     const encRows = () => { const gs = [];
       D.enclosures.filter(e => { const sec = by('sections', e.section); return atSite(sec.site) && (PK.sec === 'all' || e.section === PK.sec) && (PK.enc === 'all' || e.id === PK.enc) && (!q || e.name.toLowerCase().includes(q) || sec.name.toLowerCase().includes(q)); })
@@ -558,7 +562,7 @@ function spPickHtml() {
     else { const places = q ? sgFind(PK.q).filter(t => t.level !== 'species' && tAnimals(t).some(pkIn)) : [];
       list = (places.length ? `<p class="az-label pk-h">Enclosures And Animals</p>${pkList(places.map(t => pkRow(go1(t), pkIc(t.level === 'animal' ? 'pets' : t.level === 'section' ? 'grid_view' : 'fence'), esc(sgName(t)), esc(`${species(t.sp).name} · ${sgWhere(t)}`), undefined, isOn(t))).join(''))}` : '')
         + spList(true); }
-    const fbtn = `<button class="az-iconbtn pk-fbtn${pkFilterN() || PK.fOpen ? ' on' : ''}" onclick="PK.fOpen=!PK.fOpen;redrawSheet()" aria-expanded="${!!PK.fOpen}" aria-label="Filter by site, section or enclosure">${I('tune')}${pkFilterN() ? `<span class="pk-fbtn__n">${pkFilterN()}</span>` : ''}</button>`;
+    const fbtn = `<button class="az-filterbtn fs-btn pk-fbtn${pkFilterN() ? ' on' : ''}" onclick="pkFilter()" aria-label="Filter by site, section or enclosure${pkFilterN() ? `, ${pkFilterN()} on` : ''}">${I('tune', 20)}${pkFilterN() ? `<b>${pkFilterN()}</b>` : ''}</button>`;
     const body = `<div class="pk-top"><div class="pk-qrow">${pkSearch('pk-q', PK.q, 'Species, enclosure or animal', 'PK.q=this.value;redrawSheet()', qr)}${fbtn}</div>${filters}</div><div class="pk-pane" data-fx>${list}</div>`;
     return { title: 'Select Species', bottom: true, tall: true, step: `list:${kind}:${site}:${PK.sec}:${PK.enc}`, depth: 0, body };
   }

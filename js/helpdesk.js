@@ -10,19 +10,25 @@
    My Approvals (waiting on, or decided by, me) or All that I may see */
 const approvesAny = () => D.requests.some(r => isDiet(r) && r.approver === S.user && visibleTo(r, me()));
 const raisesAny = () => canRaise(me()) || D.requests.some(r => isDiet(r) && r.by === S.user);
-const WHO_OPTS = () => [...(raisesAny() ? [['mine', 'My Requests']] : []), ...(approvesAny() ? [['appr', 'My Approvals']] : []), ['all', 'All']];
+const WHO_OPTS = () => [...(kitchenAny() ? [['kitchen', 'To Update']] : []), ...(raisesAny() && !kitchenAny() ? [['mine', 'My Requests']] : []), ...(approvesAny() ? [['appr', 'My Approvals']] : []), ['all', 'All']];
+const kitchenAny = () => onTeam({ dept: 'diet' }, me());
 /* not chosen yet: My Requests when you have raised any, else My Approvals when some wait on you, else the first there is */
 const rWho = () => { const W = WHO_OPTS().map(o => o[0]); if (W.includes(S.rWho)) return S.rWho;
+  /* the kitchen starts on To Update, under Approved */
+  if (W.includes('kitchen')) { S.rTab = 'approved'; S.rSub = 'all'; return 'kitchen'; }
   const has = k => D.requests.some(r => isDiet(r) && visibleTo(r, me()) && (k === 'mine' ? r.by === S.user : r.approver === S.user));
   return W.find(k => k !== 'all' && has(k)) || W[0]; };
 function hdList(tab, deptId = 'diet', sub = 'all', who = rWho()) {
   const u = me(), q = S.rQ.trim().toLowerCase();
-  return D.requests.filter(r => visibleTo(r, u) && isDiet(r) && (who === 'all' || (who === 'mine' ? r.by === u.id : r.approver === u.id)) && (tab === 'all' || tabOf(r) === tab) && (!HDSUBS[tab] || sub === 'all' || r.state === sub) && (S.rPrio === 'all' || r.prio === S.rPrio)
+  return D.requests.filter(r => visibleTo(r, u) && isDiet(r) && (who === 'all' || (who === 'kitchen' ? kitchenTodo(r) : who === 'mine' ? r.by === u.id : r.approver === u.id)) && (tab === 'all' || tabOf(r) === tab) && (!HDSUBS[tab] || sub === 'all' || r.state === sub) && rfOk(r)
     && (!q || [r.id, r.title, r.text, dept(r.dept).name, isDiet(r) ? species(r.sp).name : ''].some(x => (x || '').toLowerCase().includes(q))))
     .sort((a, b) => (S.rSort === 'priority' ? PRIO_RANK[a.prio] - PRIO_RANK[b.prio] : 0) || (lastAt(a) < lastAt(b) ? 1 : -1));
 }
 const ago = s => { const m = Math.round((Date.now() - new Date(s)) / 6e4); return m < 60 ? `${Math.max(m, 1)} min` : m < 1440 ? `${Math.round(m / 60)} h` : `${Math.round(m / 1440)} d`; };
-const flag = p => `<span class="az-flag${p === 'high' ? ' az-flag--high' : p === 'emergency' ? ' az-flag--emergency' : ''}" title="${PRIO[p][1]} priority" aria-label="${PRIO[p][1]} priority">${p === 'emergency' ? I('local_fire_department', 20, true) : PRIO[p][0]}</span>`;
+/* the priority flag, as the Figma's Priority Flags (UI Elements, Request Module): 52 × 34, notched on the left; the emergency one is the Figma's own
+   flag with its flame (assets/prio/flag-emergency.svg) */
+const flag = p => p === 'emergency' ? `<img class="az-flag az-flag--img" src="assets/prio/flag-emergency.svg" alt="Emergency priority" title="Emergency priority" width="52" height="34">`
+  : `<span class="az-flag${p === 'high' ? ' az-flag--high' : ''}" title="${PRIO[p][1]} priority" aria-label="${PRIO[p][1]} priority">${PRIO[p][0]}</span>`;
 /* what a diet request asks for, in plain words; other requests show their description */
 function whatOf(r) {
   if (!isDiet(r) || JOB_KINDS.includes(r.kind)) return r.text;
@@ -55,14 +61,18 @@ function cardFact(r) {
     return w ? [w[0] === 'Which day' ? 'Which Day' : 'When', [w[1].split(' · ')[0], l ? tcase(l[1]) : ''].filter(Boolean).join(' · ')] : null; }
   return ['When', r.how === 'always' && r.start ? `From ${fmtDayY(r.start)}` : howText(r)];
 }
+/* the request card, as the Figma's Request Card (Card UI 13/08/25 and 20/08/25): the type's icon and the request ID with the priority flag;
+   "Type • Requester • 2 d"; the description, three lines and "more"; the attachments and one fact (owner, 27 Nov 2026: keep When); the status */
 function hdCard(r, cur = false) {
-  const s = stateOf(r), c = lastComment(r), low = r.approver === S.user && isOpen(r) && shortOf(r).length, fact = cardFact(r), nf = (r.files || []).length;
+  const s = stateOf(r), low = r.approver === S.user && isOpen(r) && shortOf(r).length, fact = cardFact(r), nf = (r.files || []).length;
+  const dt = isDiet(r) ? dtOfKind(r.kind) : null, ic = dt ? dt[4] : 'category', type = dt ? tcase(dt[2]) : dept(r.dept).name, d = r.text || cardLine(r);
+  const files = nf ? `<span class="hdcard__files">${I('attach_file', 16)}<span>${nf}</span></span>` : '';
+  const fx = fact ? `<span class="hdcard__fact"><small>${fact[0]}</small><b${fact[0] === 'Estimate' ? ' class="amt-green"' : ''}>${esc(fact[1])}</b></span>` : '';
   return `<a class="hdcard pick" href="#/requests/${r.id}"${cur ? ' aria-current="true"' : ''}>
-    <span class="hdcard__top"><span class="grow"><b class="hdcard__id">${r.id}</b><span class="hdcard__cat">${esc(catOf(r))}</span></span>${flag(r.prio)}</span>
-    <span class="hdcard__body"><b class="hdcard__t">${esc(r.title)}</b><span class="hdcard__d">${esc(r.text || cardLine(r))}</span>
-      <span class="hdcard__by"><b>${youName(r.by)}</b> • ${fmtDayY(r.events[0].at.slice(0, 10))}${low ? ` ${pill('pending', 'Low Stock')}` : ''}</span>
-      ${fact || nf ? `<span class="hdcard__facts">${fact ? `<span><small>${fact[0]}</small><b${fact[0] === 'Estimate' ? ' class="amt-green"' : ''}>${esc(fact[1])}</b></span>` : '<span></span>'}${nf ? `<span class="hdcard__files">${I('attach_file', 18)}${nf}</span>` : ''}</span>` : ''}</span>
-    ${c ? `<span class="hdcard__cmt">${I('format_quote', 22, true)}<span><i>${esc(c.note)}</i><small>${youName(c.by)} • ${fmtTime(c.at)} • ${fmtDayY(c.at.slice(0, 10))}</small></span></span>` : ''}
+    <span class="hdcard__top"><span class="hdcard__ic">${I(ic, 24)}</span><b class="hdcard__id">${r.id}</b>${flag(r.prio)}</span>
+    <span class="hdcard__body"><span class="hdcard__by"><b>${esc(type)} • ${youName(r.by)}</b> • ${ago(r.events[0].at)}${low ? ` ${pill('pending', 'Low Stock')}` : ''}</span>
+      <span class="hdcard__d">${esc(d)}</span>${d.length > 120 ? '<span class="hdcard__more">more</span>' : ''}
+      ${fx || files ? `<span class="hdcard__facts">${files ? files + fx : fx}</span>` : ''}</span>
     <span class="az-strip az-strip--${s.tone}">${I(s.icon, 20)}${esc(s.label)}<span class="az-strip__time">${stripTime(r)}</span></span></a>`;
 }
 /* Requests, the third tab of the Diet landing page (owner, 26 Nov 2026: "when I change there itself show the listing filters"): the same page
@@ -75,26 +85,48 @@ function reqHomeParts(cur = null) {
   const status = `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Status">${thumb()}${HDTABS.map(([k, l]) => `<button role="tab" aria-selected="${S.rTab === k}" onclick="hdSet({rTab:'${k}',rSub:'all'})">${l}</button>`).join('')}</div></div>`;
   const subOpts = (HDSUBS[S.rTab] || []).filter(([k]) => k === 'all' || k === S.rSub || hdList(S.rTab, 'diet', k).length);
   const subs = subOpts.length > 2 ? `<div class="az-chips az-chips--sub hdpills" role="tablist" aria-label="${HDTABS.find(x => x[0] === S.rTab)[1]} requests">${thumb()}${subOpts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S.rSub === k}" onclick="hdSet({rSub:'${k}'})">${l} - ${hdList(S.rTab, 'diet', k).length}</button>`).join('')}</div>` : '';
-  const list = hdList(S.rTab, 'diet', S.rSub), filt = S.rPrio !== 'all';
-  const tools = `<span class="hdtools">${iconBtn('swap_vert', `Sort: ${S.rSort === 'priority' ? 'priority' : 'newest'}`, "S.rSort=S.rSort==='priority'?'newest':'priority';render();toast('Sorted by '+(S.rSort==='priority'?'priority':'newest'))")}<button class="az-iconbtn${filt ? ' on' : ''}" onclick="hdFilterSheet()" aria-label="Filter">${I('tune')}</button></span>`;
-  const body = `<div class="body">${status}${subs}<p class="az-countline lcount">${plural(list.length, 'request')}${tools}</p>${list.length ? `<div class="list list--16 hdlist">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1(who === 'mine' ? 'You have no requests here' : 'No requests here')}</div>`;
+  const list = hdList(S.rTab, 'diet', S.rSub), nF = RF_GROUPS().reduce((n, g) => n + (g.multi ? rF()[g.k].length : rF()[g.k] !== g.dflt ? 1 : 0), 0);
+  const tools = `<span class="hdtools">${iconBtn('swap_vert', `Sort: ${S.rSort === 'priority' ? 'priority' : 'newest'}`, "S.rSort=S.rSort==='priority'?'newest':'priority';render();toast('Sorted by '+(S.rSort==='priority'?'priority':'newest'))")}<button class="az-filterbtn fs-btn${nF ? ' on' : ''}" onclick="hdFilterSheet()" aria-label="Filter${nF ? `, ${nF} on` : ''}">${I('tune', 20)}${nF ? `<b>${nF}</b>` : ''}</button></span>`;
+  const body = `<div class="body">${status}${subs}<p class="az-countline lcount">${plural(list.length, 'request')}${tools}</p>${rfChips()}${list.length ? `<div class="list list--16 hdlist">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1(who === 'mine' ? 'You have no requests here' : 'No requests here', '', S.rQ.trim() || nF ? 'seal' : 'meerkat')}</div>`;
   return { search, chips, body };
 }
 /* a tab, a department, a sub-status or My Approvals | All: the cards come in from the side the highlight moved to */
 const HD_ORDER = { rTab: () => HDTABS.map(x => x[0]), rWho: () => WHO_OPTS().map(x => x[0]), rSub: () => (HDSUBS[S.rTab] || []).map(x => x[0]) };
 function hdSet(o) {
+  if (o.rWho === 'kitchen' && !o.rTab) Object.assign(o, { rTab: 'approved', rSub: 'all' });
   let dir = 'hd-rise';
   for (const [k, v] of Object.entries(o)) if (HD_ORDER[k] && S[k] !== v) { const ord = HD_ORDER[k](), a = ord.indexOf(k === 'rWho' ? rWho() : S[k]), b = ord.indexOf(v); if (a > -1 && b > -1) dir = b > a ? 'hd-fwd' : 'hd-back'; break; }
   const same = Object.entries(o).every(([k, v]) => (k === 'rWho' ? rWho() : S[k]) === v); Object.assign(S, o);
   go('#/requests'); if (!same) setTimeout(() => playFx($('.hdlist'), dir), 0);
 }
-function hdFilterSheet() { optionSheet('Priority', [['all', 'All Priorities'], ...Object.entries(PRIO).map(([k, [, l]]) => [k, l, PRI_TEXT[k]])], S.rPrio, 'pickRPrio'); }
-function pickRPrio(v) { S.rPrio = v; closeAll(); render(); }
+/* the Requests filter (owner, 27 Nov 2026: the Figma's Filter screen): Request Type · Creation Date · Created By · Priority */
+const RF0 = () => ({ type: [], date: 'all', by: [], prio: [] });
+const RF_DATES = [['all', 'All Time (default)'], ['1', 'Last 24 Hours'], ['7', 'Last 7 Days'], ['30', 'Last 1 Month'], ['90', 'Last 3 Months']];
+const rF = () => S.rF || (S.rF = RF0());
+function rfOk(r, f = rF()) {
+  const dt = isDiet(r) ? dtOfKind(r.kind) : null, at = r.events[0].at;
+  return (!f.type.length || (dt && f.type.includes(dt[0]))) && (!f.prio.length || f.prio.includes(r.prio)) && (!f.by.length || f.by.includes(r.by))
+    && (f.date === 'all' || at >= plusMin(nowStamp(), -1440 * +f.date));
+}
+const RF_GROUPS = () => [
+  { k: 'type', label: 'Request Type', multi: true, opts: () => DTYPES.map(x => [x[0], x[2]]) },
+  { k: 'date', label: 'Creation Date', dflt: 'all', opts: () => RF_DATES },
+  { k: 'by', label: 'Created By', multi: true, search: true, opts: () => [...new Set(D.requests.filter(isDiet).map(r => r.by))].map(id => [id, user(id).name]).sort((a, b) => a[1].localeCompare(b[1])) },
+  { k: 'prio', label: 'Priority', multi: true, opts: () => Object.entries(PRIO).map(([k, [, l]]) => [k, l]) }];
+function hdFilterSheet() { filterScreen({ groups: RF_GROUPS(), value: rF(), apply: 'rfApply', count: d => { const keep = S.rF; S.rF = d; const n = hdList(S.rTab, 'diet', S.rSub).length; S.rF = keep; return n; } }); }
+function rfApply(d) { S.rF = d; render(); }
+/* the filters on, as chips under the search (the Figma's Animal List): a tap takes one off */
+function rfChips() {
+  const f = rF(), G = RF_GROUPS(), out = [];
+  G.forEach(g => { if (g.multi) (f[g.k] || []).forEach(v => out.push([g.k, v, (g.opts().find(o => o[0] === v) || [, v])[1]])); else if (f[g.k] !== g.dflt) out.push([g.k, null, g.opts().find(o => o[0] === f[g.k])[1]]); });
+  return out.length ? `<div class="fs-on">${out.map(([k, v, l]) => `<button class="fchip" onclick="rfOff('${k}',${v === null ? 'null' : `'${v}'`})" aria-label="Remove filter ${esc(l)}">${esc(l)}${I('close', 16)}</button>`).join('')}</div>` : '';
+}
+function rfOff(k, v) { const f = rF(); if (v === null) f[k] = RF0()[k]; else f[k] = f[k].filter(x => x !== v); render(); }
 
 /* ---------- one request (record layout) ---------- */
 const lastEv = (r, k) => [...r.events].reverse().find(e => e.kind === k);
 const EVT = { raised: ['Request raised', 'send', ''], edited: ['Request edited', 'edit', ''], delayed: ['Delayed', 'timer', 'wait'], approved: ['Approved', 'check', 'ok'], rejected: ['Rejected', 'close', 'bad'], cancelled: ['Canceled', 'do_not_disturb_on', 'bad'],
-  started: ['Moved to In progress', 'progress_activity', 'ok'], assigned: ['Job In Charge', 'badge', ''], completed: ['Completed', 'task_alt', 'ok'], reopened: ['Moved back to In progress', 'undo', 'wait'] };
+  started: ['Moved to In progress', 'progress_activity', 'ok'], assigned: ['Job In Charge', 'badge', ''], completed: ['Completed', 'task_alt', 'ok'], reopened: ['Moved back to In progress', 'undo', 'wait'], nostock: ['Item not in stock', 'inventory_2', 'wait'], subok: ['Substitute approved', 'check', 'ok'], subno: ['Substitute rejected', 'close', 'bad'] };
 /* what the team wrote when completing: the notes, the team, the files */
 const teamText = e => [plural(e.team || 1, 'person', 'people'), e.people].filter(Boolean).join(' · ');
 /* a request's facts in the Figma's order (Request Module, Req Details 25 Sep 2025): { k, icon, label, v, link } */
@@ -177,30 +209,25 @@ function reqExtra(r) {
    iPad landscape: the same boxes in two columns */
 function paneRequest(id, { cls = '' } = {}) {
   const r = by('requests', id), back = isPhone() ? '#/requests' : '';
-  if (!r || !visibleTo(r, me())) return pane(cls, topbar({ back, title: 'Request' }), empty1('Not one of your requests'));
+  if (!r || !visibleTo(r, me())) return pane(cls, topbar({ back, title: 'Request' }), empty1('Not one of your requests', '', 'sloth'));
   const more = iconBtn('more_vert', 'More', `moreMenu('${r.id}',this)`);
-  const req = user(r.by), edited = r.events.some(e => e.kind === 'edited');
-  const head = `<div class="rhd"><div class="rhd__cat"><span class="az-dept">${I(isDiet(r) ? KIND[r.kind][1] : dept(r.dept).icon, 20)}</span><span class="rhd__catn">${esc(catOf(r))}</span>${flag(r.prio)}</div>
-    <h2 class="rhd__t">${esc(r.title)}</h2>${siteLine(r) ? `<p class="rhd__s">${esc(siteLine(r))}</p>` : ''}
-    <p class="rhd__m">${I('schedule', 16)}${fmtTime(r.events[0].at)} • ${fmtDayY(r.events[0].at.slice(0, 10))}${edited ? '<span class="rhead__edited">Edited</span>' : ''}</p></div>
-    <div class="rhd__who">${avatar(req.name)}<span class="grow"><b>${youName(r.by)}</b><small>${esc(req.title)}</small></span>${callChat(req)}</div>`;
+  const req = user(r.by), edited = r.events.some(e => e.kind === 'edited'), dt = isDiet(r) ? dtOfKind(r.kind) : null;
+  /* (owner, 27 Nov 2026: "Request Details page as the Figma") the Figma's Req Details (Comment Input UI, 1 Sep 2025): the ID in the middle of the
+     top bar; under it the type's icon, its name and the priority flag; the time; the requester with call and chat. Then one row per fact on the
+     page colour, a line between them (icon 20, the label 14/500, the answer 16), then Activity on white. The status bar stays at the foot */
+  const head = `<div class="rq2-hd"><div class="rq2-dept"><span class="rq2-ic">${I(dt ? dt[4] : dept(r.dept).icon, 24)}</span><b class="grow">${esc(dt ? tcase(dt[2]) : dept(r.dept).name)}</b>${flag(r.prio)}</div>
+    <p class="rq2-time">${fmtTime(r.events[0].at)} • ${fmtDayY(r.events[0].at.slice(0, 10))}${edited ? ' • Edited' : ''}</p>
+    <div class="rq2-user">${avatar(req.name, '30')}<span>${youName(r.by)}</span>${req.id === S.user ? '' : `<button class="rq2-act" onclick="toast('Calling ${esc(req.name)}')" aria-label="Call ${esc(req.name)}">${I('call', 20)}</button><button class="rq2-act" onclick="toast('Chat with ${esc(req.name)}')" aria-label="Chat with ${esc(req.name)}">${I('chat', 20)}</button>`}</div></div>`;
   const low = reqLowStock(r), F = reqFacts(r), extra = reqExtra(r), act = activityView(r, { bare: true });
-  const hd = (f, link = f.link) => `<div class="rbox__h">${I(f.icon, 20)}<span class="grow">${f.label}</span>${link || ''}</div>`;
-  const box = (f, wide = false) => `<section class="rbox rbox--${f.k}${wide ? ' rbox--wide' : ''}">${hd(f)}<div class="rbox__b">${f.v}</div></section>`;
-  /* the title is in the head now: the Request box keeps the words only */
-  const reqF = F.find(f => f.k === 'req'), words = r.text ? `<p>${esc(r.text)}</p>` : '';
-  const grp = F.filter(f => ['site', 'by', 'appr'].includes(f.k)), rest = F.filter(f => !['req', 'site', 'by', 'appr', 'form'].includes(f.k)), form = F.filter(f => f.k === 'form');
-  const boxes = [];
-  if (low) boxes.push(`<div class="rlow rbox rbox--wide">${low}</div>`);
-  if (words) boxes.push(box({ ...reqF, label: 'Request', v: words }, true));
-  if (form.length) boxes.push(`<section class="rbox rbox--form">${hd({ icon: dept(r.dept).icon, label: 'Details' }, '')}<div class="rbox__kv">${form.map(f => `<div><span>${f.label}</span>${f.v}</div>`).join('')}</div></section>`);
-  rest.forEach(f => boxes.push(box(f, f.k === 'chg')));
-  boxes.push(`<section class="rbox rbox--grp">${grp.map(f => `<div class="rbox__f">${hd(f)}<div class="rbox__b">${f.v}</div></div>`).join('')}</section>`);
-  if (extra) boxes.push(`<div class="rbox rbox--extra rbox--wide">${extra}</div>`);
-  boxes.push(`<section class="rbox rbox--act rbox--wide"><div class="rbox__h">${I('forum', 20)}<span class="grow">Activity</span>${act.filter}</div>${act.html}</section>`);
-  const body = head + `<div class="rboxes">${boxes.join('')}</div>`;
-  /* the record head scrolls away with the request; only the top bar and the status bar stay */
-  return pane(`${cls} req-a req-b${isLand() ? ' req-wide' : ''}`, topbar({ back, title: r.id, actions: more }), body, statusBar(r), `req-${r.id}`);
+  const row = f => `<section class="rq2-row rq2-row--${f.k}">${I(f.icon, 20)}<div class="rq2-row__b"><div class="rq2-row__h"><b>${f.label}</b>${f.link || ''}</div><div class="rq2-row__v">${f.v}</div></div></section>`;
+  const get = k => F.filter(f => f.k === k);
+  /* the Figma's order: Requested Site · Description · (the diet's own facts) · Requested by · Approval · Attachments */
+  const desc = r.text ? [{ k: 'desc', icon: 'subject', label: 'Description', v: `<p>${esc(r.text)}</p>` }] : [];
+  const mid = F.filter(f => !['req', 'site', 'by', 'appr', 'files'].includes(f.k));
+  const rows = [...get('site'), ...desc, ...mid, ...get('by'), ...get('appr'), ...get('files')];
+  const body = head + `<div class="rq2">${low ? `<div class="rq2-low">${low}</div>` : ''}${rows.map(row).join('')}${extra ? `<div class="rq2-extra">${extra}</div>` : ''}
+    <section class="rq2-actsec"><div class="rq2-acth">${I('chat', 24)}<b class="grow">Activity</b>${act.filter}</div>${act.html}</section></div>`;
+  return pane(`${cls} req-a req-b rq2-pane${isLand() ? ' req-wide' : ''}`, topbar({ back, title: r.id, actions: more }), body, statusBar(r), `req-${r.id}`);
 }
 /* When, with proper dates (owner, 26 Nov 2026): rows, the label on the left and the full date on the right (weekday, day, month, year, and
    Today / Tomorrow under it), the days as chips when there are several, then the feed. Offsets in a request's answers count from the day it was raised */
@@ -221,14 +248,14 @@ function whenView(r) {
 /* Activity, as the Figma (Comment Input, 1 Sep 2025): Show All with its filter, an attach button and "Add Your Comment", then each entry;
    a status change shows old → new in its colour */
 const ST_TO = { raised: 'Awaiting Approval', edited: 'Awaiting Approval', delayed: 'Delayed', approved: 'Approved', rejected: 'Rejected', cancelled: 'Canceled', started: 'In Progress', completed: 'Completed', reopened: 'In Progress' };
-const ST_TONE = { 'Awaiting Approval': 'wait', Delayed: 'wait', Approved: 'ok', 'In Progress': 'prog', Completed: 'done', 'Diet Updated': 'done', Rejected: 'bad', Canceled: 'cancel' };
+const ST_TONE = { 'Awaiting Approval': 'wait', Delayed: 'wait', 'Substitute To Approve': 'wait', 'Waiting For Stock': 'wait', 'With Kitchen': 'ok', Approved: 'ok', 'In Progress': 'prog', Completed: 'done', 'Diet Updated': 'done', Rejected: 'bad', Canceled: 'cancel' };
 const stPill = t => `<span class="stp stp--${ST_TONE[t] || 'wait'}">${esc(t)}</span>`;
 const ACT_F = [['all', 'Show All'], ['c', 'Comments'], ['s', 'Status Updates']];
 function actFilterSheet() { optionSheet('Show', ACT_F, S.actF || 'all', 'pickActF'); }
 function pickActF(v) { S.actF = v; closeAll(); render(); }
 function activityView(r, { bare = false } = {}) {
   const f = S.actF || 'all'; let prev = null;
-  const items = r.events.map(e => { if (e.kind === 'comment' || e.kind === 'assigned') return { e }; const to = e.kind === 'completed' && changesDiet(r) ? 'Diet Updated' : ST_TO[e.kind], x = { e, from: e.kind === 'raised' ? null : prev, to }; prev = to; return x; })
+  const items = r.events.map(e => { if (e.kind === 'comment' || e.kind === 'assigned') return { e }; const to = e.kind === 'completed' && isDiet(r) ? 'Diet Updated' : e.kind === 'approved' && isDiet(r) ? 'With Kitchen' : e.kind === 'nostock' ? (e.mode === 'sub' ? 'Substitute To Approve' : 'Waiting For Stock') : e.kind === 'subok' || e.kind === 'subno' ? 'With Kitchen' : ST_TO[e.kind], x = { e, from: e.kind === 'raised' ? null : prev, to }; prev = to; return x; })
     .filter(x => f === 'all' || (f === 'c' ? x.e.kind === 'comment' : x.e.kind !== 'comment')).reverse();
   /* each entry in a tinted box, as the Hub's Help Desk: a comment is a yellow note, a status change a light box in its colour, raised or edited grey */
   const card = x => { const e = x.e, who = `<span class="act__who">${avatar(user(e.by).name, '24')}<b>${youName(e.by)}</b><span>${fmtTime(e.at)} • ${fmtDayY(e.at.slice(0, 10))}</span></span>`;
@@ -236,7 +263,7 @@ function activityView(r, { bare = false } = {}) {
     if (e.kind === 'assigned') return `<div class="act">${who}<div class="act__box"><small>Update</small><p>Job In Charge: <b>${youName(e.to)}</b></p></div></div>`;
     const t = e.kind === 'raised' ? 'Request Raised' : e.kind === 'edited' ? 'Request Edited' : e.kind === 'delayed' ? `Delayed Until ${fmtDay(e.until)}` : '';
     const box = e.kind === 'raised' || e.kind === 'edited' ? '' : ` act__box--${ST_TONE[x.to] || 'wait'}`;
-    return `<div class="act act--st">${who}<div class="act__box${box}"><small>${t ? 'Update' : 'Status Update'}</small><p class="act__st">${t ? `<span class="act__t">${t}</span>` : ''}${x.from && x.from !== x.to ? `${stPill(x.from)}${I('arrow_forward', 16)}` : ''}${stPill(x.to)}</p>${e.reason || e.note ? `<p>${esc([e.reason, e.note].filter(Boolean).join('. '))}</p>` : ''}${e.kind === 'completed' && !isDiet(r) ? `<p class="plain">${esc(teamText(e))}</p>` : ''}${(e.files || []).length ? fileTiles(e.files) : ''}</div></div>`; };
+    return `<div class="act act--st">${who}<div class="act__box${box}"><small>${t ? 'Update' : 'Status Update'}</small><p class="act__st">${t ? `<span class="act__t">${t}</span>` : ''}${x.from && x.from !== x.to ? `${stPill(x.from)}${I('arrow_forward', 16)}` : ''}${stPill(x.to)}</p>${e.kind === 'nostock' ? `<p><b>${esc(item(e.item).name)}</b> not in stock · ${e.mode === 'sub' ? `use <b>${esc(item(e.to).name)}</b> instead` : `wait till ${fmtDayY(e.until)}; the old diet runs till then`}</p>` : ''}${e.kind === 'subok' || e.kind === 'subno' ? `<p>${esc(item(e.item).name)} → ${esc(item(e.to).name)}</p>` : ''}${e.reason || e.note ? `<p>${esc([e.reason, e.note].filter(Boolean).join('. '))}</p>` : ''}${e.kind === 'completed' && !isDiet(r) ? `<p class="plain">${esc(teamText(e))}</p>` : ''}${(e.files || []).length ? fileTiles(e.files) : ''}</div></div>`; };
   const filter = `<button class="lnk act-fbtn" onclick="actFilterSheet()" aria-label="Show: ${ACT_F.find(x => x[0] === f)[1]}">${ACT_F.find(x => x[0] === f)[1]}${I('filter_list', 20)}</button>`;
   const html = `<div class="act-comp"><button class="act-attach" onclick="toast('Attach a photo or a file')" aria-label="Attach a photo or a file">${I('attach_file')}</button><div class="az-composer">${avatar(me().name, '24')}<input id="cmt" placeholder="Add Your Comment" onkeydown="if(event.key==='Enter')addComment('${r.id}')" aria-label="Add your comment"><button class="send" onclick="addComment('${r.id}')" aria-label="Send">${I('send', 20)}</button></div></div>
     <div class="acts">${items.map(card).join('') || '<p class="act__none">Nothing here yet</p>'}</div>`;
@@ -263,6 +290,9 @@ function nextLine(r) {
     return back && back.kind === 'reopened' ? `${youName(back.by)}: ${esc(back.reason)}` : r.assignee ? `Job In Charge: ${youName(r.assignee)}` : back ? `By ${youName(back.by)}` : ''; }
   if (r.state === 'completed') return `By ${youName(lastEv(r, 'completed').by)}`;
   const e = lastEv(r, r.state === 'cancelled' ? 'cancelled' : r.state);
+  if (r.state === 'subcheck') return `${youName(lastEv(r, 'nostock').by)}: ${esc(item(r.sub.item).name)} not in stock · use ${esc(item(r.sub.to).name)}?`;
+  if (r.state === 'waitstock') return `${esc(item(r.wait.item).name)} not in stock · the old diet runs till ${fmtDay(r.wait.until)}`;
+  if (r.state === 'approved' && isDiet(r)) return onTeam(r, me()) ? 'Diet changed · update the items in the kitchen' : 'Waiting for the kitchen to update the items';
   if (r.state === 'approved') return isDiet(r) ? (r.kind === 'ask' ? 'The dietician builds the diet' : changesDiet(r) || r.kind === 'skip' ? 'In the diet · the kitchen has it' : 'With the kitchen') : `By ${youName(e.by)}`;
   return `${youName(e.by)}: ${e.reason}`;
 }
@@ -271,21 +301,24 @@ function nextLine(r) {
    Cancel are in the ⋮ menu, as the app */
 function statusBar(r) {
   const a = actionsFor(r, me()), at = r.events.filter(e => !['comment', 'assigned'].includes(e.kind)).pop().at, s = stateOf(r), mine = e => e && e.by === S.user;
-  const big = r.state === 'approved' ? (mine(lastEv(r, 'approved')) ? 'You Approved' : 'Approved') : r.state === 'rejected' ? 'Request Rejected' : r.state === 'cancelled' ? (mine(lastEv(r, 'cancelled')) ? 'You Canceled' : 'Request Canceled') : r.state === 'completed' ? (changesDiet(r) ? 'Diet Updated' : 'Request Completed') : '';
+  const big = r.state === 'approved' && isDiet(r) ? '' : r.state === 'approved' ? (mine(lastEv(r, 'approved')) ? 'You Approved' : 'Approved') : r.state === 'rejected' ? 'Request Rejected' : r.state === 'cancelled' ? (mine(lastEv(r, 'cancelled')) ? 'You Canceled' : 'Request Canceled') : r.state === 'completed' ? (changesDiet(r) ? 'Diet Updated' : 'Request Completed') : '';
   const tone = r.state === 'rejected' ? ' az-statusbar--bad' : r.state === 'cancelled' ? ' az-statusbar--cancel' : r.state === 'approved' && mine(lastEv(r, 'approved')) ? ' az-statusbar--ok' : '';
   let btns = '';
   if (a.includes('approve')) btns = `<button class="az-btn az-btn--reject" onclick="reasonSheet('${r.id}','reject')">Reject</button><button class="az-btn az-btn--approve" onclick="doAct('${r.id}','approve')">${I('check')}Approve</button>`;
   /* the team's one next step, as the Help Desk app (the design system: one main green button; going back is outline) */
   else if (a.includes('start')) btns = `<button class="az-btn az-btn--approve" onclick="doAct('${r.id}','start')">${I('progress_activity')}Move To In Progress</button>`;
-  else if (a.includes('complete')) btns = `<button class="az-btn az-btn--approve" onclick="completeSheet('${r.id}')">${I('task_alt')}${changesDiet(r) ? 'Diet Updated' : isDiet(r) ? 'Done' : 'Move To Completed'}</button>`;
+  /* the kitchen (owner, 27 Nov 2026): Items Updated, or Item Not In Stock */
+  else if (a.includes('complete') && isDiet(r)) btns = `${a.includes('nostock') ? `<button class="az-btn az-btn--outline" onclick="noStockSheet('${r.id}')">${I('inventory_2')}Not In Stock</button>` : ''}<button class="az-btn az-btn--approve" onclick="completeSheet('${r.id}')">${I('task_alt')}Items Updated</button>`;
+  else if (a.includes('subok')) btns = `<button class="az-btn az-btn--reject" onclick="reasonSheet('${r.id}','subno')">Reject</button><button class="az-btn az-btn--approve" onclick="doAct('${r.id}','subok')">${I('check')}Approve</button>`;
+  else if (a.includes('complete')) btns = `<button class="az-btn az-btn--approve" onclick="completeSheet('${r.id}')">${I('task_alt')}Move To Completed</button>`;
   else if (a.includes('reopen')) btns = `<button class="az-btn az-btn--outline az-btn--approve" onclick="reasonSheet('${r.id}','reopen')">${I('undo')}Move Back To In Progress</button>`;
   return `<div class="az-statusbar${tone}"><span>Current Status • ${ago(at)} ago</span>${big ? `<b class="az-statusbar__big">${big}</b>` : `<b class="tone-${s.tone}">${esc(s.label)}</b>`}${sbLine(r)}${btns ? `<div class="az-statusbar__actions">${btns}</div>` : ''}</div>`;
 }
 /* who the request waits on, with their faces (Hub Help Desk and Incident Reporting: "Waiting on you · Site approver") */
 function sbLine(r) {
   const ap = user(r.approver), x = dept(r.dept), team = r.assignee ? [user(r.assignee)] : (x.team || [x.head]).map(user);
-  const who = r.state === 'pending' || r.state === 'delayed' ? [ap] : ['approved', 'in_progress'].includes(r.state) ? team : null;
-  const t = r.state === 'pending' ? (r.approver === S.user ? `Your turn to approve · ${esc(ap.title)}` : `Waiting for ${esc(ap.name)} · ${esc(ap.title)}`) : nextLine(r);
+  const who = r.state === 'pending' || r.state === 'delayed' || r.state === 'subcheck' ? [ap] : ['approved', 'in_progress', 'waitstock'].includes(r.state) ? team : null;
+  const t = r.state === 'subcheck' && r.approver === S.user ? `Your turn: ${nextLine(r)}` : r.state === 'pending' ? (r.approver === S.user ? `Your turn to approve · ${esc(ap.title)}` : `Waiting for ${esc(ap.name)} · ${esc(ap.title)}`) : nextLine(r);
   return `<span class="sb-who">${who ? `<span class="sb-avs">${who.slice(0, 3).map(u => avatar(u.name, '24')).join('')}</span>` : ''}<span>${t}</span></span>`;
 }
 const MENU_ACTS = ['assign', 'delay', 'edit', 'cancel'];
@@ -319,8 +352,8 @@ function delayHtml() {
 }
 let RS = {};
 function reasonSheet(id, kind) { RS = { id, kind, reason: '' }; openSheet(() => {
-  const r = by('requests', RS.id), rej = RS.kind === 'reject', back = RS.kind === 'reopen';
-  return { title: back ? 'Move Back To In Progress?' : `${rej ? 'Reject' : 'Cancel'} ${r.id}?`, sub: rej || back ? `${esc(user(r.by).name)} sees your reason` : `${esc(user(r.approver).name)} sees your reason`,
+  const r = by('requests', RS.id), sub = RS.kind === 'subno', rej = RS.kind === 'reject' || sub, back = RS.kind === 'reopen';
+  return { title: sub ? 'Reject The Substitute?' : back ? 'Move Back To In Progress?' : `${rej ? 'Reject' : 'Cancel'} ${r.id}?`, sub: sub ? 'The kitchen sees your reason and chooses again' : rej || back ? `${esc(user(r.by).name)} sees your reason` : `${esc(user(r.approver).name)} sees your reason`,
     form: true, body: `<label class="az-field"><span class="az-label">Reason <span class="az-req">*</span></span><span class="az-input az-input--text az-textarea"><textarea id="rs-reason" rows="4" oninput="RS.reason=this.value;document.getElementById('rs-go').disabled=this.value.trim().length<3">${esc(RS.reason)}</textarea></span></label>`,
     foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button id="rs-go" class="az-btn ${back ? '' : 'az-btn--reject'}"${RS.reason.trim().length < 3 ? ' disabled' : ''} onclick="doAct(RS.id,'${RS.kind}',{reason:RS.reason})">${back ? `${I('undo')}Move Back` : rej ? 'Reject Request' : 'Cancel Request'}</button>` };
 }); setTimeout(() => { const t = $('#rs-reason'); if (t) t.focus(); }, 30); }
@@ -340,7 +373,7 @@ function completeSheet(id) { if (isDiet(by('requests', id))) return dietDoneShee
   foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button class="az-btn" onclick="doAct(CP.id,'complete',CP)">${I('task_alt')}Complete Request</button>` })); }
 const CP_FILES = [{ name: 'First feed served.jpg', kind: 'image', size: '1.8 MB' }, { name: 'Feed sheet.pdf', kind: 'pdf', size: '180 KB' }];
 function addCpFile() { const f = CP_FILES.find(x => !CP.files.some(y => y.name === x.name)); if (f) CP.files.push(f); redrawSheet(); }
-const DONE = { approve: 'Approved', delay: 'Delayed', reject: 'Rejected', cancel: 'Canceled', start: 'In Progress', assign: 'Job In Charge Set', complete: 'Completed', reopen: 'Back To In Progress' };
+const DONE = { approve: 'Approved · sent to the kitchen', delay: 'Delayed', reject: 'Rejected', cancel: 'Canceled', start: 'In Progress', assign: 'Job In Charge Set', complete: 'Items updated', reopen: 'Back To In Progress', nostock: 'Sent', subok: 'Substitute approved · sent to the kitchen', subno: 'Substitute rejected' };
 function doAct(id, kind, x = {}) {
   const r = by('requests', id);
   try { act(r, kind, S.user, x); } catch (e) { toast(e.message); return; }

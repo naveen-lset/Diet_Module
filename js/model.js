@@ -283,7 +283,11 @@ function stateOf(r) {
   switch (r.state) {
     case 'pending': return { label: 'Awaiting Approval', tone: 'awaiting', icon: 'pace' };
     case 'delayed': return { label: `Delayed Until ${fmtDay(r.delay.until)}`, tone: 'awaiting', icon: 'timer' };
-    case 'approved': return { label: 'Approved', tone: 'positive', icon: 'check_circle' };
+    case 'approved': return { label: isDiet(r) ? 'Approved · With Kitchen' : 'Approved', tone: 'positive', icon: 'check_circle' };
+    /* the kitchen's side of an approved diet request (owner, 27 Nov 2026): an item not in stock — a substitute waits for the Dietitian's OK,
+       or the kitchen waits for the stock until a day (the old diet runs till then) */
+    case 'subcheck': return { label: 'Substitute To Approve', tone: 'awaiting', icon: 'swap_horiz' };
+    case 'waitstock': return { label: `Waiting For Stock · ${fmtDay(r.wait.until)}`, tone: 'awaiting', icon: 'inventory_2' };
     /* the work after approval, as the Help Desk app: the department moves it to In progress, then to Completed. Positive like Approved (the design system's Positive is "active, approved, done"); the label and icon tell them apart */
     case 'in_progress': return { label: 'In Progress', tone: 'positive', icon: 'progress_activity' };
     case 'completed': return { label: changesDiet(r) ? 'Diet Updated' : 'Completed', tone: 'positive', icon: 'task_alt' };
@@ -295,8 +299,10 @@ function stateOf(r) {
 /* Help Desk tabs (owner, 19 Nov 2026: "Pending Approval has no space"): four that fit the width. Pending holds the delayed ones too;
    Approved holds In progress and Completed; Closed holds Rejected, Canceled and Deleted. Each of the last two has chips under it */
 const HDTABS = [['pending', 'Pending'], ['approved', 'Approved'], ['closed', 'Closed'], ['all', 'All']];
-const HDSUBS = { approved: [['all', 'All'], ['approved', 'Approved'], ['in_progress', 'In Progress'], ['completed', 'Completed']], closed: [['all', 'All'], ['rejected', 'Rejected'], ['cancelled', 'Canceled'], ['deleted', 'Deleted']] };
-const wasApproved = r => ['approved', 'in_progress', 'completed'].includes(r.state);
+const HDSUBS = { approved: [['all', 'All'], ['approved', 'With Kitchen'], ['subcheck', 'Substitute'], ['waitstock', 'Waiting For Stock'], ['completed', 'Diet Updated']], closed: [['all', 'All'], ['rejected', 'Rejected'], ['cancelled', 'Canceled'], ['deleted', 'Deleted']] };
+const wasApproved = r => ['approved', 'in_progress', 'completed', 'subcheck', 'waitstock'].includes(r.state);
+/* what the kitchen still has to do: approved diet requests not yet updated in the kitchen */
+const kitchenTodo = r => isDiet(r) && ['approved', 'waitstock'].includes(r.state);
 const tabOf = r => r.state === 'delayed' ? 'pending' : wasApproved(r) ? 'approved' : ['rejected', 'cancelled', 'deleted'].includes(r.state) ? 'closed' : r.state;
 /* the Antz priority flags */
 const PRIO = { normal: ['!', 'Normal'], high: ['!!!', 'High'], emergency: ['local_fire_department', 'Emergency'] };
@@ -310,7 +316,8 @@ const lastAt = r => r.events[r.events.length - 1].at;
 /* diet requests (owner, 19 Nov 2026: "anybody can request the diet, then it goes to the Dietician; approved, it applies to the species diet
    and the kitchen side follows, that's all"): anyone raises; the Dietician approves; approving applies it; the kitchen works from the diet as it now is */
 const isApprover = u => u.role === 'dietician';
-const canRaise = u => !!u;
+/* (owner, 27 Nov 2026) the kitchen does not raise requests: it updates the diets it is told about */
+const canRaise = u => !!u && !onTeam({ dept: 'diet' }, u);
 /* the department's team does the approved work: for Diet, the Kitchen Head and the Kitchen Operator */
 const onTeam = (r, u) => { const x = dept(r.dept); return (x.team || [x.head]).includes(u.id); };
 /* the requester, or whoever raised it for them (owner, 20 Nov 2026: "Requester also I can change") */
@@ -322,7 +329,13 @@ function actionsFor(r, u) {
   if (ownsReq(r, u.id) && isOpen(r)) a.push('cancel', 'edit');
   if (r.approver === u.id && isOpen(r)) a.push('reject', 'delay', 'approve');
   /* after approval, as the Help Desk app: Move to In progress → Move to Completed; a completed request can be moved back to In progress, with a reason */
-  /* a diet request ends at approval: the change is in the diet, and the kitchen has it (no kitchen step) */
+  /* (owner, 27 Nov 2026) a diet request, approved, goes to the kitchen: it is told, sees what changed, updates the items (Items Updated).
+     An item not in stock: a substitute (the Dietitian OKs it) or wait for the stock till a day */
+  if (onTeam(r, u) && isDiet(r)) {
+    if (r.state === 'approved') a.push('complete', ...(kitItems(r).length ? ['nostock'] : []));
+    if (r.state === 'waitstock') a.push('complete');
+  }
+  if (r.approver === u.id && r.state === 'subcheck') a.push('subok', 'subno');
   if (onTeam(r, u) && !isDiet(r)) {
     if (r.state === 'approved') a.push('start');
     if (r.state === 'in_progress') a.push('assign', 'complete');
@@ -398,6 +411,13 @@ function act(r, kind, uid, x = {}) {
     case 'assign': ev('assigned', { to: x.to }); r.assignee = x.to; break;
     case 'complete': if (isDiet(r) && !r.outcome) { if (planOf(r).block) throw new Error(planOf(r).block); applyApproval(r, at, uid); } ev('completed', { note: (x.note || '').trim(), team: Math.max(1, +x.team || 1), people: (x.people || '').trim(), files: [...(x.files || [])] }); r.state = 'completed'; break;
     case 'reopen': ev('reopened', { reason: x.reason.trim() }); r.state = 'in_progress'; break;
+    case 'nostock':
+      if (!x.item) throw new Error('Choose the item');
+      if (x.mode === 'sub') { if (!x.to) throw new Error('Choose the substitute'); ev('nostock', { mode: 'sub', item: x.item, to: x.to, note: (x.note || '').trim() }); r.sub = { item: x.item, to: x.to }; r.state = 'subcheck'; }
+      else { if (!x.until) throw new Error('Choose the day'); ev('nostock', { mode: 'wait', item: x.item, until: x.until, note: (x.note || '').trim() }); r.wait = { item: x.item, until: x.until }; r.state = 'waitstock'; }
+      break;
+    case 'subok': kitSwap(r, r.sub.item, r.sub.to, at, uid); ev('subok', { item: r.sub.item, to: r.sub.to }); r.subs = [...(r.subs || []), r.sub]; r.sub = null; r.state = 'approved'; break;
+    case 'subno': if ((x.reason || '').trim().length < 3) throw new Error('Add a reason'); ev('subno', { item: r.sub.item, to: r.sub.to, reason: x.reason.trim() }); r.sub = null; r.state = 'approved'; break;
     default: throw new Error('Unknown action ' + kind);
   }
   return r;
@@ -436,4 +456,14 @@ function changesIn({ days = null, sp = null, site = 'all', level = null, type = 
   return D.history.filter(h => (!days || days.includes(h.at.slice(0, 10))) && (!sp || h.sp === sp) && (site === 'all' || changeSite(h) === site || (h.level === 'species' && spAnimals(h.sp, site).length))
     && (!level || h.level === level) && (type === 'all' || h.type === type) && (!dietId || h.diet === dietId || h.follows === dietId))
     .sort((a, b) => (a.at < b.at ? 1 : -1));
+}
+
+/* the items the kitchen needs for a request (what its stock check looks at), and a substitute put into the diets the request changed */
+const kitItems = r => !isDiet(r) || ['skip', 'end'].includes(r.kind) ? [] : stockCheck(r).map(x => x.item);
+function kitSwap(r, from, to, at, uid) {
+  const ids = [...new Set(D.history.filter(h => h.req === r.id && h.diet).map(h => h.diet))];
+  ids.forEach(id => { const d = diet(id); if (!d) return; const lines = [];
+    d.meals.forEach(m => m.items.forEach(l => { if (l.item === from) { const was = { ...l }; l.item = to; lines.push({ op: 'change', feed: m.feed, was, now: { ...l } }); } }));
+    const a0 = D.assigns.find(a => a.diet === id && !ended(a)) || { sp: d.sp, level: 'species', ref: null };
+    if (lines.length) addHistory({ at, by: uid, approvedBy: r.approver, doneBy: null, type: 'edited', diet: id, sp: a0.sp, level: a0.level, ref: a0.ref ?? null, reason: 'Item not in stock', remarks: `Substitute: ${item(from).name} → ${item(to).name}`, req: r.id, lines }); });
 }

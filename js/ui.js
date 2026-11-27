@@ -55,7 +55,11 @@ function patchNode(o, n) {
   if (o.tagName === 'INPUT' && document.activeElement !== o) { const v = n.getAttribute('value') ?? ''; if (o.value !== v) o.value = v; }
   patchKids(o, n);
 }
-const empty1 = (t, sub = '') => `<div class="empty1"><div>${t}${sub ? `<small>${sub}</small>` : ''}</div></div>`;
+/* an empty list, as the Antz design system's empty state (Web Components library, and the Kitchen's EmptyState; owner, 27 Nov 2026):
+   one of its three animals at 150 px, by meaning — meerkat "a data-free zone… for now!" = nothing yet; seal "Seal-iously nothing here…" =
+   nothing matches the search, the filters or the link; sloth "Wake me up when there's data" = a step to take first — then the title */
+const emptyArt = (art = 'meerkat') => `<img class="empty1__img" src="assets/empty/${art}.png" alt="" width="150" height="150">`;
+const empty1 = (t, sub = '', art = 'meerkat') => `<div class="empty1"><div>${emptyArt(art)}<span class="empty1__t">${t}</span>${sub ? `<small>${sub}</small>` : ''}</div></div>`;
 
 /* ---------- motion: one set for every screen (Antz Design · Motion), off with Reduce motion ---------- */
 const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -232,10 +236,15 @@ function mealTable(groups, wide = false, showDays = true, { act = false, add = n
     const more = add ? `<tr class="mtab__add"><td colspan="${cols - (wide ? 1 : 0)}"><button onclick="${add(g.feed)}">${I('add', 20)}Add item</button></td></tr>` : '';
     return (wide ? '' : `<tr class="mtab__band"><td colspan="${cols}"><span>${I('schedule', 18)}${bandText(feed(g.feed))}</span></td></tr>`) + rows + more;
   }).join('');
+  /* (owner, 27 Nov 2026: option 2, "Item column pinned, groups scroll") on the phone the Item column stays put and the groups slide sideways;
+     the "Daily Amt · By Age" label moves to the line above the table (it would be cut while sliding), with the groups' count */
+  const pin = !!bands && !wide;
+  const hint = pin ? `<p class="mtab-hint"><span>Daily Amt · ${esc(bands.by)}</span></p>` : '';
   const rs = bands ? ' rowspan="2"' : '';
-  const head = bands ? `<tr>${wide ? `<th${rs}>Time</th>` : ''}${showDays ? `<th${rs}>Day</th>` : ''}<th${rs}>Item</th><th class="mtab__bh" colspan="${nb}">Daily Amt · ${esc(bands.by)}</th>${act ? `<th${rs}></th>` : ''}</tr><tr class="mtab__bands">${bands.list.map(b => `<th>${esc(b)}</th>`).join('')}</tr>`
+  const head = pin ? `<tr>${showDays ? '<th>Day</th>' : ''}<th class="mtab__ih">Item</th>${bands.list.map(b => `<th class="mtab__bt">${esc(b)}</th>`).join('')}${act ? '<th></th>' : ''}</tr>`
+    : bands ? `<tr>${wide ? `<th${rs}>Time</th>` : ''}${showDays ? `<th${rs}>Day</th>` : ''}<th class="mtab__ih"${rs}>Item</th><th class="mtab__bh" colspan="${nb}">Daily Amt · ${esc(bands.by)}</th>${act ? `<th${rs}></th>` : ''}</tr><tr class="mtab__bands">${bands.list.map(b => `<th>${esc(b)}</th>`).join('')}</tr>`
     : `<tr>${wide ? '<th>Time</th>' : ''}${showDays ? '<th>Day</th>' : ''}<th>Item</th><th>Daily Amt</th>${act ? '<th></th>' : ''}</tr>`;
-  return `<div class="mtab-wrap${bands ? ' mtab-wrap--bands' : ''}"><table class="mtab${wide ? ' mtab--wide' : ''}${bands ? ` mtab--b${nb}` : ''}"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  return `${hint}<div class="mtab-wrap${bands ? ' mtab-wrap--bands' : ''}${pin ? ' mtab-wrap--pin' : ''}"><table class="mtab${wide ? ' mtab--wide' : ''}${bands ? ` mtab--b${nb}` : ''}"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 /* a mix's parts as the Kitchen table's chips: the item and its share, then its preparation and cut */
 const ingrChips = (x, per = null) => `<span class="ingr">${x.mix.map(p => `<span><b>${esc(item(p.item).name)} · ${per ? qtyText(per * p.pct / 100, 'g') : p.pct + '%'}</b><small>${esc([p.prep, p.cut].filter(Boolean).join(' · '))}</small></span>`).join('')}</span>`;
@@ -269,7 +278,7 @@ function speciesRow(sp, { end = '', href, current = false, sub = '', big = false
 function dietStatus(a) {
   if (ended(a)) return ['neutral', 'Ended'];
   if (isNow(a)) return ['positive', 'Currently Active'];
-  if (inForce(a, TODAY)) return ['neutral', 'Not In Use Now'];
+  if (inForce(a, TODAY)) return ['neutral', 'Inactive'];   /* owner, 27 Nov 2026: "Not in use now" is Inactive */
   return ['neutral', `Starts ${fmtDay(slotDay(a))}`];
 }
 /* a diet in a species' list: the Diet wise row (avatar, name, kind and when) with its state and its animals (audit, 2 Nov: one diet card) */
@@ -292,3 +301,30 @@ function animalCard(a, extra = '') {
   const e = by('enclosures', a.enc), sp = species(a.sp), t = SEXT[a.sex] || 'UD';
   return `<div class="acard"><div class="az-animal"><span class="az-photo"><img src="${spPhoto(a.sp)}" alt="" loading="lazy"><span class="az-photo__sex az-photo__sex--${t}">${t}</span></span><span class="az-animal__d"><span class="az-animal__tag">AID: ${a.id}</span><span>${esc(a.name ? `${a.name} · ${sp.name}` : sp.name)}</span><span class="az-animal__sci">${esc(sp.sci)}</span><span>Encl: ${esc(e.name)}</span></span></div>${extra}</div>`;
 }
+
+/* ---------- the Filter screen (owner, 27 Nov 2026: "check the proper Filter component") ----------
+   As the Antz Mobile Figma (Request Module "Filters", Housing "Filter (n)"): a tall sheet, "Filter (n)" with close; the groups down the left
+   on the page colour (the open one white, its count beside it); the open group's options on the right (a search when it is long; checkboxes
+   for several, radios for one); the foot says how many results, Clear all and Apply Filters. Nothing changes until Apply.
+   o = { groups: [{ k, label, multi, dflt, opts: () => [[v, label]], search }], value, count: draft => n, apply: 'fnName' } */
+let FS = null;
+const fsN = (g, d) => g.multi ? (d[g.k] || []).length : d[g.k] !== g.dflt ? 1 : 0;
+const fsTotal = d => FS.groups.reduce((n, g) => n + fsN(g, d), 0);
+/* o.push: the filter opens as the next page of the sheet it came from (Select Species), and Apply comes back to it */
+function filterScreen(o) { FS = { ...o, tab: o.tab || o.groups[0].k, draft: JSON.parse(JSON.stringify(o.value)), q: '' }; openSheet(filterScreenHtml, !!o.push); }
+function filterScreenHtml() {
+  const d = FS.draft, g = FS.groups.find(x => x.k === FS.tab), q = FS.q.trim().toLowerCase(), n = fsTotal(d);
+  const rail = FS.groups.map(x => { const c = fsN(x, d); return `<button class="fs-tab" role="tab" aria-selected="${x.k === g.k}" onclick="FS.tab='${x.k}';FS.q='';redrawSheet()"><span>${esc(x.label)}</span>${c ? `<b>${c}</b>` : ''}</button>`; }).join('');
+  const on = v => g.multi ? (d[g.k] || []).includes(v) : d[g.k] === v;
+  const opts = g.opts().filter(([, l]) => !q || l.toLowerCase().includes(q));
+  const list = opts.map(([v, l]) => `<button class="fs-opt" role="${g.multi ? 'checkbox' : 'radio'}" aria-checked="${on(v)}" onclick="fsPick(${JSON.stringify(v).replace(/"/g, '&quot;')})">${I(g.multi ? (on(v) ? 'check_box' : 'check_box_outline_blank') : on(v) ? 'radio_button_checked' : 'radio_button_unchecked', 18, on(v))}<span>${esc(l)}</span></button>`).join('') || '<p class="fs-none">Nothing by that name</p>';
+  const search = g.search ? `<label class="fs-q">${I('search', 18)}<input id="fs-q" placeholder="Search" value="${esc(FS.q)}" oninput="FS.q=this.value;redrawSheet()" aria-label="Search ${esc(g.label)}"></label>` : '';
+  return { title: `Filter (${n})`, bottom: true, tall: true, step: 'fs', sub: FS.sub || '',
+    body: `<div class="fs"><nav class="fs-rail" role="tablist" aria-label="Filter by">${rail}</nav><div class="fs-pane" role="group" aria-label="${esc(g.label)}">${search}<div class="fs-list">${list}</div></div></div>`,
+    foot: `<span class="fs-n"><b>${FS.count(d)}</b> ${FS.count(d) === 1 ? 'result' : 'results'}</span><button class="az-btn az-btn--outline fs-clear" onclick="fsClear()">Clear all</button><button class="az-btn fs-apply" onclick="fsApply()">Apply Filters</button>` };
+}
+function fsPick(v) { const g = FS.groups.find(x => x.k === FS.tab), d = FS.draft;
+  if (g.multi) { const a = d[g.k] || []; d[g.k] = a.includes(v) ? a.filter(x => x !== v) : [...a, v]; } else d[g.k] = v;
+  redrawSheet(); }
+function fsClear() { FS.groups.forEach(g => { FS.draft[g.k] = g.multi ? [] : g.dflt; }); redrawSheet(); }
+function fsApply() { const f = window[FS.apply], d = FS.draft; if (FS.push) closeSheet(); else closeAll(); f(d); }

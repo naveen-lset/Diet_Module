@@ -625,7 +625,7 @@ function redrawFoot() { const f = $('#form-foot'); if (f && S.draft) f.innerHTML
    Your request stay beside the form */
 function paneForm(q) {
   const d = initDraft(q), close = d.edit ? `#/requests/${d.edit}` : S.back;
-  if (d.blocked) return pane('pane--fill', topbar({ back: close, title: 'Edit Request' }), empty1('This request can no longer be edited'));
+  if (d.blocked) return pane('pane--fill', topbar({ back: close, title: 'Edit Request' }), empty1('This request can no longer be edited', '', 'sloth'));
   if (d.pick) return whoPage(d.pick, 'S.draft.pick', { back: 'S.draft.pick=null;render()', done: 'dfWhoDone()' });
   if (d.ent) return paneEntity(d);
   const top = topbar({ close: `go('${close}')`, title: d.edit ? 'Edit Request' : 'New Request', actions: prioBtn(d.prio, "prioMenu(this,S.draft.prio,'setFormPrio')") }), foot = `<div id="form-foot">${formFoot(d)}</div>`;
@@ -815,6 +815,8 @@ function dfAuto(d) {
   }
 }
 const dfTitle = d => d.titleEdited ? d.title : dfAuto(d);
+/* a title from the description when nothing else names the request: its first line, cut at a word near 60 letters */
+const firstWords = t => { const l = (t || '').trim().split('\n')[0]; return l.length <= 60 ? l : l.slice(0, 60).replace(/\s+\S*$/, '') + '…'; };
 function dfErr(d) {
   if (!d.dgroup) return 'Choose a diet request or a diet change';
   if (!d.dtype) return 'Choose the type';
@@ -828,7 +830,6 @@ function dfErr(d) {
   if (k === 'extra' && !extraDays(d.f).length) return 'Choose the days';
   if (k === 'skip' && d.feeds !== 'all' && !d.feeds.length) return 'Choose the feeds to skip';
   if (!words && !d.reason) return 'Choose why';
-  if (!dfTitle(d).trim()) return 'Add a title';
   if ((words || kind === 'ask') && !d.text.trim()) return 'Add the details';
   if (['items', 'diet', 'end', 'skip', 'new'].includes(kind)) { const p = planOf(dfReq(d)); if (p.block) return p.block; }
   return '';
@@ -906,7 +907,7 @@ function dtypeFields(d) {
   if (k === 'skip') { const all = d.feeds === 'all';
     return when(daysField('skip', 'Days', true),
       /* every feed is picked to start with (the whole day); a tap leaves one out */
-      wfield('Feeds', all ? 'Whole Day' : feedsText(d.feeds), feedTiles(f => all || d.feeds.includes(f), f => `dfToggleFeed(${f})`) + `<p class="wf__hint">${all ? 'Tap a feed to skip only some' : `<button class="lnk" onclick="S.draft.feeds='all';render()">Skip The Whole Day</button>`}</p>`, { req: true, ph: !all && !d.feeds.length })); }
+      wfield('Feeds', all ? 'Whole Day' : feedsText(d.feeds), feedTiles(f => all || d.feeds.includes(f), f => `dfToggleFeed(${f})`), { req: true, ph: !all && !d.feeds.length })); }
   if (k === 'extra') { if (!d.f.dates) { d.f.dates = extraDays(d.f); d.f.dmode = dmodeOf(d.f.dates); }
     return when(daysField('extra', 'Days', true), feedsOf('With Which Feeds')); }
   if (k === 'medicine') { const n = d.f.from ?? 0, dd = d.f.days ?? 5;
@@ -941,9 +942,9 @@ function dietForm(d) {
   if (!dt) return out.join('');
   out.push(section('pets', 'For', t ? forPick(d) : select('', '', 'dfWho()', { placeholder: 'Choose an animal, a place or the species', id: 'f-sp', icon: 'search' }), true));
   if (t) out.push(dtypeFields(d));
-  /* a Diet request is said in words (title and details); a Diet change says why under Why, and its title is made from what changes */
-  if (words) out.push(section('subject', 'Describe Your Request', `<label class="az-input az-input--text"><input id="f-title" placeholder="Title" value="${esc(dfTitle(d))}" oninput="S.draft.title=this.value;S.draft.titleEdited=true;redrawFoot()" aria-label="Title"></label>
-      <label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="4" placeholder="${esc(`${DT_HINT[d.dtype] || 'Details'} *`)}" oninput="S.draft.text=this.value;redrawFoot()" aria-label="Details">${esc(d.text)}</textarea></label>`, true));
+  /* a Diet request is said in words: one box, left empty for the requester (owner, 27 Nov 2026: no Title, nothing filled in by itself).
+     The request's title in the lists is still made from what is asked (dfAuto), or from the first words of the box */
+  if (words) out.push(section('subject', 'Describe Your Request', `<label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="4" placeholder="${esc(DT_HINT[d.dtype] || 'Details')}" oninput="S.draft.text=this.value;redrawFoot()" aria-label="Details">${esc(d.text)}</textarea></label>`, true));
   out.push(attachSec(d), approvalSec(d));
   return out.join('');
 }
@@ -969,7 +970,7 @@ function dtypeSheet() { DTQ = ''; openSheet(dtypeHtml); }
 function dtypeHtml() {
   const d = S.draft, q = DTQ.trim().toLowerCase();
   const grp = g => { const xs = DTYPES.filter(x => x[5] === g[0] && (!q || `${x[2]} ${x[3]}`.toLowerCase().includes(q)));
-    return xs.length ? `<p class="az-label pk-h dt-h">${g[1]}<small>${g[0] === 'request' ? 'Said in words; the kitchen gets it' : 'Approving it changes the diet'}</small></p>${pkList(xs.map(x => pkRow(`dfType('${x[0]}')`, pkIc(x[4]), esc(x[2]), esc(x[3]), undefined, d.dtype === x[0])).join(''))}` : ''; };
+    return xs.length ? `${pkList(xs.map(x => pkRow(`dfType('${x[0]}')`, pkIc(x[4]), esc(x[2]), esc(x[3]), undefined, d.dtype === x[0])).join(''))}` : ''; };
   return { title: 'Select Request Type', bottom: true, body: pkSearch('dt-q', DTQ, 'Search', 'DTQ=this.value;redrawSheet()') + (DGROUPS.map(grp).join('') || '<p class="sg-none">No type by that name</p>') };
 }
 /* Request: a Diet request or a Diet change; Type: one of its few kinds (chips) */
@@ -1017,7 +1018,7 @@ function dfSubmit(d) {
   const e = dfErr(d);
   if (e) { toast(e); const at = { 'Choose a diet request or a diet change': '#f-dgroup', 'Choose the type': '#f-dtype', 'Choose who it is for': '#f-sp', 'Choose why': '#f-reason', 'Add a title': '#f-title', 'Add the details': '#f-text' }[e], el = at && document.querySelector(at); if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
   const x = dfReq(d); delete x.by;
-  Object.assign(x, { title: dfTitle(d).trim(), text: d.text.trim(), note: '', files: [...d.files], prio: d.prio, site: d.site });
+  Object.assign(x, { title: dfTitle(d).trim() || firstWords(d.text), text: d.text.trim(), note: '', files: [...d.files], prio: d.prio, site: d.site });
   /* a request in words changes no diet: who it is for is kept now */
   if (JOB_KINDS.includes(x.kind)) { x.outcome = { lines: [], get: tAnimals(x.targets[0]).map(a => a.id) }; x.f.rows = dfRows(d); }
   let r;

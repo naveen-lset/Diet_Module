@@ -74,21 +74,25 @@ function versionsTab(sp) {
     const fname = f === 'all' ? 'All diets' : diet(f).name;
   const head = `<div class="vh__top"><span class="vh__t"><b>${plural(list.length, 'version')}</b><span>Now at v${top} · ${plural(spDietIds(sp).length, 'diet')}</span></span>
     ${spDietIds(sp).length > 1 ? `<button class="vh__f" onclick="vFilterPop(this,${sp})" aria-haspopup="menu"><span>${esc(fname)}</span>${I('keyboard_arrow_down', 20)}</button>` : ''}</div>`;
-  /* (owner, 26 Nov 2026: "A · Versions on one line, by day — history has to be like this") the mockup's option A: a heading per day, the version
-     numbers on one line down the left, and a white card for each on the page colour. A card says what happened and to which diet, then who
-     did it and when; each certification the same way. Nothing else (no item changes, no reasons). View diet at its foot */
-  const who = (icon, label, uid, at, fill = false) => `<div class="vr">${I(icon, 18, fill)}<span class="vr__t"><small>${label}</small><b>${esc(user(uid).name)}<span> · ${esc(user(uid).title)}</span></b><span class="vr__w">${fmtDay(at.slice(0, 10))}, ${fmtTime(at)}</span></span></div>`;
-  const VERB = { created: 'Created by', changed: 'Changed by', moved: 'Changed by', shared: 'Shared by', ended: 'Ended by' };
+  /* (owner, 27 Nov 2026: option A of the mockup, "cards on one dotted rail", built on the design system's History component) one dotted line
+     down the left joins every day and every version: a calendar icon beside each day, and a round dot tinted by what happened beside each card.
+     A card: the version and what happened, the diet's name with its ID small, what changed, who and when, and the Dietitian's approval only */
+  const APPROVES = ['created', 'changed', 'moved'];
   let day = '', html = '';
   list.forEach(v => {
-    const d = v.at.slice(0, 10); if (d !== day) { html += `<p class="vday">${wday(d)} ${fmtDayY(d)}</p>`; day = d; }
-    const [t] = VKIND[v.kind], cur = v.n === top, cert = v.certs.find(c => c.kind === 'cert'), kc = v.certs.find(c => c.kind === 'kcert');
-    html += `<div class="tv${cur ? ' cur' : ''}"><span class="tv__n">v${v.n}</span><article class="vc2${cur ? ' cur' : ''}"><div class="vc2__h"><span class="vc2__k">${t}</span>${cur ? pill('positive', 'Current') : ''}</div>
-      <b class="vc2__d">${esc(diet(v.diet).name)}</b>
-      <div class="vc2__rows">${who('person', VERB[v.kind], v.by, v.at)}${cert ? who('verified', 'Certified by Dietitian', cert.by, cert.at, true) : ''}${kc ? who('soup_kitchen', 'Certified by Kitchen', kc.by, kc.at) : ''}</div>
-      <div class="vc2__f"><button class="lnk" onclick="go('#/diets/${sp}/v/${v.n}')">View diet${I('chevron_right', 18)}</button></div></article></div>`;
+    const d = v.at.slice(0, 10); if (d !== day) { html += `<div class="vh3__day"><span class="vh3__ic">${I('calendar_today', 18)}</span><span>${wday(d)} ${fmtDayY(d)}</span></div>`; day = d; }
+    const [t, ic] = VKIND[v.kind], cur = v.n === top, dd = diet(v.diet), cert = v.certs.find(c => c.kind === 'cert');
+    const when = c => c.at.slice(0, 10) === d ? fmtTime(c.at) : `${fmtDay(c.at.slice(0, 10))}, ${fmtTime(c.at)}`;
+    const ok = !APPROVES.includes(v.kind) ? '' : cert ? `<div class="vh3__ok">${I('check_circle', 18, true)}<span><b>Dietitian Approved</b><small>${esc(user(cert.by).name)}</small></span><time>${when(cert)}</time></div>`
+      : `<div class="vh3__ok no">${I('schedule', 18)}<span><b>Waiting for Dietitian approval</b></span></div>`;
+    html += `<div class="vh3__it"><span class="vh3__dot vh3__dot--${v.kind}">${I(ic, 20)}</span><article class="vh3__c${cur ? ' cur' : ''}">
+      <div class="vh3__h"><span class="vh3__v">v${v.n}</span><span class="vh3__k">${t}</span>${cur ? pill('positive', 'Current') : ''}</div>
+      <b class="vh3__n">${esc(dd.name)}</b><span class="vh3__id">${esc(dd.id)} · ${esc(KINDTYPE[dd.type] || tcase(dd.type))}</span>
+      <p class="vh3__w">${vWhat(v).replace(/^[^·]+ diet · /, '')}</p>
+      <div class="vh3__p"><b>${esc(user(v.by).name)}<span> · ${esc(user(v.by).title)}</span></b><time>${fmtTime(v.at)}</time></div>${ok}
+      <div class="vh3__f"><button class="lnk" onclick="go('#/diets/${sp}/v/${v.n}')">View diet${I('chevron_right', 18)}</button></div></article></div>`;
   });
-  return head + `<div class="tl tl2">${html}</div>`;
+  return head + `<div class="tl vh3">${html}</div>`;
 }
 function vOpen(el) { const o = el.getAttribute('aria-expanded') === 'true'; el.setAttribute('aria-expanded', String(!o)); el.closest('.tv').classList.toggle('open', !o); }
 /* the diet filter: a menu under its button (no sheet, no second dimming) */
@@ -106,7 +110,7 @@ function vFilter(sp, id) {
 function paneVersion(sp, n, { cls = '', back = '' } = {}) {
   const all = spVersions(sp), v = all.find(x => x.n === n);
   const top = topbar({ back: '', lead: `<button class="az-iconbtn" onclick="goBack('${back || `#/diets/${sp}`}')" aria-label="Back">${I('arrow_back')}</button>`, title: v ? `Version v${n}` : 'Version', sub: esc(species(sp).name) });
-  if (!v) return pane(cls, top, empty1('Version not found'), '', `ver-${sp}-${n}`);
+  if (!v) return pane(cls, top, empty1('Version not found', '', 'seal'), '', `ver-${sp}-${n}`);
   const d0 = diet(v.diet), x = v.kind === 'ended' ? d0 : dietAt(v.diet, v.at), nextV = all.find(y => y.n > n && y.diet === v.diet && y.h && y.h.lines), cur = !nextV;
   const [t] = VKIND[v.kind], hl = v.h && v.h.lines && v.h.lines.length ? v.h : null;
   const groups = hl ? markedGroups(x, hl, null) : dietGroups(x);
