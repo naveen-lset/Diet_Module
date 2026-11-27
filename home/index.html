@@ -57445,6 +57445,8 @@ if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
 /* (owner, 27 Nov 2026: "in Modules keep the Diet module"): the Home stays as it is; the module lists (All Modules, and Modules for your
    role) offer Diet only */
 .mview [data-mod]:not([data-mod="diet"]){display:none!important}
+/* the Home grid too, whatever layout a browser saved before (owner, 27 Nov 2026: "on my mobile other modules are there") */
+#moduleGrid .card[data-variant]:not([data-variant^="diet."]){display:none!important}
 .pmenu--modules .pmenu__item:not([data-id="diet"]),.pmenu--modules .pmenu__heading,.pmenu--modules .pmenu__rule{display:none!important}
 </style>
 <script>

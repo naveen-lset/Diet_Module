@@ -2765,3 +2765,21 @@ body,.pane,.spsheet__body,.tab .main,.tab .main[class],.spsheet__body:has(.vlist
 .pane--home .az-tabs{box-shadow:0 -2px 0 var(--white)}
 /* the count line gets room under the white block (owner, 27 Nov 2026: "need space on top") */
 .pane--home .body > .lcount:first-child,.pane--home .body > .ltoggle + .lcount,.pane--home .body > .lcount{margin:8px 2px 0}
+/* Diet Applies To as a page (owner, 27 Nov 2026) */
+.ap-body{display:flex;flex-direction:column;gap:12px;padding:16px}
+.ap-card{width:100%;cursor:pointer}
+.ap-card > .az-i{flex:none;color:var(--OnSurfaceVariant)}
+.ap-row.on{box-shadow:inset 0 0 0 2px var(--Primary)}
+.ap-foot{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--white);border-top:1px solid var(--neutral05)}
+.ap-foot .az-btn{flex:none;width:auto;padding:0 32px}
+/* Diet Applies To with the design system's Site card and Animal card */
+.ap-site{width:100%;text-align:left;cursor:pointer}
+.ap-site__t{flex:1;min-width:0}
+.ap-site__t .az-site__name,.ap-site__t .az-site__sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ap-site__ic{display:grid;place-items:center;color:var(--OnPrimaryContainer);background:var(--displaybgPrimary)}
+.ap-site__x{flex:none;display:grid;place-items:center;width:32px;height:32px;margin-left:auto;background:none;border:0;color:var(--Tertiary);cursor:pointer}
+.ap-list{gap:8px}
+.ap-ac .ap-ac__big{display:none}
+.ap-ac.is-open .ap-ac__small{display:none}
+.ap-ac.is-open .ap-ac__big{display:block}
+.ap-sel .az-ac{background:var(--white)}
