@@ -719,7 +719,7 @@ function dfRows(d) {
   }
 }
 /* what the details box asks for, by type */
-const DT_HINT = { skip: 'Why the feed is skipped, for example a vet procedure', extra: 'Which food, how much and why', medicine: 'Which medicine, the dose and how to mix it', quality: 'What was wrong, and with which food', other: 'What the diet team should do', newdiet: 'What the new diet is for' };
+const DT_HINT = { change: 'Why the food has to change, for example weight loss', move: 'Why they should move to this diet, and anything the kitchen should know', skip: 'Why the feed is skipped, for example a vet procedure', extra: 'Which food, how much and why', medicine: 'Which medicine, the dose and how to mix it', quality: 'What was wrong, and with which food', other: 'What the diet team should do', newdiet: 'What the new diet is for' };
 /* choice chips: the picked one shows a tick; a day chip says its date, a feed chip its clock (owner, 18 Nov: "other things also some work") */
 const dchips = (opts, on, js, icon = '') => `<div class="sg-chips dchips">${opts.map(([v, l, sub]) => `<button class="az-chip" aria-selected="${on(v)}" onclick="${js(v)}">${on(v) ? I('check', 18) : icon ? I(icon, 18) : ''}<span>${esc(l)}${sub ? `<small>${esc(sub)}</small>` : ''}</span></button>`).join('')}</div>`;
 const dayOpt = (n, l) => [n, l, `${wday(addDays(TODAY, n))} ${+addDays(TODAY, n).slice(8)} ${MON[+addDays(TODAY, n).slice(5, 7) - 1]}`];
@@ -829,8 +829,8 @@ function dfErr(d) {
   if (k === 'skip' && !skipDays(d).length) return 'Choose the days';
   if (k === 'extra' && !extraDays(d.f).length) return 'Choose the days';
   if (k === 'skip' && d.feeds !== 'all' && !d.feeds.length) return 'Choose the feeds to skip';
-  if (!words && !d.reason) return 'Choose why';
-  if ((words || kind === 'ask') && !d.text.trim()) return 'Add the details';
+  if (!words && !['move', 'change'].includes(d.dtype) && !d.reason) return 'Choose why';
+  if (!d.text.trim()) return 'Add the details';
   if (['items', 'diet', 'end', 'skip', 'new'].includes(kind)) { const p = planOf(dfReq(d)); if (p.block) return p.block; }
   return '';
 }
@@ -916,13 +916,13 @@ function dtypeFields(d) {
   if (k === 'quality') { const n = d.f.day ?? 0; return when(wfield('Which Day', dayLong(n), dayStrip(n, 'f.day', { past: true, days: 14 })), feedsOf('Which Feeds')); }
   /* ---- a Diet change: the diet's configuration ---- */
   if (k === 'change') return section('tune', 'What Changes', !d.base ? '<p class="sg-none sg-hint">No diet here yet. Choose New Diet instead.</p>' : foodEditor(d), true)
-    + (d.changes.length ? how() + why(REASONS.items) : '');
+    + (d.changes.length ? how() : '');
   if (k === 'newdiet') return section('add_circle', 'New Diet', select('Start From', d.base ? diet(d.base).name : 'Nothing · the dietician builds it', 'dfStartSheet()', { id: 'f-from', icon: 'search' })
       + (d.base ? `<label class="az-field"><span class="az-label">Diet Name</span><span class="az-input az-input--text"><input id="df-name" placeholder="${esc(dfNewName(d) || 'Name the diet')}" value="${esc(d.name || '')}" oninput="S.draft.name=this.value;redrawFoot()"></span></label>${dfield('Foods', foodEditor(d))}`
         : wfield('Needed From', dayLong(d.f.from ?? 1), dayStrip(d.f.from ?? 1, 'f.from'))), true)
     + (d.base ? how() : '') + why(REASONS.items);
   if (k === 'move') { const opts = dfMoveOpts(d);
-    return section('restaurant', 'Move To', opts.length ? select('', d.diet ? diet(d.diet).name : '', 'dfMoveSheet()', { placeholder: 'Search and choose a diet', id: 'f-move', icon: 'search' }) : '<p class="sg-none sg-hint">No other diet for this species</p>', true) + how() + why(REASONS.items); }
+    return section('restaurant', 'Move To', opts.length ? select('', d.diet ? diet(d.diet).name : '', 'dfMoveSheet()', { placeholder: 'Search and choose a diet', id: 'f-move', icon: 'search' }) : '<p class="sg-none sg-hint">No other diet for this species</p>', true) + how(); }
   if (k === 'end') { const es = endable(d);
     return section('event_busy', 'Diet To End', (es.length ? select('', d.ends[0] ? diet(by('assigns', d.ends[0]).diet).name : '', 'dfEndSheet()', { placeholder: 'Search and choose a diet', id: 'f-end', icon: 'search' }) : '<p class="sg-none sg-hint">No diet here ends early: only Seasonal, Time-bound or place diets do</p>')
       + wfield('Last Day', dayLong(daysBetween(TODAY, d.stop)), dayStrip(daysBetween(TODAY, d.stop), 'stop'), { req: true }), true) + why(REASONS.items); }
@@ -933,6 +933,7 @@ function dfToggleFeed(f) { const d = S.draft, every = dfFeeds(); let l = d.feeds
    Request Details (Requesting To, Request Type that opens Select Request Type) · For (the Figma Animal Card For Selection) · the type's own
    sections · Describe Your Request · Attachments If Any · Priority · Approval (Requester and Approver) */
 function dietForm(d) {
+  const descSec = d => section('subject', 'Describe Your Request', `<label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="4" placeholder="${esc(DT_HINT[d.dtype] || 'Details')}" oninput="S.draft.text=this.value;redrawFoot()" aria-label="Details">${esc(d.text)}</textarea></label>`, true);
   const t = d.targets[0], dt = d.dtype && dtOf(d.dtype), g = dt && dgOf(dt[5]), words = d.dgroup === 'request', needText = words || (dt && dfKind(d) === 'ask');
   const typeIn = dt ? `<span class="dtsel__ic">${I(dt[4])}</span><span class="grow"><b>${esc(dt[2])}</b><small>${esc(g[1])}</small></span>` : '<span class="grow">What do you need?</span>';
   const type = `<div class="az-field" id="f-dtype"><span class="az-label">Request Type <span class="az-req">*</span></span>${d.edit && dt ? `<div class="az-input az-input--select dtsel" aria-disabled="true">${typeIn}</div>`
@@ -940,11 +941,13 @@ function dietForm(d) {
   /* requests are raised inside the Diet module only (owner, 26 Nov 2026): Requesting To is Diet and cannot change */
   const out = [section('category', 'Request Details', select('Requesting To', 'Diet', '', { disabled: true }) + type, true)];
   if (!dt) return out.join('');
-  out.push(section('pets', 'For', t ? forPick(d) : select('', '', 'dfWho()', { placeholder: 'Choose an animal, a place or the species', id: 'f-sp', icon: 'search' }), true));
+  /* (owner, 27 Nov 2026) Describe Your Request comes right after the type, for every type */
+  out.push(descSec(d));
+  out.push(section('pets', 'Diet Applies To', t ? forPick(d) : select('', '', 'dfWho()', { placeholder: 'Choose an animal, a place or the species', id: 'f-sp', icon: 'search' }), true));
   if (t) out.push(dtypeFields(d));
   /* a Diet request is said in words: one box, left empty for the requester (owner, 27 Nov 2026: no Title, nothing filled in by itself).
      The request's title in the lists is still made from what is asked (dfAuto), or from the first words of the box */
-  if (words) out.push(section('subject', 'Describe Your Request', `<label class="az-input az-input--text az-textarea"><textarea id="f-text" rows="4" placeholder="${esc(DT_HINT[d.dtype] || 'Details')}" oninput="S.draft.text=this.value;redrawFoot()" aria-label="Details">${esc(d.text)}</textarea></label>`, true));
+
   out.push(attachSec(d), approvalSec(d));
   return out.join('');
 }
@@ -967,9 +970,11 @@ function setFormPrio(k) { S.draft.prio = k; render(); playFx($('.prio-hd'), 'pop
 /* Select Request Type, as the Figma's Select Department sheet: search, then the two groups with their types */
 let DTQ = '';
 function dtypeSheet() { DTQ = ''; openSheet(dtypeHtml); }
+/* (owner, 27 Nov 2026) four types to choose: Skip A Feed, Extra Feed, Medicine With Food, Another Diet; the rest is said in words */
+const DT_ON = ['skip', 'extra', 'medicine', 'change', 'move'];   /* owner, 27 Nov 2026: Change Item Values back, with its food editor */
 function dtypeHtml() {
   const d = S.draft, q = DTQ.trim().toLowerCase();
-  const grp = g => { const xs = DTYPES.filter(x => x[5] === g[0] && (!q || `${x[2]} ${x[3]}`.toLowerCase().includes(q)));
+  const grp = g => { const xs = DTYPES.filter(x => DT_ON.includes(x[0]) && x[5] === g[0] && (!q || `${x[2]} ${x[3]}`.toLowerCase().includes(q)));
     return xs.length ? `${pkList(xs.map(x => pkRow(`dfType('${x[0]}')`, pkIc(x[4]), esc(x[2]), esc(x[3]), undefined, d.dtype === x[0])).join(''))}` : ''; };
   return { title: 'Select Request Type', bottom: true, body: pkSearch('dt-q', DTQ, 'Search', 'DTQ=this.value;redrawSheet()') + (DGROUPS.map(grp).join('') || '<p class="sg-none">No type by that name</p>') };
 }
@@ -985,7 +990,7 @@ function dfType(k) {
   closeAll(); render(); if (k && !d.targets[0]) setTimeout(dfWho, 120);
 }
 /* For (owner, 19 Nov 2026): the species sheet with search, not a page */
-function dfWho() { spPickSheet('dfPickT', S.draft.targets[0] || null); }
+function dfWho() { applyPick('dfPickT', S.draft.targets[0] || null); }
 function dfPickT(sp, level, ref) { dfPick({ sp, level, ref }); }
 function dfWhoDone() { const t = S.draft.pick.sel; S.draft.pick = null; dfPick(t); }
 function dfPick(t) { const d = S.draft; d.targets = [{ sp: t.sp, level: t.level, ref: t.ref ?? null }]; d.site = sgSite(d.targets[0]); const e = dfEat(d)[0]; d.base = e ? e.diet.id : null; d.changes = []; d.diet = null; d.ends = []; closeAll(); render(); }
