@@ -2739,3 +2739,21 @@ button.step{cursor:pointer}
 .rq2-row__v .whn__r > b small{font:400 12px/16px var(--font);color:var(--neutralSecondary);margin-top:2px}
 .rq2-row__v .whn__chips{gap:8px;padding:0 0 12px}
 .rq2-row__v .whn__chips span{background:var(--white);border:0;color:var(--OnPrimaryContainer)}
+/* one count label for every list (owner, 27 Nov 2026) */
+.lcount .lcount__n{font:400 14px/20px var(--font);color:var(--neutralSecondary)}
+.lcount .lcount__n b{font:600 14px/20px var(--font);color:var(--OnSurfaceVariant)}
+/* the search row with its Filter button */
+.az-searchrow{display:flex;align-items:center;gap:8px}
+.az-searchrow .az-search{flex:1;min-width:0}
+/* the design system's Search and filter (owner, 27 Nov 2026: "all are the same colour, check the components"):
+   search 40 tall, Light grey, corners 4; the filter button 40 × 40 beside it, gap 10, Light grey; with filters on it turns OnSurface green
+   (#006D35) with a white icon and the count in white 14 Regular. Each filter in use is a Filter chip: white, 1 px Outline, corners 8,
+   32 tall, 12 Regular OnSurface, close 16. The group chips keep Teal ink for the one selected */
+.az-searchrow{gap:10px}
+.az-searchrow .az-search{height:40px;border-radius:var(--r-4)}
+.fs-btn{height:40px;min-width:40px;border-radius:var(--r-4);background:var(--neutral05);color:var(--OnSurfaceVariant)}
+.fs-btn.on,.az-filterbtn.fs-btn.on{background:var(--OnSurface);color:var(--white)}
+.fs-btn b{font:400 14px/1 var(--font)}
+.fs-on .fchip,.pk-on .fchip{height:32px;padding:0 8px 0 12px;gap:4px;border:1px solid var(--Outline);border-radius:var(--r-8);background:var(--white);color:var(--OnSurface);font:400 12px/1 var(--font)}
+.fs-on .fchip .az-i,.pk-on .fchip .az-i{font-size:16px;color:var(--OnSurface)}
+.lcount .lcount__n{font:var(--t-body-title);color:var(--OnSurfaceVariant)}

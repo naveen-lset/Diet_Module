@@ -12,18 +12,39 @@ const inClass = (s, c) => c === 'all' || (c === 'Other' ? !CLASSES.includes(s.cl
 const spStatus = id => { const sl = slotsOf(id); return !sl.length ? 'without' : sl.every(a => diet(a.diet).cert) ? 'cert' : 'uncert'; };
 function speciesFor(tab, cls = S.spCls) {
   const q = S.spQ.trim().toLowerCase();
-  return D.species.filter(s => spAnimals(s.id, S.site).length && inClass(s, cls) && (tab === 'all' || spStatus(s.id) === tab) && (!q || s.name.toLowerCase().includes(q) || s.sci.toLowerCase().includes(q) || String(s.id).includes(q)))
+  return D.species.filter(s => spAnimals(s.id, S.site).length && inClass(s, cls) && (tab === 'all' || spStatus(s.id) === tab) && certOk([...new Set(slotsOf(s.id).map(a => a.diet))]) && (!q || s.name.toLowerCase().includes(q) || s.sci.toLowerCase().includes(q) || String(s.id).includes(q)))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 /* every diet in use (not ended), at the site picked, by kind */
 /* certified = a dietitian certified it (Kitchen & Diet's Certified / Uncertified) */
 const isCert = a => !!diet(a.diet).cert;
+/* the list filters (owner, 27 Nov 2026: "after the search, filters: certified by kitchen or dietitian; the same for site"):
+   Certification (Dietitian · Kitchen · Not Certified, and No Diet for species) and Site, in the Filter screen next to the search */
+const LF = () => S.lf || (S.lf = { cert: [] });
+const certOf = d => [d.cert ? 'diet' : '', d.kcert ? 'kitchen' : '', !d.cert ? 'none' : ''].filter(Boolean);
+const certOk = (ids, f = LF()) => !f.cert.length || (ids.length ? ids.some(id => certOf(diet(id)).some(c => f.cert.includes(c))) : f.cert.includes('nodiet'));
+const CERT_OPTS = species => [['diet', 'Certified by Dietitian'], ['kitchen', 'Certified by Kitchen'], ['none', 'Not Certified'], ...(species ? [['nodiet', 'No Diet']] : [])];
+function listFilter() {
+  const tab = S.land, sp = tab === 'species';
+  filterScreen({ value: { cert: [...LF().cert], site: String(S.site) }, apply: 'listFilterApply', groups: [
+    { k: 'cert', label: 'Certification', multi: true, opts: () => CERT_OPTS(sp) },
+    { k: 'site', label: 'Site', dflt: 'all', search: true, opts: () => [['all', 'All Sites'], ...D.sites.map(x => [String(x.id), x.name])] }],
+    count: d => { const keep = [S.lf, S.site]; S.lf = { cert: d.cert }; S.site = d.site === 'all' ? 'all' : +d.site; const n = sp ? speciesFor(S.spTab).length : dietsFor(S.dKind).length; [S.lf, S.site] = keep; return n; } });
+}
+function listFilterApply(d) { S.lf = { cert: d.cert }; S.site = d.site === 'all' ? 'all' : +d.site; storeSave(); render(); }
+const lfN = () => LF().cert.length + (S.site !== 'all' ? 1 : 0);
+const lfBtn = () => `<button class="az-filterbtn fs-btn${lfN() ? ' on' : ''}" onclick="listFilter()" aria-label="Filter${lfN() ? `, ${lfN()} on` : ''}">${I('tune', 20)}${lfN() ? `<b>${lfN()}</b>` : ''}</button>`;
+function lfChips() {
+  const out = LF().cert.map(c => [`S.lf.cert=S.lf.cert.filter(x=>x!=='${c}')`, CERT_OPTS(true).find(o => o[0] === c)[1]]);
+  if (S.site !== 'all') out.push(["S.site='all'", by('sites', S.site).name]);
+  return out.length ? `<div class="fs-on">${out.map(([js, l]) => `<button class="fchip" onclick="${js};storeSave();render()" aria-label="Remove filter ${esc(l)}">${esc(l)}${I('close', 16)}</button>`).join('')}</div>` : '';
+}
 /* a diet's uses in force at the site picked: one per species it is given to (a diet can be shared), its own species first */
 const usesOf = id => D.assigns.filter(a => a.diet === id && !ended(a) && atSite(a, S.site) && spAnimals(a.sp, S.site).length).sort((x, y) => (y.sp === diet(id).sp) - (x.sp === diet(id).sp));
 /* Diet wise lists diets, one card each however many species share it; the card stands for its first matching use */
 function dietsFor(kind, cert = S.dCert) {
   const q = S.dQ.trim().toLowerCase(), seen = new Set();
-  return D.assigns.filter(a => !ended(a) && atSite(a, S.site) && spAnimals(a.sp, S.site).length && (kind === 'all' || slotKind(a) === kind) && (cert === 'all' || (cert === 'cert') === isCert(a)) && (!q || [diet(a.diet).name, diet(a.diet).id, species(a.sp).name, scopeText(a)].some(x => x.toLowerCase().includes(q))))
+  return D.assigns.filter(a => !ended(a) && atSite(a, S.site) && spAnimals(a.sp, S.site).length && (kind === 'all' || slotKind(a) === kind) && (cert === 'all' || (cert === 'cert') === isCert(a)) && certOk([a.diet]) && (!q || [diet(a.diet).name, diet(a.diet).id, species(a.sp).name, scopeText(a)].some(x => x.toLowerCase().includes(q))))
     .sort((x, y) => (y.sp === diet(y.diet).sp) - (x.sp === diet(x.diet).sp))
     .filter(a => !seen.has(a.diet) && seen.add(a.diet))
     .sort((x, y) => species(x.sp).name.localeCompare(species(y.sp).name) || LEVELS.indexOf(x.level) - LEVELS.indexOf(y.level) || kindRank(x) - kindRank(y));
@@ -103,8 +124,8 @@ function dietStats() {
   const sps = D.species.filter(s => spAnimals(s.id, S.site).length).length;
   const ids = [...new Set(D.assigns.filter(a => !ended(a) && atSite(a, S.site) && spAnimals(a.sp, S.site).length).map(a => a.diet))], cert = ids.filter(id => diet(id).cert).length;
   const cell = (n, l, cls, js) => `<button class="dstats__c" onclick="${js}"><b class="${cls}">${n}</b><span>${l}</span></button>`;
-  const dw = c => `S.dCert='${c}';S.dKind='all';homeTab('diets')`;
-  return `<div class="dstats" role="group" aria-label="Diets at ${esc(siteName())}">${cell(sps, 'Species', 'c1', "S.spTab='all';S.spCls='all';homeTab('species')")}${cell(ids.length, ids.length === 1 ? 'Diet' : 'Diets', '', dw('all'))}${cell(cert, 'Certified', 'c2', dw('cert'))}${cell(ids.length - cert, 'Uncertified', 'c3', dw('uncert'))}</div>`;
+  const dw = c => `S.dCert='all';S.lf={cert:${c === 'cert' ? "['diet']" : c === 'uncert' ? "['none']" : '[]'}};S.dKind='all';homeTab('diets')`;
+  return `<div class="dstats" role="group" aria-label="Diets at ${esc(siteName())}">${cell(sps, 'Species', 'c1', "S.spTab='all';S.spCls='all';S.lf={cert:[]};homeTab('species')")}${cell(ids.length, ids.length === 1 ? 'Diet' : 'Diets', '', dw('all'))}${cell(cert, 'Certified', 'c2', dw('cert'))}${cell(ids.length - cert, 'Uncertified', 'c3', dw('uncert'))}</div>`;
 }
 /* the page scrolls as one: the stats card, search and chips go up with the list; Diet Wise | Species Wise stays pinned under the top bar */
 function paneDietHome({ cls = '', cur = null } = {}) {
@@ -116,23 +137,23 @@ function paneDietHome({ cls = '', cur = null } = {}) {
   if (tab === 'requests' && isKitchen()) { const r = kitchenParts(cur); return withFab(pane(`${cls} pane--home`, top, head + r.search + r.body, '', 'home')); }
   if (tab === 'requests') { const r = reqHomeParts(cur); return withFab(pane(`${cls} pane--home`, top, head + r.search + r.chips + r.body, '', 'home')); }
   /* the count of the list (owner, 27 Nov 2026: the class chips and the status toggle are on the page already, so no Filter button and no sheet) */
-  const countLine = n => `<p class="az-countline lcount"><span class="lcount__n">${plural(n, tab === 'diets' ? 'diet' : 'species', tab === 'diets' ? 'diets' : 'species')}</span></p>`;
+  const countLine = n => `<p class="az-countline lcount">${tab === 'diets' ? countText(n, 'diet') : countText(n, 'species', 'species')}</p>`;
   const chips = (key, opts, count) => `<div class="az-chips" role="tablist">${opts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l} - ${count(k)}</button>`).join('')}</div>`;
   if (tab === 'diets') {
-    const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species, place or ID" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label></div>`;
+    const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="d-q" placeholder="Search diet, species, place or ID" value="${esc(S.dQ)}" oninput="S.dQ=this.value;render()" aria-label="Search diets"></label>${lfBtn()}</div>`;
     const list = dietsFor(S.dKind), on = (by('assigns', cur) || {}).diet, rows = list.map(a => dietRow(a, !!cur && on === a.diet)).join('');
     const none = S.dQ.trim() && !dietsFor(S.dKind, 'all').length;
     return withFab(pane(`${cls} pane--home`, top, head + search + chips('dKind', [['all', 'All'], ...KINDS.map(k => [k, tcase(k)])], k => dietsFor(k).length)
-      + `<div class="body">${none ? '' : (isKitchen() ? '' : listToggle('dCert', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified']])) + countLine(list.length)}<div class="list list--8">${rows || (none ? noMatch(S.dQ, "S.dQ=''") : empty1('No diet here', '', S.dKind !== 'all' ? 'seal' : 'meerkat'))}</div></div>`, '', 'home'));
+      + `<div class="body">${none ? '' : countLine(list.length) + lfChips()}<div class="list list--8">${rows || (none ? noMatch(S.dQ, "S.dQ=''") : empty1('No diet here', '', S.dKind !== 'all' ? 'seal' : 'meerkat'))}</div></div>`, '', 'home'));
   }
-  const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="sp-q" placeholder="Search species or taxonomy ID" value="${esc(S.spQ)}" oninput="S.spQ=this.value;render()" aria-label="Search species"></label></div>`;
+  const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="sp-q" placeholder="Search species or taxonomy ID" value="${esc(S.spQ)}" oninput="S.spQ=this.value;render()" aria-label="Search species"></label>${lfBtn()}</div>`;
   const list = speciesFor(S.spTab), clsChips = chips('spCls', [['all', 'All'], ...CLASSES.map(c => [c, c]), ['Other', 'Other']], c => speciesFor(S.spTab, c).length);
   /* a species card: photo, name, scientific name, and its diet count big in a tile (no animal count: owner, 18 Nov) */
   const none = S.spQ.trim() && !speciesFor('all', 'all').length;
   const rows = list.length ? list.map(s => { const all = slotsOf(s.id).length;
     return speciesRow(s, { href: `#/diets/${s.id}`, current: cur === s.id, big: true,
       end: `<span class="sprow__n${all ? '' : ' sprow__n--none'}"><b>${all ? activeDiets(s.id) : 0}</b><span>${all && activeDiets(s.id) === 1 ? 'Diet' : 'Diets'}</span></span>` }); }).join('') : none ? noMatch(S.spQ, "S.spQ=''") : empty1('No species here', '', S.spCls !== 'all' || S.spTab !== 'all' ? 'seal' : 'meerkat');
-  return withFab(pane(`${cls} pane--home`, top, head + search + clsChips + `<div class="body">${none ? '' : listToggle('spTab', [['all', 'All'], ['cert', 'Certified'], ['uncert', 'Uncertified'], ['without', 'No Diet']]) + countLine(list.length)}<div class="list list--8">${rows}</div></div>`, '', 'home'));
+  return withFab(pane(`${cls} pane--home`, top, head + search + clsChips + `<div class="body">${none ? '' : countLine(list.length) + lfChips()}<div class="list list--8">${rows}</div></div>`, '', 'home'));
 }
 
 /* a search that finds nothing says so, with a way back (audit, 2 Nov) */

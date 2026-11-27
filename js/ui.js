@@ -21,6 +21,9 @@ const tcase = s => String(s ?? '').replace(/(^|[\s(\-–·/])([a-z])/g, (m, a, b
 const cap = s => { s = String(s ?? ''); return s.charAt(0).toUpperCase() + s.slice(1); };
 const initials = n => n.split(/[\s-]+/).filter(w => /^[A-Za-z0-9#]/.test(w)).slice(0, 2).map(w => w[0].toUpperCase()).join('');
 const I = (name, size = 24, fill = false) => `<span class="az-i${size === 24 ? '' : ' az-i--' + size}${fill ? ' az-i--fill' : ''}" aria-hidden="true">${name}</span>`;
+/* the list count (owner, 27 Nov 2026: one size for every list): "15" in 14/600, "requests" in 14 regular grey */
+/* the design system's count line (Search and filter): "Noun (n)", e.g. "Requests (8)" */
+const countText = (n, one, many) => `<span class="lcount__n">${cap(many || one + 's')} (${n})</span>`;
 const pill = (tone, text) => `<span class="az-pill az-pill--${tone}">${esc(text)}</span>`;
 const avatar = (name, sz = '') => `<span class="az-avatar${sz ? ' az-avatar--' + sz : ''}" aria-hidden="true">${initials(name)}</span>`;
 function toast(msg) { const t = $('#toast'); t.innerHTML = `${I('check_circle', 24, true)}<span class="az-toast__msg">${esc(msg)}</span>`; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2600); }
