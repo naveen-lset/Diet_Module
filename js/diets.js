@@ -93,7 +93,7 @@ function homeTab(k) {
 /* one diet in the Diet wise list: a diet avatar, its name, its kind, how many species get it, and its ID */
 function dietRow(a, current) {
   const d = diet(a.diet), n = new Set(usesOf(d.id).map(u => u.sp)).size;
-  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(tcase(slotKind(a)))}${recentlyChanged(d.id) ? ` ${pill('pending', 'Changed')}` : ''}</span><span class="dfoot"><span class="dfoot__n">${n} species</span><span class="did">${esc(d.id)}</span></span></span></a>`;
+  return `<a class="sprow dietrow pick" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="kline">${ktag(slotKind(a))}${recentlyChanged(d.id) ? pill('pending', 'Changed') : ''}</span><span class="dfoot"><span class="dfoot__n">${n} species</span><span class="did">${esc(d.id)}</span></span></span></a>`;
 }
 /* the list's own toggle, at the top of the list and as wide as its cards: certification (and, for species, no diet); it scrolls with the list */
 const listToggle = (key, opts) => `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Certification">${thumb()}${opts.map(([k, l]) => `<button role="tab" aria-selected="${S[key] === k}" onclick="S.${key}='${k}';render();swapFx('.pane .list')">${l}</button>`).join('')}</div></div>`;
@@ -211,6 +211,8 @@ function certLine(d) {
 const isDietitian = () => isApprover(me());
 function certCard(d) {
   if (isKitchen()) return '';
+  /* (owner, 27 Nov 2026) anyone else sees who certified it, and nothing while it is being certified */
+  if (!isDietitian() && !d.cert) return '';
   const rv = d.review, mine = isDietitian(), made = d.made ? `Set up on the web by ${esc(user(d.made.by).name)} · ${fmtDayY(d.made.at)}` : 'Set up on the web';
   const cmts = rv && rv.state !== 'done' && rv.comments.length && mine ? `<div class="dcert__cmts">${rv.comments.map(c => `<div class="dcert__c">${avatar(user(c.by).name, '24')}<span class="grow"><b>${youName(c.by)}<small> · ${fmtTime(c.at)} • ${fmtDay(c.at.slice(0, 10))}</small></b><p>${esc(c.text)}</p></span></div>`).join('')}</div>` : '';
   const btns = (cert = true) => `<div class="dcert__btns"><button class="az-btn az-btn--outline az-btn--compact" onclick="askChangesSheet('${d.id}')">Ask For Changes</button>${cert ? `<button class="az-btn az-btn--compact" onclick="certifyDiet('${d.id}')">${I('verified', 20)}Certify</button>` : ''}</div>`;
@@ -323,8 +325,8 @@ function paneDiet(asgId, { cls = '', back = '', wide = isTab() } = {}) {
   const days = true ? `<div class="dayseg"><div class="az-seg" role="tablist" aria-label="Day">${thumb()}${[[null, 'Full Week'], ...DAYS.map((x, i) => [i, x[0]])].map(([i, l]) => `<span role="tab" tabindex="0" class="${i == null ? 'wide' : ''}" aria-selected="${S.day === i}" aria-label="${i == null ? 'Full Week' : DAYS[i]}" onclick="S.day=${i};render();swapFx('.dtable')" onkeydown="if(event.key==='Enter'){S.day=${i};render();swapFx('.dtable')}">${l}</span>`).join('')}</div></div>` : '';
   const chg = ended(a) ? null : dietChanged(d), coming = ended(a) ? [] : dietComing(a);
   const groups = chg && (chg.h.lines || []).length ? markedGroups(d, chg.h, S.day, 'itemSheet') : dietGroups(d, S.day, 'itemSheet');
-  /* (owner, 27 Nov 2026) the Dietitian works the requests in Requests; on the diet she sees only its certification */
-  const cards = certCard(d) + (isDietitian() ? '' : (coming.length ? comingCard(coming) : '') + (chg ? changedCard(chg) : ''));
+  /* (owner, 27 Nov 2026) nobody sees request cards on a diet: requests live in Requests; the diet shows only its certification */
+  const cards = certCard(d);
   const body = S.dTab === 'nu' ? nutriTab(d) : S.dTab === 'ap' ? appliedTo(a) : S.dTab === 'hi' ? historyTab(a, d) : cards + days + `<div class="dtable">${mealTable(groups, wide, S.day == null, { bands: qBands(d) })}</div>` + notesBlock(d);
   const fab = S.dTab === 'ov' && canRaise(me()) && !isKitchen() && !isDietitian() && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="raisePick('${a.id}')">${I('add_circle')}<span class="dfab__t">Raise Request</span></button>` : '';
   return pane(cls + (fab ? ' has-fab' : ''), head + tabs, `<div class="body">${body}</div>`, '', `diet-${asgId}`).replace(/<\/section>$/, `${fab}</section>`);
@@ -343,7 +345,7 @@ const pathNamed = x => { const p = pathOf(x); return ['site', 'section', 'enclos
 function appliedTo(a) {
   const d = diet(a.diet), uses = dietUses(d.id), n = x => followersOf(x).length, total = uses.reduce((t, x) => t + n(x), 0), sps = [...new Set(uses.map(x => x.sp))];
   const tap = x => `onclick="dietAnimalsSheet('${x.id}')"${x.id === a.id ? ' aria-current="true"' : ''}`;
-  const when = x => slotKind(x) !== slotKind(a) ? `<span class="apc__k">${esc(slotText(x))}</span>` : '';
+  const when = x => kindLine(x);
   const sp = x => species(x.sp);
   const card = {
     /* the species and an animal: the Figma's Animal Card For Selection (Animal Card Redesign): photo 84, a teal tag line, then plain lines */
@@ -352,13 +354,13 @@ function appliedTo(a) {
       return `<button class="apc apc--place" ${tap(x)}><span class="apc__img"><img src="${spPhoto(x.sp)}" alt="" loading="lazy"></span><span class="apc__top"><b>${esc(targetName(x))}</b><span class="apc__stats"><span><b>${n(x)}</b>Animals</span><span><b>${sps2}</b>Species</span><span><b>${encs}</b>Enclosures</span></span></span>
         <span class="apc__foot">${I(x.level === 'site' ? 'location_on' : 'grid_view', 20)}<span class="grow">${x.level === 'section' ? `Site: ${esc(by('sites', pathOf(x).site).name)} · ` : ''}${esc(sp(x).name)}</span>${when(x)}${I('chevron_right', 20)}</span></button>`; },
     enclosure: x => { const p = pathOf(x);
-      return `<button class="apc apc--encl" ${tap(x)}><span class="apc__dot"><img src="${spPhoto(x.sp)}" alt="" loading="lazy"></span><span class="apc__d"><b>${esc(targetName(x))}</b><small>${esc(sp(x).name)}</small><small>Section: ${esc(by('sections', p.section).name)} · Site: ${esc(by('sites', p.site).name)}</small>${when(x)}</span><b class="apc__n">${n(x)}<small>Animals</small></b></button>`; },
+      return `<button class="apc acs" ${tap(x)}><span class="acs__p"><img src="${spPhoto(x.sp)}" alt="" loading="lazy"></span><span class="acs__d"><b>Enclosure: ${esc(targetName(x))}</b>${sps.length > 1 ? `<span>${esc(sp(x).name)}</span>` : ''}<span>Section: ${esc(by('sections', p.section).name)}</span><span>Site: ${esc(by('sites', p.site).name)}</span><span>${n(x) ? plural(n(x), 'animal') + ' on this diet' : 'No animals on it now'}</span>${when(x)}</span>${I('chevron_right', 20)}</button>`; },
     animal: x => { const an = by('animals', x.ref), sx = SEXT[an.sex] || 'UD', pth = pathOf(x);
       return `<button class="apc acs" ${tap(x)}><span class="acs__p"><img src="${spPhoto(x.sp)}" alt="" loading="lazy"><span class="acs__sex acs__sex--${sx}">${sx}</span></span><span class="acs__d"><b>AID: ${an.id}</b><span>${esc(an.name ? `${an.name} · ${sp(x).name}` : sp(x).name)}</span><span>Encl: ${esc(by('enclosures', an.enc).name)}</span><span>Site: ${esc(by('sites', pth.site).name)}</span>${n(x) ? '' : '<span class="acs__off">Not on it now</span>'}${when(x)}</span>${I('chevron_right', 20)}</button>`; } };
   const GROUPS = [['species', 'Species'], ['site', 'Sites'], ['section', 'Sections'], ['enclosure', 'Enclosures'], ['animal', 'Animals']];
-  return `<div class="apply__h apply__h--top"><b>Applied To</b><span>${plural(sps.length, 'species', 'species')} · ${plural(total, 'animal')}</span></div>`
-    + GROUPS.map(([lv, t]) => { const xs = uses.filter(u => u.level === lv); if (!xs.length) return '';
-      return `<section class="apg"><p class="apg__h">${t} <span>${xs.length}</span></p><div class="apg__list">${xs.map(lv === 'site' || lv === 'section' ? card.place : card[lv]).join('')}</div></section>`; }).join('');
+  /* (owner, 27 Nov 2026) no "Applied To · 1 species · 5 animals" line: the tab says it; the groups start at once */
+  return `<div class="apg-wrap">` + GROUPS.map(([lv, t]) => { const xs = uses.filter(u => u.level === lv); if (!xs.length) return '';
+      return `<section class="apg"><p class="apg__h">${t} <span>${xs.length}</span></p><div class="apg__list">${xs.map(lv === 'site' || lv === 'section' ? card.place : card[lv]).join('')}</div></section>`; }).join('') + `</div>`;
 }
 /* Raise request from a diet set at several places asks which place first (audit, 2 Nov) */
 function raisePick(id) {
