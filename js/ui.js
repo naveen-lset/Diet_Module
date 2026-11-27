@@ -284,7 +284,7 @@ function dietStatus(a) {
 /* a diet in a species' list: the Diet wise row (avatar, name, kind and when) with its state and its animals (audit, 2 Nov: one diet card) */
 function dietCard(a, { current = false } = {}) {
   const d = diet(a.diet), [tone, label] = dietStatus(a);
-  return `<a class="sprow dietrow pick${ended(a) ? ' dietrow--ended' : ''}" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b><span class="sub">${esc(slotText(a))}</span><span class="dfoot"><span class="dfoot__tags">${pill(tone, label)}${!d.cert ? pill('negative', 'Not Certified') : ''}</span></span></span></a>`;
+  return `<a class="sprow dietrow pick${ended(a) ? ' dietrow--ended' : ''}" href="#/diets/${a.sp}/${a.id}"${current ? ' aria-current="true"' : ''}><span class="davatar">${I('restaurant')}</span><span class="sprow__t"><b>${esc(d.name)}</b>${kindLine(a)}<span class="dfoot"><span class="dfoot__tags">${pill(tone, label)}${!d.cert ? pill('negative', 'Not Certified') : ''}</span></span></span></a>`;
 }
 /* one diet set at a place, as a row of its card */
 function placeDietRow(a, current) {

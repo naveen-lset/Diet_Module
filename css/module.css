@@ -2711,3 +2711,11 @@ button.step{cursor:pointer}
 .rq2-row__v .az-kvgrid{padding:12px;border-radius:var(--r-8);background:var(--Background)}
 /* on the white request page the status bar's rounded top read as a seam (owner, 27 Nov 2026: "see the top edges"): a straight top, one hairline, a soft shadow up */
 .rq2-pane .az-statusbar{border-radius:0;border-top:1px solid var(--neutral05);box-shadow:0 -4px 12px rgba(0,0,0,.05)}
+/* Applied To spacing (owner, 27 Nov 2026): one rhythm — 20 px between groups, 8 px from a heading to its cards, 12 px between cards */
+.apg-wrap{display:flex;flex-direction:column;gap:20px}
+.apg-wrap .apg{margin-top:0;gap:8px}
+.apg-wrap .apg__h{margin:0 4px}
+.apg-wrap .apg__list{gap:12px}
+/* the kind tag and its period (Year-Round green, Seasonal orange, Time-Bound blue; owner-approved colours) */
+.kline{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:4px;font:400 13px/18px var(--font);color:var(--neutralSecondary);white-space:normal!important}
+.acs__d .kline{margin-top:2px}
