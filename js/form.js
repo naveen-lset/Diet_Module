@@ -178,7 +178,7 @@ function spMultiSheet() {
         + (list.length ? `<button class="az-checkrow spall" role="checkbox" aria-checked="${all}" onclick="spAll()">${I(all ? 'check_box' : 'check_box_outline_blank', 24, all)}Select all ${list.length}</button>`
           + list.map(s => { const on = SPSEL.has(s.id), k = slotsOf(s.id).length;
             return `<button class="sprow" role="checkbox" aria-checked="${on}" onclick="spToggle(${s.id})">${spThumb(s)}<span class="sprow__t"><b>${esc(s.name)}</b><span class="sub sci">${esc(s.sci)}</span><span class="meta">${s.cls} · ${k ? plural(k, 'diet') : 'No diet'}</span></span>${I(on ? 'check_box' : 'check_box_outline_blank', 24, on)}</button>`; }).join('')
-          : '<div class="nodiet">No species matches</div>'),
+          : '<div class="nodiet nodiet--seal">No species matches</div>'),
       foot: `<button class="az-btn"${n ? '' : ' disabled'} onclick="spDone()">Done${n ? ` · ${plural(n, 'species', 'species')}` : ''}</button>` };
   });
   setTimeout(() => { const i = document.getElementById('spq-f'); if (i && !matchMedia('(pointer: coarse)').matches) i.focus(); }, 60);
@@ -304,7 +304,7 @@ function paneEntity(d) {
     const secs = placesUnder(e.sp, 'section', {}, pool).filter(o => o.name.toLowerCase().includes(q)), encs = placesUnder(e.sp, 'enclosure', {}, pool).filter(o => o.name.toLowerCase().includes(q));
     const ans = pool.filter(a => `${animalName(a)} ${a.id}`.toLowerCase().includes(q));
     const pick = (l, id) => { const p = pathOf({ sp: e.sp, level: l, ref: id }); return `entSet({site:${p.site || 'null'},section:${p.section || 'null'},enclosure:${p.enclosure || 'null'},animal:${p.animal || 'null'},q:''})`; };
-    body = !secs.length && !encs.length && !ans.length ? `<div class="nodiet">Nothing called “${esc(e.q)}”. Try another name, or choose step by step.</div>`
+    body = !secs.length && !encs.length && !ans.length ? `<div class="nodiet nodiet--seal">Nothing called “${esc(e.q)}”. Try another name, or choose step by step.</div>`
       : (secs.length ? `<p class="cap">Sections</p>${secs.map(o => pcardBtn('section', o.id, pool, pick('section', o.id))).join('')}` : '')
       + (encs.length ? `<p class="cap">Enclosures</p>${encs.map(o => pcardBtn('enclosure', o.id, pool, pick('enclosure', o.id))).join('')}` : '')
       + (ans.length ? `<p class="cap">Animals</p>${ans.map(a => `<button class="epick" onclick="${pick('animal', a.id)}">${animalCard(a)}</button>`).join('')}` : '');
@@ -412,7 +412,7 @@ function ipHtml() {
   const list = D.items.filter(i => !taken.has(i.id) && (!q || i.name.toLowerCase().includes(q))).sort((a, b) => a.name.localeCompare(b.name));
   const ok = list.filter(i => stockFor(i, LS.qty, LS.unit, n) === 'ok'), low = list.filter(i => stockFor(i, LS.qty, LS.unit, n) !== 'ok');
   const chips = (h, xs, warn) => xs.length ? `<p class="cap">${h}</p><div class="itemchips">${xs.map(i => `<button class="${warn ? 'warn' : ''}" aria-pressed="${i.id === LS.to}" onclick="chooseItem(${i.id})">${esc(i.name)}</button>`).join('')}</div>` : '';
-  return { title: 'Choose Item', body: `<label class="az-search" style="background:var(--white)">${I('search', 20)}<input id="ip-q" placeholder="Search items" value="${esc(IP.q)}" oninput="IP.q=this.value;redrawSheet()" aria-label="Search items"></label>${chips('In stock', ok)}${chips('Low stock', low, true)}${list.length ? '' : '<div class="nodiet">No item matches</div>'}` };
+  return { title: 'Choose Item', body: `<label class="az-search" style="background:var(--white)">${I('search', 20)}<input id="ip-q" placeholder="Search items" value="${esc(IP.q)}" oninput="IP.q=this.value;redrawSheet()" aria-label="Search items"></label>${chips('In stock', ok)}${chips('Low stock', low, true)}${list.length ? '' : '<div class="nodiet nodiet--seal">No item matches</div>'}` };
 }
 function chooseItem(id) {
   const it = item(id), dim = BASE[it.unit][0];
@@ -915,16 +915,16 @@ function dtypeFields(d) {
       `<div class="wf wf--row"><span class="wf__l">For</span><div class="mstep"><button class="how-step" onclick="S.draft.f.days=Math.max(1,${dd}-1);render()" aria-label="One day less"${dd <= 1 ? ' disabled' : ''}>${I('remove')}</button><b>${plural(dd, 'Day')}</b><button class="how-step" onclick="S.draft.f.days=Math.min(60,${dd}+1);render()" aria-label="One day more">${I('add')}</button></div></div>`); }
   if (k === 'quality') { const n = d.f.day ?? 0; return when(wfield('Which Day', dayLong(n), dayStrip(n, 'f.day', { past: true, days: 14 })), feedsOf('Which Feeds')); }
   /* ---- a Diet change: the diet's configuration ---- */
-  if (k === 'change') return section('tune', 'What Changes', !d.base ? '<p class="sg-none">No diet here yet. Choose New Diet instead.</p>' : foodEditor(d), true)
+  if (k === 'change') return section('tune', 'What Changes', !d.base ? '<p class="sg-none sg-hint">No diet here yet. Choose New Diet instead.</p>' : foodEditor(d), true)
     + (d.changes.length ? how() + why(REASONS.items) : '');
   if (k === 'newdiet') return section('add_circle', 'New Diet', select('Start From', d.base ? diet(d.base).name : 'Nothing · the dietician builds it', 'dfStartSheet()', { id: 'f-from', icon: 'search' })
       + (d.base ? `<label class="az-field"><span class="az-label">Diet Name</span><span class="az-input az-input--text"><input id="df-name" placeholder="${esc(dfNewName(d) || 'Name the diet')}" value="${esc(d.name || '')}" oninput="S.draft.name=this.value;redrawFoot()"></span></label>${dfield('Foods', foodEditor(d))}`
         : wfield('Needed From', dayLong(d.f.from ?? 1), dayStrip(d.f.from ?? 1, 'f.from'))), true)
     + (d.base ? how() : '') + why(REASONS.items);
   if (k === 'move') { const opts = dfMoveOpts(d);
-    return section('restaurant', 'Move To', opts.length ? select('', d.diet ? diet(d.diet).name : '', 'dfMoveSheet()', { placeholder: 'Search and choose a diet', id: 'f-move', icon: 'search' }) : '<p class="sg-none">No other diet for this species</p>', true) + how() + why(REASONS.items); }
+    return section('restaurant', 'Move To', opts.length ? select('', d.diet ? diet(d.diet).name : '', 'dfMoveSheet()', { placeholder: 'Search and choose a diet', id: 'f-move', icon: 'search' }) : '<p class="sg-none sg-hint">No other diet for this species</p>', true) + how() + why(REASONS.items); }
   if (k === 'end') { const es = endable(d);
-    return section('event_busy', 'Diet To End', (es.length ? select('', d.ends[0] ? diet(by('assigns', d.ends[0]).diet).name : '', 'dfEndSheet()', { placeholder: 'Search and choose a diet', id: 'f-end', icon: 'search' }) : '<p class="sg-none">No diet here ends early: only Seasonal, Time-bound or place diets do</p>')
+    return section('event_busy', 'Diet To End', (es.length ? select('', d.ends[0] ? diet(by('assigns', d.ends[0]).diet).name : '', 'dfEndSheet()', { placeholder: 'Search and choose a diet', id: 'f-end', icon: 'search' }) : '<p class="sg-none sg-hint">No diet here ends early: only Seasonal, Time-bound or place diets do</p>')
       + wfield('Last Day', dayLong(daysBetween(TODAY, d.stop)), dayStrip(daysBetween(TODAY, d.stop), 'stop'), { req: true }), true) + why(REASONS.items); }
   return '';
 }

@@ -2650,3 +2650,11 @@ button.step{cursor:pointer}
 .acs__d b{font:600 14px/17px var(--font);letter-spacing:0;color:var(--OnPrimaryContainer)}
 .acs__d i{font:italic 400 14px/17px var(--font);color:var(--neutralSecondary)}
 .acs__off{color:var(--neutralSecondary)}
+/* every other empty place gets the design system's animal too (owner, 27 Nov 2026: "here and all, where is the empty state"):
+   a list or tab with nothing yet = the meerkat; a search with nothing found = the seal; 120 px inside a tab or a sheet */
+.nodiet,.act__none{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:20px 16px 24px!important;font:500 16px/24px var(--font)!important;color:var(--OnSurfaceVariant)!important}
+.nodiet::before,.act__none::before,.sg-none:not(.sg-hint)::before,.fs-none::before{content:"";display:block;width:120px;height:120px;background:url(../assets/empty/meerkat.png) center/contain no-repeat}
+.sg-none:not(.sg-hint),.fs-none{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:16px 8px;font:500 16px/24px var(--font);color:var(--OnSurfaceVariant)}
+.sg-none:not(.sg-hint)::before,.fs-none::before{background-image:url(../assets/empty/seal.png)}
+.fs-none::before{width:96px;height:96px}
+.nodiet--seal::before{background-image:url(../assets/empty/seal.png)}
