@@ -57442,17 +57442,26 @@ if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
 <style>
 /* Diet module prototype: under Modules, only Diet and Help Desk (owner, 18 Nov 2026), so the Command Centre banner is not shown */
 .hero--estate{display:none!important}
-/* (owner, 27 Nov 2026: "on the Home page only the Diet module has to show") no Recents, audit strip, announcements, site chips or
-   observation notes: the greeting, the search and the Modules grid (Diet) only */
-#panel-modules > :not(.modules-band):not(.v2d){display:none!important}
-.v2d__main > :not(.modules-band),.v2d__rail,.modules-band > #recentObs{display:none!important}
-.v2d{grid-template-columns:1fr!important}
+/* (owner, 27 Nov 2026: "in Modules keep the Diet module"): the Home stays as it is; the module lists (All Modules, and Modules for your
+   role) offer Diet only */
+.mview [data-mod]:not([data-mod="diet"]){display:none!important}
+.pmenu--modules .pmenu__item:not([data-id="diet"]),.pmenu--modules .pmenu__heading,.pmenu--modules .pmenu__rule{display:none!important}
 </style>
 <script>
 /* Added for the Antz Diet module prototype (diet-module/). The other changes in this copy: the person is Yeswanth (was Sourav Tambe), and the module grid seeds only Diet and Help Desk (V2_LAYOUT, V2_PHONE_LAYOUT, V2_DESK_LAYOUT; owner, 18 Nov 2026).
    the Diet and Help Desk modules open the new Diet and Help Desk screens instead of their placeholder pages. */
 (function () {
   var OPEN = { diet: 'diets' };   /* Help Desk lives inside Diet now (26 Nov 2026) */
+  /* (owner, 27 Nov 2026: "move the Modules part after the ticker") on the phone and iPad Home, Modules comes right after the audit ticker;
+     kept there whenever the Home redraws */
+  function modulesAfterTicker() {
+    var p = document.getElementById('panel-modules'), t = document.getElementById('healthStrip'), m = p && p.querySelector(':scope > .modules-band');
+    if (t && m && t.parentElement === p && t.nextElementSibling !== m) t.after(m);
+  }
+  modulesAfterTicker();
+  document.addEventListener('DOMContentLoaded', modulesAfterTicker);
+  window.addEventListener('load', modulesAfterTicker);
+  new MutationObserver(function () { modulesAfterTicker(); }).observe(document.documentElement, { childList: true, subtree: true });
   document.addEventListener('click', function (e) {
     /* a module's own tile (All Modules) carries data-mod; a card on the Home grid carries its variant (diet.photo, helpdesk.default) */
     var c = e.target.closest('#moduleGrid .card[data-variant]'), t = e.target.closest('[data-mod]');
