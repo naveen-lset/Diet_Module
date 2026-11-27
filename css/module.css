@@ -2757,3 +2757,11 @@ button.step{cursor:pointer}
 .fs-on .fchip,.pk-on .fchip{height:32px;padding:0 8px 0 12px;gap:4px;border:1px solid var(--Outline);border-radius:var(--r-8);background:var(--white);color:var(--OnSurface);font:400 12px/1 var(--font)}
 .fs-on .fchip .az-i,.pk-on .fchip .az-i{font-size:16px;color:var(--OnSurface)}
 .lcount .lcount__n{font:var(--t-body-title);color:var(--OnSurfaceVariant)}
+/* the page colour is the design system's Background #EFF5F2 (owner, 27 Nov 2026), on every screen and sheet body */
+body,.pane,.spsheet__body,.tab .main,.tab .main[class],.spsheet__body:has(.vlist2),.pane__body:has(.vlist2){background:var(--Background)}
+/* the white top block's lower edge (owner, 27 Nov 2026: "a light shadow instead of a line, more elegant"): a soft shadow, no 1 px edge */
+.pane--home .az-chips,.spsheet .az-chips,.pane .az-chips:not(.pk-f):not(.az-chips--sub){box-shadow:0 6px 12px -6px rgba(31,81,91,.12);position:relative;z-index:1}
+/* the pinned tabs cover the sub-pixel seam under the top bar while the list scrolls (owner, 27 Nov 2026: bug) */
+.pane--home .az-tabs{box-shadow:0 -2px 0 var(--white)}
+/* the count line gets room under the white block (owner, 27 Nov 2026: "need space on top") */
+.pane--home .body > .lcount:first-child,.pane--home .body > .ltoggle + .lcount,.pane--home .body > .lcount{margin:8px 2px 0}

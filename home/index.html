@@ -57442,6 +57442,11 @@ if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
 <style>
 /* Diet module prototype: under Modules, only Diet and Help Desk (owner, 18 Nov 2026), so the Command Centre banner is not shown */
 .hero--estate{display:none!important}
+/* (owner, 27 Nov 2026: "on the Home page only the Diet module has to show") no Recents, audit strip, announcements, site chips or
+   observation notes: the greeting, the search and the Modules grid (Diet) only */
+#panel-modules > :not(.modules-band):not(.v2d){display:none!important}
+.v2d__main > :not(.modules-band),.v2d__rail,.modules-band > #recentObs{display:none!important}
+.v2d{grid-template-columns:1fr!important}
 </style>
 <script>
 /* Added for the Antz Diet module prototype (diet-module/). The other changes in this copy: the person is Yeswanth (was Sourav Tambe), and the module grid seeds only Diet and Help Desk (V2_LAYOUT, V2_PHONE_LAYOUT, V2_DESK_LAYOUT; owner, 18 Nov 2026).
