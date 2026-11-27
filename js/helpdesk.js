@@ -80,14 +80,16 @@ function hdCard(r, cur = false) {
    the status (the same toggle the other lists have), the sub-status chips, and Requests (n) with sort and filter */
 function reqHomeParts(cur = null) {
   const W = WHO_OPTS(), who = rWho();
-  const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="hd-q" placeholder="Search request, species or ID" value="${esc(S.rQ)}" oninput="S.rQ=this.value;render()" aria-label="Search requests"></label></div>`;
+  const nF = RF_GROUPS().reduce((n, g) => n + (g.multi ? rF()[g.k].length : rF()[g.k] !== g.dflt ? 1 : 0), 0);
+  const fbtn = `<button class="az-filterbtn fs-btn${nF ? ' on' : ''}" onclick="hdFilterSheet()" aria-label="Filter${nF ? `, ${nF} on` : ''}">${I('tune', 20)}${nF ? `<b>${nF}</b>` : ''}</button>`;
+  const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="hd-q" placeholder="Search request, species or ID" value="${esc(S.rQ)}" oninput="S.rQ=this.value;render()" aria-label="Search requests"></label>${fbtn}</div>`;
   const chips = W.length > 1 ? `<div class="az-chips" role="tablist" aria-label="Whose requests">${W.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${who === k}" onclick="hdSet({rWho:'${k}'})">${l} - ${hdList('all', 'diet', 'all', k).length}</button>`).join('')}</div>` : '';
   const status = `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Status">${thumb()}${HDTABS.map(([k, l]) => `<button role="tab" aria-selected="${S.rTab === k}" onclick="hdSet({rTab:'${k}',rSub:'all'})">${l}</button>`).join('')}</div></div>`;
   const subOpts = (HDSUBS[S.rTab] || []).filter(([k]) => k === 'all' || k === S.rSub || hdList(S.rTab, 'diet', k).length);
   const subs = subOpts.length > 2 ? `<div class="az-chips az-chips--sub hdpills" role="tablist" aria-label="${HDTABS.find(x => x[0] === S.rTab)[1]} requests">${thumb()}${subOpts.map(([k, l]) => `<button class="az-chip" role="tab" aria-selected="${S.rSub === k}" onclick="hdSet({rSub:'${k}'})">${l} - ${hdList(S.rTab, 'diet', k).length}</button>`).join('')}</div>` : '';
-  const list = hdList(S.rTab, 'diet', S.rSub), nF = RF_GROUPS().reduce((n, g) => n + (g.multi ? rF()[g.k].length : rF()[g.k] !== g.dflt ? 1 : 0), 0);
-  const tools = `<span class="hdtools">${iconBtn('swap_vert', `Sort: ${S.rSort === 'priority' ? 'priority' : 'newest'}`, "S.rSort=S.rSort==='priority'?'newest':'priority';render();toast('Sorted by '+(S.rSort==='priority'?'priority':'newest'))")}<button class="az-filterbtn fs-btn${nF ? ' on' : ''}" onclick="hdFilterSheet()" aria-label="Filter${nF ? `, ${nF} on` : ''}">${I('tune', 20)}${nF ? `<b>${nF}</b>` : ''}</button></span>`;
-  const body = `<div class="body">${status}${subs}<p class="az-countline lcount">${plural(list.length, 'request')}${tools}</p>${rfChips()}${list.length ? `<div class="list list--16 hdlist">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1(who === 'mine' ? 'You have no requests here' : 'No requests here', '', S.rQ.trim() || nF ? 'seal' : 'meerkat')}</div>`;
+  const list = hdList(S.rTab, 'diet', S.rSub);
+  const tools = `<span class="hdtools">${iconBtn('swap_vert', `Sort: ${S.rSort === 'priority' ? 'priority' : 'newest'}`, "S.rSort=S.rSort==='priority'?'newest':'priority';render();toast('Sorted by '+(S.rSort==='priority'?'priority':'newest'))")}</span>`;
+  const body = `<div class="body">${status}${subs}<p class="az-countline lcount">${countText(list.length, 'request')}${tools}</p>${rfChips()}${list.length ? `<div class="list list--16 hdlist">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1(who === 'mine' ? 'You have no requests here' : 'No requests here', '', S.rQ.trim() || nF ? 'seal' : 'meerkat')}</div>`;
   return { search, chips, body };
 }
 /* a tab, a department, a sub-status or My Approvals | All: the cards come in from the side the highlight moved to */
