@@ -901,13 +901,13 @@ function dtypeFields(d) {
   const how = () => section('date_range', 'How Long', howBlock(d), true);
   const feedChips = (cur, js, all = true) => dchips([...(all ? [['all', 'Whole Day', 'All feeds']] : []), ...dfFeeds(d).map(f => [f, bandText(feed(f))])], v => v === 'all' ? cur === 'all' : cur !== 'all' && (cur || []).includes(v), js, 'schedule');
   /* one or more feed times */
-  const feedsOf = (label, key = 'feed') => wfield(label, feedsText(d.f[key]), feedTiles(f => (d.f[key] || []).includes(f), f => `dfToggleF('${key}',${f})`), { ph: !(d.f[key] || []).length });
+  const feedsOf = (label, key = 'feed') => wfield(label, '', feedTiles(f => (d.f[key] || []).includes(f), f => `dfToggleF('${key}',${f})`), { ph: !(d.f[key] || []).length });
   const when = (...fs) => section('calendar_month', 'When', fs.join('')).replace('<section class="az-section">', '<section class="az-section az-section--when">');
   /* ---- a Diet request: when, which feed; what is asked goes in Describe Your Request ---- */
   if (k === 'skip') { const all = d.feeds === 'all';
     return when(daysField('skip', 'Days', true),
       /* every feed is picked to start with (the whole day); a tap leaves one out */
-      wfield('Feeds', all ? 'Whole Day' : feedsText(d.feeds), feedTiles(f => all || d.feeds.includes(f), f => `dfToggleFeed(${f})`), { req: true, ph: !all && !d.feeds.length })); }
+      wfield('Feeds', '', feedTiles(f => all || d.feeds.includes(f), f => `dfToggleFeed(${f})`), { req: true, ph: !all && !d.feeds.length })); }
   if (k === 'extra') { if (!d.f.dates) { d.f.dates = extraDays(d.f); d.f.dmode = dmodeOf(d.f.dates); }
     return when(daysField('extra', 'Days', true), feedsOf('With Which Feeds')); }
   if (k === 'medicine') { const n = d.f.from ?? 0, dd = d.f.days ?? 5;
