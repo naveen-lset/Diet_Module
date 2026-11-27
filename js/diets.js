@@ -189,7 +189,7 @@ function paneSpecies(spId, { cls = '', cur = null } = {}) {
   return pane(cls + (spFab(spId) ? ' has-fab' : ''), spHead(sp) + p.chips, `<div class="body">${p.body}</div>`, '', `sp-${spId}`).replace(/<\/section>$/, `${spFab(spId)}</section>`);
 }
 /* Raise request from a species: the request starts with it, whole species (a species without a diet has its own button) */
-const spFab = spId => canRaise(me()) && slotsOf(spId).length && S.spView !== 'hist' ? `<button class="az-fab az-fab--pill dfab" onclick="SG=null;go('#/suggest?sp=${spId}')">${I('edit_note')}<span class="dfab__t">Suggest A Change</span></button>` : '';
+const spFab = spId => canRaise(me()) && !isDietitian() && slotsOf(spId).length && S.spView !== 'hist' ? `<button class="az-fab az-fab--pill dfab" onclick="S.draft=null;go('#/new?dept=diet&sp=${spId}')">${I('add_circle')}<span class="dfab__t">Raise Request</span></button>` : '';
 /* the phone's species: a bottom sheet over Diet, with the species header */
 function speciesSheet(spId) {
   const sp = species(spId), p = speciesParts(spId, null);
@@ -204,6 +204,36 @@ function certLine(d) {
   const tile = (icon, tone, cap, who, when) => `<div class="cert cert--${tone}">${I(icon, 22, true)}<span><small>${cap}</small><b>${who}</b>${when ? `<small>${when}</small>` : ''}</span></div>`;
   return `<div class="certs certs--2">${d.cert ? tile('verified', 'ok', 'Certified Dietitian', esc(user(d.cert.by).name), fmtDayY(d.cert.at)) : tile('gpp_maybe', 'bad', 'Dietitian', 'Not certified', '')}${d.kcert ? tile('soup_kitchen', 'ok', 'Certified by Kitchen', esc(user(d.kcert.by).name), fmtDayY(d.kcert.at)) : tile('soup_kitchen', 'none', 'Kitchen', 'Not certified', '')}</div>`;
 }
+/* ---------- certification (owner, 27 Nov 2026) ----------
+   The web team sets a diet up; it comes here uncertified. The Dietitian certifies it, or asks for changes in a comment; the web team answers
+   in the comments once it is updated and applied; then she certifies it. Anyone else sees who certified it. The Dietitian sees "Certified by
+   You" with Edit, which asks for changes again (it is uncertified until she certifies it again). The kitchen does not see this card */
+const isDietitian = () => isApprover(me());
+function certCard(d) {
+  if (isKitchen()) return '';
+  const rv = d.review, mine = isDietitian(), made = d.made ? `Set up on the web by ${esc(user(d.made.by).name)} · ${fmtDayY(d.made.at)}` : 'Set up on the web';
+  const cmts = rv && rv.state !== 'done' && rv.comments.length && mine ? `<div class="dcert__cmts">${rv.comments.map(c => `<div class="dcert__c">${avatar(user(c.by).name, '24')}<span class="grow"><b>${youName(c.by)}<small> · ${fmtTime(c.at)} • ${fmtDay(c.at.slice(0, 10))}</small></b><p>${esc(c.text)}</p></span></div>`).join('')}</div>` : '';
+  const btns = (cert = true) => `<div class="dcert__btns"><button class="az-btn az-btn--outline az-btn--compact" onclick="askChangesSheet('${d.id}')">Ask For Changes</button>${cert ? `<button class="az-btn az-btn--compact" onclick="certifyDiet('${d.id}')">${I('verified', 20)}Certify</button>` : ''}</div>`;
+  let ic, tone, t, sub, act = '';
+  if (d.cert) { const me_ = d.cert.by === S.user; ic = 'verified'; tone = 'ok'; t = me_ ? 'Certified by You' : `Certified by ${esc(user(d.cert.by).name)}`; sub = `${esc(user(d.cert.by).title)} · ${fmtDayY(d.cert.at)}`;
+    if (mine) act = `<button class="lnk dcert__edit" onclick="askChangesSheet('${d.id}')">${I('edit', 18)}Edit</button>`; }
+  else if (rv && rv.state === 'asked') { ic = 'hourglass_top'; tone = 'wait'; t = mine ? 'Changes asked · with the web team' : 'Not certified yet'; sub = mine ? 'They answer here once it is updated and applied' : 'The Dietitian certifies it'; }
+  else if (rv && rv.state === 'updated') { ic = 'mark_chat_unread'; tone = 'wait'; t = mine ? 'Updated by the web team · certify it' : 'Not certified yet'; sub = mine ? 'Check the answer below, then certify or ask again' : 'The Dietitian certifies it'; }
+  else { ic = 'gpp_maybe'; tone = 'wait'; t = mine ? 'New from the web · certify it' : 'Not certified yet'; sub = mine ? made : 'The Dietitian certifies it'; }
+  const showBtns = mine && !d.cert && !(rv && rv.state === 'asked');
+  return `<section class="dcert dcert--${tone}"><div class="dcert__h">${I(ic, 24, true)}<span class="grow"><b>${t}</b><small>${sub}</small></span>${act}</div>${cmts}${showBtns ? btns() : ''}</section>`;
+}
+function certifyDiet(id) { const d = diet(id); d.cert = { by: S.user, at: TODAY }; if (d.review) d.review.state = 'done'; storeSave(); toast(`Certified · ${d.name}`); render(); }
+let ACH = null;
+function askChangesSheet(id) { ACH = { id, text: '' }; openSheet(() => { const d = diet(ACH.id);
+  return { title: 'Ask For Changes', sub: esc(d.name), bottom: true, form: true,
+    body: `<p class="ach__say">${d.cert ? 'The diet is uncertified until you certify it again. ' : ''}The web team sees your comment, updates the diet and answers here.</p><label class="az-field"><span class="az-label">What has to change <span class="az-req">*</span></span><span class="az-input az-input--text az-textarea"><textarea id="ach-t" rows="4" placeholder="For example, banana 300 g instead of 500 g" oninput="ACH.text=this.value;document.getElementById('ach-go').disabled=ACH.text.trim().length<3">${esc(ACH.text)}</textarea></span></label>`,
+    foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button id="ach-go" class="az-btn" disabled onclick="askChanges()">Send To Web Team</button>` }; }); setTimeout(() => { const t = $('#ach-t'); if (t) t.focus(); }, 30); }
+function askChanges() { const d = diet(ACH.id); d.cert = null; d.review = { state: 'asked', comments: [...((d.review && d.review.state !== 'done' && d.review.comments) || []), { by: S.user, at: nowStamp(), text: ACH.text.trim() }] }; storeSave(); closeAll(); toast('Sent to the web team'); render(); }
+/* the web team's answer, from the prototype controls (they work on the web) */
+function webReply() { const d = D.diets.find(x => x.review && x.review.state === 'asked'); if (!d) return toast('No diet is waiting on the web team');
+  d.review.comments.push({ by: 'u-narendra', at: nowStamp(), text: 'Updated and applied on the web. Please check and certify.' }); d.review.state = 'updated'; storeSave(); toast(`Web team answered · ${d.name}`); render(); }
+
 /* the notes under the table, as the web: Kitchen Note, Site Note; then Remark (highlighted) and Change Reason */
 function notesBlock(d) {
   const rows = [['Kitchen Note', esc(d.note)], ['Site Note', esc(d.site)]].filter(r => r[1]);
@@ -293,9 +323,10 @@ function paneDiet(asgId, { cls = '', back = '', wide = isTab() } = {}) {
   const days = true ? `<div class="dayseg"><div class="az-seg" role="tablist" aria-label="Day">${thumb()}${[[null, 'Full Week'], ...DAYS.map((x, i) => [i, x[0]])].map(([i, l]) => `<span role="tab" tabindex="0" class="${i == null ? 'wide' : ''}" aria-selected="${S.day === i}" aria-label="${i == null ? 'Full Week' : DAYS[i]}" onclick="S.day=${i};render();swapFx('.dtable')" onkeydown="if(event.key==='Enter'){S.day=${i};render();swapFx('.dtable')}">${l}</span>`).join('')}</div></div>` : '';
   const chg = ended(a) ? null : dietChanged(d), coming = ended(a) ? [] : dietComing(a);
   const groups = chg && (chg.h.lines || []).length ? markedGroups(d, chg.h, S.day, 'itemSheet') : dietGroups(d, S.day, 'itemSheet');
-  const cards = (coming.length ? comingCard(coming) : '') + (chg ? changedCard(chg) : '');
+  /* (owner, 27 Nov 2026) the Dietitian works the requests in Requests; on the diet she sees only its certification */
+  const cards = certCard(d) + (isDietitian() ? '' : (coming.length ? comingCard(coming) : '') + (chg ? changedCard(chg) : ''));
   const body = S.dTab === 'nu' ? nutriTab(d) : S.dTab === 'ap' ? appliedTo(a) : S.dTab === 'hi' ? historyTab(a, d) : cards + days + `<div class="dtable">${mealTable(groups, wide, S.day == null, { bands: qBands(d) })}</div>` + notesBlock(d);
-  const fab = S.dTab === 'ov' && canRaise(me()) && !isKitchen() && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="raisePick('${a.id}')">${I('edit_note')}<span class="dfab__t">Suggest A Change</span></button>` : '';
+  const fab = S.dTab === 'ov' && canRaise(me()) && !isKitchen() && !isDietitian() && !ended(a) ? `<button class="az-fab az-fab--pill dfab" onclick="raisePick('${a.id}')">${I('add_circle')}<span class="dfab__t">Raise Request</span></button>` : '';
   return pane(cls + (fab ? ' has-fab' : ''), head + tabs, `<div class="body">${body}</div>`, '', `diet-${asgId}`).replace(/<\/section>$/, `${fab}</section>`);
 }
 /* where one diet is applied: every species, level and place it is set on, broad to narrow, each with the animals that eat it there */
@@ -332,9 +363,9 @@ function appliedTo(a) {
 /* Raise request from a diet set at several places asks which place first (audit, 2 Nov) */
 function raisePick(id) {
   const a = by('assigns', id), uses = dietUses(a.diet);
-  SG = null; if (uses.length < 2) return go(`#/suggest?asg=${id}`);
+  SG = null; S.draft = null; if (uses.length < 2) return go(`#/new?dept=diet&asg=${id}`);
   openSheet(() => ({ title: 'Which place?', sub: esc(diet(a.diet).name), pick: true,
-    body: uses.map(x => `<button class="az-option" onclick="closeAll();go('#/suggest?asg=${x.id}')"><span>${esc(useText(x))}<small>${esc([pathNamed(x), plural(followersOf(x).length, 'animal')].filter(Boolean).join(' · '))}</small></span>${I('chevron_right')}</button>`).join('') }));
+    body: uses.map(x => `<button class="az-option" onclick="closeAll();S.draft=null;go('#/new?dept=diet&asg=${x.id}')"><span>${esc(useText(x))}<small>${esc([pathNamed(x), plural(followersOf(x).length, 'animal')].filter(Boolean).join(' · '))}</small></span>${I('chevron_right')}</button>`).join('') }));
 }
 /* Nutrition: energy as one big number, then each group as Diet Info had it, with the calcium to phosphorus ratio under the minerals */
 function nutriTab(d) {
