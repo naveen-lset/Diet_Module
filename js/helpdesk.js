@@ -128,7 +128,7 @@ function rfOff(k, v) { const f = rF(); if (v === null) f[k] = RF0()[k]; else f[k
 /* ---------- one request (record layout) ---------- */
 const lastEv = (r, k) => [...r.events].reverse().find(e => e.kind === k);
 const EVT = { raised: ['Request raised', 'send', ''], edited: ['Request edited', 'edit', ''], delayed: ['Delayed', 'timer', 'wait'], approved: ['Approved', 'check', 'ok'], rejected: ['Rejected', 'close', 'bad'], cancelled: ['Canceled', 'do_not_disturb_on', 'bad'],
-  started: ['Moved to In progress', 'progress_activity', 'ok'], assigned: ['Job In Charge', 'badge', ''], completed: ['Completed', 'task_alt', 'ok'], reopened: ['Moved back to In progress', 'undo', 'wait'], nostock: ['Item not in stock', 'inventory_2', 'wait'], subok: ['Substitute approved', 'check', 'ok'], subno: ['Substitute rejected', 'close', 'bad'] };
+  started: ['Moved to In progress', 'progress_activity', 'ok'], assigned: ['Job In Charge', 'badge', ''], completed: ['Completed', 'task_alt', 'ok'], reopened: ['Moved back to In progress', 'undo', 'wait'], nostock: ['Item not in stock', 'inventory_2', 'wait'], kdelay: ['Delayed by the kitchen', 'schedule', 'wait'], subok: ['Substitute approved', 'check', 'ok'], subno: ['Substitute rejected', 'close', 'bad'] };
 /* what the team wrote when completing: the notes, the team, the files */
 const teamText = e => [plural(e.team || 1, 'person', 'people'), e.people].filter(Boolean).join(' · ');
 /* a request's facts in the Figma's order (Request Module, Req Details 25 Sep 2025): { k, icon, label, v, link } */
@@ -257,7 +257,7 @@ function actFilterSheet() { optionSheet('Show', ACT_F, S.actF || 'all', 'pickAct
 function pickActF(v) { S.actF = v; closeAll(); render(); }
 function activityView(r, { bare = false } = {}) {
   const f = S.actF || 'all'; let prev = null;
-  const items = r.events.map(e => { if (e.kind === 'comment' || e.kind === 'assigned') return { e }; const to = e.kind === 'completed' && isDiet(r) ? 'Diet Updated' : e.kind === 'approved' && isDiet(r) ? 'With Kitchen' : e.kind === 'nostock' ? (e.mode === 'sub' ? 'Substitute To Approve' : 'Waiting For Stock') : e.kind === 'subok' || e.kind === 'subno' ? 'With Kitchen' : ST_TO[e.kind], x = { e, from: e.kind === 'raised' ? null : prev, to }; prev = to; return x; })
+  const items = r.events.map(e => { if (e.kind === 'comment' || e.kind === 'assigned') return { e }; const to = e.kind === 'completed' && isDiet(r) ? 'Diet Updated' : e.kind === 'approved' && isDiet(r) ? 'With Kitchen' : e.kind === 'kdelay' ? `Delayed Till ${fmtDay(e.until)}` : e.kind === 'nostock' ? (e.mode === 'sub' ? 'Substitute To Approve' : 'Waiting For Stock') : e.kind === 'subok' || e.kind === 'subno' ? 'With Kitchen' : ST_TO[e.kind], x = { e, from: e.kind === 'raised' ? null : prev, to }; prev = to; return x; })
     .filter(x => f === 'all' || (f === 'c' ? x.e.kind === 'comment' : x.e.kind !== 'comment')).reverse();
   /* each entry in a tinted box, as the Hub's Help Desk: a comment is a yellow note, a status change a light box in its colour, raised or edited grey */
   const card = x => { const e = x.e, who = `<span class="act__who">${avatar(user(e.by).name, '24')}<b>${youName(e.by)}</b><span>${fmtTime(e.at)} • ${fmtDayY(e.at.slice(0, 10))}</span></span>`;
@@ -293,7 +293,8 @@ function nextLine(r) {
   if (r.state === 'completed') return `By ${youName(lastEv(r, 'completed').by)}`;
   const e = lastEv(r, r.state === 'cancelled' ? 'cancelled' : r.state);
   if (r.state === 'subcheck') return `${youName(lastEv(r, 'nostock').by)}: ${esc(item(r.sub.item).name)} not in stock · use ${esc(item(r.sub.to).name)}?`;
-  if (r.state === 'waitstock') return `${esc(item(r.wait.item).name)} not in stock · the old diet runs till ${fmtDay(r.wait.until)}`;
+  if (r.state === 'waitstock') { const k = lastEv(r, 'kdelay'); if (!k) return `${esc(item(r.wait.item).name)} not in stock · the old diet runs till ${fmtDay(r.wait.until)}`;
+    return `${onTeam(r, me()) ? '' : `By ${youName(k.by)} · `}${esc(r.wait.reason)}${r.wait.note ? '. ' + esc(r.wait.note) : ''}${onTeam(r, me()) ? ' · the old diet runs till then' : ''}`; }
   if (r.state === 'approved' && isDiet(r)) return onTeam(r, me()) ? 'Diet changed · update the items in the kitchen' : 'Waiting for the kitchen to update the items';
   if (r.state === 'approved') return isDiet(r) ? (r.kind === 'ask' ? 'The dietician builds the diet' : changesDiet(r) || r.kind === 'skip' ? 'In the diet · the kitchen has it' : 'With the kitchen') : `By ${youName(e.by)}`;
   return `${youName(e.by)}: ${e.reason}`;
@@ -309,8 +310,8 @@ function statusBar(r) {
   if (a.includes('approve')) btns = `<button class="az-btn az-btn--reject" onclick="reasonSheet('${r.id}','reject')">Reject</button><button class="az-btn az-btn--approve" onclick="doAct('${r.id}','approve')">${I('check')}Approve</button>`;
   /* the team's one next step, as the Help Desk app (the design system: one main green button; going back is outline) */
   else if (a.includes('start')) btns = `<button class="az-btn az-btn--approve" onclick="doAct('${r.id}','start')">${I('progress_activity')}Move To In Progress</button>`;
-  /* the kitchen (owner, 27 Nov 2026): Items Updated, or Item Not In Stock */
-  else if (a.includes('complete') && isDiet(r)) btns = `${a.includes('nostock') ? `<button class="az-btn az-btn--outline" onclick="noStockSheet('${r.id}')">${I('inventory_2')}Not In Stock</button>` : ''}<button class="az-btn az-btn--approve" onclick="completeSheet('${r.id}')">${I('task_alt')}Items Updated</button>`;
+  /* the kitchen (owner, 28 Nov 2026): Delay and Updated only. Updated goes at once, as Approve does */
+  else if (a.includes('complete') && isDiet(r)) btns = `${a.includes('kdelay') ? `<button class="az-btn az-btn--outline" onclick="kDelaySheet('${r.id}')">${I('schedule')}Delay</button>` : ''}<button class="az-btn az-btn--approve" onclick="doAct('${r.id}','complete')">${I('task_alt')}Updated</button>`;
   else if (a.includes('subok')) btns = `<button class="az-btn az-btn--reject" onclick="reasonSheet('${r.id}','subno')">Reject</button><button class="az-btn az-btn--approve" onclick="doAct('${r.id}','subok')">${I('check')}Approve</button>`;
   else if (a.includes('complete')) btns = `<button class="az-btn az-btn--approve" onclick="completeSheet('${r.id}')">${I('task_alt')}Move To Completed</button>`;
   else if (a.includes('reopen')) btns = `<button class="az-btn az-btn--outline az-btn--approve" onclick="reasonSheet('${r.id}','reopen')">${I('undo')}Move Back To In Progress</button>`;
@@ -376,7 +377,7 @@ function completeSheet(id) { if (isDiet(by('requests', id))) return dietDoneShee
   foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button class="az-btn" onclick="doAct(CP.id,'complete',CP)">${I('task_alt')}Complete Request</button>` })); }
 const CP_FILES = [{ name: 'First feed served.jpg', kind: 'image', size: '1.8 MB' }, { name: 'Feed sheet.pdf', kind: 'pdf', size: '180 KB' }];
 function addCpFile() { const f = CP_FILES.find(x => !CP.files.some(y => y.name === x.name)); if (f) CP.files.push(f); redrawSheet(); }
-const DONE = { approve: 'Approved · sent to the kitchen', delay: 'Delayed', reject: 'Rejected', cancel: 'Canceled', start: 'In Progress', assign: 'Job In Charge Set', complete: 'Items updated', reopen: 'Back To In Progress', nostock: 'Sent', subok: 'Substitute approved · sent to the kitchen', subno: 'Substitute rejected' };
+const DONE = { approve: 'Approved · sent to the kitchen', delay: 'Delayed', reject: 'Rejected', cancel: 'Canceled', start: 'In Progress', assign: 'Job In Charge Set', complete: 'Updated', kdelay: 'Delayed', reopen: 'Back To In Progress', nostock: 'Sent', subok: 'Substitute approved · sent to the kitchen', subno: 'Substitute rejected' };
 function doAct(id, kind, x = {}) {
   const r = by('requests', id);
   try { act(r, kind, S.user, x); } catch (e) { toast(e.message); return; }
