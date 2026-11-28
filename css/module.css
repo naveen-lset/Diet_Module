@@ -2791,3 +2791,12 @@ body,.pane,.spsheet__body,.tab .main,.tab .main[class],.spsheet__body:has(.vlist
 /* Nutrition: an icon before each group's name */
 .nutri__h{display:flex;align-items:center;gap:8px}
 .nutri__h > .az-i{color:var(--Primary)}
+
+/* ---------- 28 Nov 2026 · owner review: kitchen Delay / Updated ---------- */
+/* a decision pair in the status bar: the same height (the outline button was 56 px, approve 48 px) and the same width (border-box: give the borderless button a clear border) */
+.az-statusbar__actions .az-btn{height:var(--btn-decision-h);flex:1 1 0}
+.az-statusbar__actions .az-btn:not(.az-btn--outline){border:1px solid transparent}
+/* option rows in a sheet: 8 px between rows, so each choice is its own box ("see there any gap between the options") */
+.az-sheet .sg-list{gap:8px;background:none;border-radius:0;overflow:visible}
+/* Delay Till chips sit in the field, not in a white bar */
+.ns-days{padding:0;background:none;box-shadow:none;gap:8px}

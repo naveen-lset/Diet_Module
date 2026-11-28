@@ -284,10 +284,10 @@ function stateOf(r) {
     case 'pending': return { label: 'Awaiting Approval', tone: 'awaiting', icon: 'pace' };
     case 'delayed': return { label: `Delayed Until ${fmtDay(r.delay.until)}`, tone: 'awaiting', icon: 'timer' };
     case 'approved': return { label: isDiet(r) ? 'Approved · With Kitchen' : 'Approved', tone: 'positive', icon: 'check_circle' };
-    /* the kitchen's side of an approved diet request (owner, 27 Nov 2026): an item not in stock — a substitute waits for the Dietitian's OK,
-       or the kitchen waits for the stock until a day (the old diet runs till then) */
-    case 'subcheck': return { label: 'Substitute To Approve', tone: 'awaiting', icon: 'swap_horiz' };
-    case 'waitstock': return { label: `Waiting For Stock · ${fmtDay(r.wait.until)}`, tone: 'awaiting', icon: 'inventory_2' };
+    /* the kitchen's side of an approved diet request (owner, 28 Nov 2026: "no substitute; Updated, Delay, that's all"): the kitchen delays
+       till a day, for a reason from a list (Sourav's Diet Tab); the old diet runs till then. Past that day it shows Overdue (Sourav) */
+    case 'subcheck': return { label: 'Substitute To Approve', tone: 'awaiting', icon: 'swap_horiz' };   /* older demo data only */
+    case 'waitstock': return kOverdue(r) ? { label: `Overdue · Delayed Till ${fmtDay(r.wait.until)}`, tone: 'negative', icon: 'error' } : { label: `Delayed Till ${fmtDay(r.wait.until)}`, tone: 'awaiting', icon: 'schedule' };
     /* the work after approval, as the Help Desk app: the department moves it to In progress, then to Completed. Positive like Approved (the design system's Positive is "active, approved, done"); the label and icon tell them apart */
     case 'in_progress': return { label: 'In Progress', tone: 'positive', icon: 'progress_activity' };
     case 'completed': return { label: changesDiet(r) ? 'Diet Updated' : 'Completed', tone: 'positive', icon: 'task_alt' };
@@ -299,10 +299,13 @@ function stateOf(r) {
 /* Help Desk tabs (owner, 19 Nov 2026: "Pending Approval has no space"): four that fit the width. Pending holds the delayed ones too;
    Approved holds In progress and Completed; Closed holds Rejected, Canceled and Deleted. Each of the last two has chips under it */
 const HDTABS = [['pending', 'Pending'], ['approved', 'Approved'], ['closed', 'Closed'], ['all', 'All']];
-const HDSUBS = { approved: [['all', 'All'], ['approved', 'With Kitchen'], ['subcheck', 'Substitute'], ['waitstock', 'Waiting For Stock'], ['completed', 'Diet Updated']], closed: [['all', 'All'], ['rejected', 'Rejected'], ['cancelled', 'Canceled'], ['deleted', 'Deleted']] };
+const HDSUBS = { approved: [['all', 'All'], ['approved', 'With Kitchen'], ['waitstock', 'Delayed'], ['completed', 'Diet Updated']], closed: [['all', 'All'], ['rejected', 'Rejected'], ['cancelled', 'Canceled'], ['deleted', 'Deleted']] };
 const wasApproved = r => ['approved', 'in_progress', 'completed', 'subcheck', 'waitstock'].includes(r.state);
 /* what the kitchen still has to do: approved diet requests not yet updated in the kitchen */
 const kitchenTodo = r => isDiet(r) && ['approved', 'waitstock'].includes(r.state);
+const kOverdue = r => r.state === 'waitstock' && !!r.wait && r.wait.until < TODAY;
+/* why the kitchen delays: chosen from a list (Sourav's Diet Tab, 30 Sep 2026) */
+const KDELAY_REASONS = [['Item Not In Stock', 'inventory_2'], ['Supplier Delay', 'local_shipping'], ['Kitchen Staff Unavailable', 'group_off'], ['Equipment Not Ready', 'build'], ['Preparation Time Needed', 'timer']];
 const tabOf = r => r.state === 'delayed' ? 'pending' : wasApproved(r) ? 'approved' : ['rejected', 'cancelled', 'deleted'].includes(r.state) ? 'closed' : r.state;
 /* the Antz priority flags */
 const PRIO = { normal: ['!', 'Normal'], high: ['!!!', 'High'], emergency: ['local_fire_department', 'Emergency'] };
@@ -330,10 +333,10 @@ function actionsFor(r, u) {
   if (ownsReq(r, u.id) && isOpen(r)) a.push('cancel', 'edit');
   if (r.approver === u.id && isOpen(r)) a.push('reject', 'delay', 'approve');
   /* after approval, as the Help Desk app: Move to In progress → Move to Completed; a completed request can be moved back to In progress, with a reason */
-  /* (owner, 27 Nov 2026) a diet request, approved, goes to the kitchen: it is told, sees what changed, updates the items (Items Updated).
-     An item not in stock: a substitute (the Dietitian OKs it) or wait for the stock till a day */
+  /* (owner, 27–28 Nov 2026) a diet request, approved, goes to the kitchen: it is told, sees what changed, and taps Updated or Delay. The kitchen
+     doesn't decide and doesn't substitute; a delayed one keeps Updated to finish it */
   if (onTeam(r, u) && isDiet(r)) {
-    if (r.state === 'approved') a.push('complete', ...(kitItems(r).length ? ['nostock'] : []));
+    if (r.state === 'approved') a.push('complete', 'kdelay');
     if (r.state === 'waitstock') a.push('complete');
   }
   if (r.approver === u.id && r.state === 'subcheck') a.push('subok', 'subno');
@@ -413,7 +416,11 @@ function act(r, kind, uid, x = {}) {
     case 'assign': ev('assigned', { to: x.to }); r.assignee = x.to; break;
     case 'complete': if (isDiet(r) && !r.outcome) { if (planOf(r).block) throw new Error(planOf(r).block); applyApproval(r, at, uid); } ev('completed', { note: (x.note || '').trim(), team: Math.max(1, +x.team || 1), people: (x.people || '').trim(), files: [...(x.files || [])] }); r.state = 'completed'; break;
     case 'reopen': ev('reopened', { reason: x.reason.trim() }); r.state = 'in_progress'; break;
-    case 'nostock':
+    case 'kdelay':
+      if (!x.until || x.until <= TODAY) throw new Error('Choose a day after today');
+      if (!x.reason) throw new Error('Choose why');
+      ev('kdelay', { until: x.until, reason: x.reason, note: (x.note || '').trim() }); r.wait = { until: x.until, reason: x.reason, note: (x.note || '').trim() }; r.state = 'waitstock'; break;
+    case 'nostock':   /* older demo data only: the kitchen no longer reports a substitute */
       if (!x.item) throw new Error('Choose the item');
       if (x.mode === 'sub') { if (!x.to) throw new Error('Choose the substitute'); ev('nostock', { mode: 'sub', item: x.item, to: x.to, note: (x.note || '').trim() }); r.sub = { item: x.item, to: x.to }; r.state = 'subcheck'; }
       else { if (!x.until) throw new Error('Choose the day'); ev('nostock', { mode: 'wait', item: x.item, until: x.until, note: (x.note || '').trim() }); r.wait = { item: x.item, until: x.until }; r.state = 'waitstock'; }

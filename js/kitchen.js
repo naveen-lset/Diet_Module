@@ -1,34 +1,21 @@
 // js/kitchen.js — the kitchen's side of an approved diet request (owner, 27 Nov 2026): "once it is approved the diet plan changes for that
 // place; the kitchen is notified, sees it somewhere and changes the items. If an item is not there, give me an idea." The kitchen hears it
-// from the bell and works from To Update (Requests); on the request it taps Items Updated, or Item Not In Stock: use a substitute (the
-// Dietitian OKs it in one tap and it goes into the diet) or wait for the stock till a day (the old diet runs till then).
+// from the bell and works from To Update (Requests); on the request it taps Updated, or Delay till a day for a reason from a list (owner,
+// 28 Nov 2026: "no substitute; Updated, Delay, that's all"; reasons and Overdue from Sourav's Diet Tab). The old diet runs till then.
 
-/* ---------- Item Not In Stock ---------- */
-let NS = null;
-const NS_DAYS = [[1, 'Tomorrow'], [2, 'In 2 Days'], [3, 'In 3 Days'], [7, 'In A Week']];
-function noStockSheet(id) {
-  const r = by('requests', id), its = kitItems(r), chk = stockCheck(r);
-  NS = { id, item: (chk.find(x => x.status !== 'ok') || chk[0] || {}).item?.id ?? its[0]?.id, mode: 'sub', to: null, days: 2, note: '', q: '' };
-  openSheet(noStockHtml);
-}
-function noStockHtml() {
-  const r = by('requests', NS.id), chk = stockCheck(r), it = NS.item != null ? item(NS.item) : null;
-  const st = x => x.status === 'ok' ? `In store · ${esc(x.need)} a day` : x.status === 'out' ? 'Out of stock' : `Short · ${esc(x.need)} a day`;
-  const which = `<div class="az-field"><span class="az-label">Which Item <span class="az-req">*</span></span><div class="sg-list">${chk.map(x => pkRow(`NS.item=${x.item.id};NS.to=null;redrawSheet()`, pkIc(x.status === 'ok' ? 'inventory_2' : 'warning'), esc(x.item.name), st(x), undefined, NS.item === x.item.id)).join('')}</div></div>`;
-  const how = `<div class="az-field"><span class="az-label">What To Do <span class="az-req">*</span></span><div class="az-segment ns-seg" role="tablist" aria-label="What to do">${thumb()}${[['sub', 'Use A Substitute'], ['wait', 'Wait For Stock']].map(([k, l]) => `<button role="tab" aria-selected="${NS.mode === k}" onclick="NS.mode='${k}';redrawSheet()">${l}</button>`).join('')}</div></div>`;
-  let more = '';
-  if (NS.mode === 'sub') {
-    const q = NS.q.trim().toLowerCase(), opts = D.items.filter(x => !x.mix && it && x.id !== it.id && x.unit === it.unit && (!q || x.name.toLowerCase().includes(q))).sort((a, b) => (b.stock > 0) - (a.stock > 0) || a.name.localeCompare(b.name));
-    more = `<div class="az-field"><span class="az-label">Substitute <span class="az-req">*</span></span>${pkSearch('ns-q', NS.q, 'Search items', 'NS.q=this.value;redrawSheet()')}<div class="sg-list ns-list">${opts.slice(0, 30).map(x => pkRow(`NS.to=${x.id};redrawSheet()`, pkIc('restaurant'), esc(x.name), x.stock > 0 ? `In store · ${x.stock} ${esc(x.stockUnit)}` : 'Out of stock', undefined, NS.to === x.id)).join('') || '<p class="sg-none">No item by that name</p>'}</div></div>
-      <p class="ns-say">${I('info', 18)}<span>${esc(user(r.approver).name)} (Dietitian) OKs the substitute, then it goes into the diet.</span></p>`;
-  } else {
-    more = `<div class="az-field"><span class="az-label">Stock Expected <span class="az-req">*</span></span><div class="az-chips ns-days">${NS_DAYS.map(([n, l]) => `<button class="az-chip" aria-selected="${NS.days === n}" onclick="NS.days=${n};redrawSheet()">${l}</button>`).join('')}</div><small class="ns-sub">${wday(addDays(TODAY, NS.days))} ${fmtDayY(addDays(TODAY, NS.days))} · the old diet runs till then; ${esc(user(r.by).name)} and ${esc(user(r.approver).name)} see it</small></div>`;
-  }
-  const note = `<label class="az-field"><span class="az-label">Note (optional)</span><span class="az-input az-input--text az-textarea"><textarea id="ns-note" rows="2" placeholder="For example, the supplier comes on Monday" oninput="NS.note=this.value">${esc(NS.note)}</textarea></span></label>`;
-  const ok = NS.item != null && (NS.mode === 'wait' || NS.to != null);
-  return { title: 'Item Not In Stock', sub: `${esc(r.id)} · ${esc(diet(r.base)?.name || r.title)}`, bottom: true, form: true, tall: true,
-    body: which + how + more + note,
-    foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button class="az-btn"${ok ? '' : ' disabled'} onclick="doAct(NS.id,'nostock',{item:NS.item,mode:NS.mode,to:NS.to,until:addDays(TODAY,NS.days),note:NS.note})">${NS.mode === 'sub' ? `Send To ${esc(user(r.approver).name)}` : 'Wait For Stock'}</button>` };
+/* ---------- Delay (owner, 28 Nov 2026: "no substitute; Updated, Delay, that's all") ---------- */
+/* till a day and why, from Sourav's list; the old diet runs till then. Everyone else just sees it */
+let KD = null;
+const KD_DAYS = [[1, 'Tomorrow'], [2, '2 Days'], [3, '3 Days'], [7, '1 Week']];
+function kDelaySheet(id) { KD = { id, days: 2, reason: null, note: '' }; openSheet(kDelayHtml); }
+function kDelayHtml() {
+  const r = by('requests', KD.id), until = addDays(TODAY, KD.days);
+  const till = `<div class="az-field"><span class="az-label">Delay Till <span class="az-req">*</span></span><div class="az-chips ns-days">${KD_DAYS.map(([n, l]) => `<button class="az-chip" aria-selected="${KD.days === n}" onclick="KD.days=${n};redrawSheet()">${l}</button>`).join('')}</div><small class="ns-sub">${wday(until)} ${fmtDayY(until)} · the old diet runs till then</small></div>`;
+  const why = `<div class="az-field"><span class="az-label">Why <span class="az-req">*</span></span><div class="sg-list">${KDELAY_REASONS.map(([t, ic]) => pkRow(`KD.reason='${t}';redrawSheet()`, pkIc(ic), t, '', undefined, KD.reason === t)).join('')}</div></div>`;
+  const note = `<label class="az-field"><span class="az-label">Note (optional)</span><span class="az-input az-input--text az-textarea"><textarea id="kd-note" rows="2" placeholder="For example, the supplier comes on Monday" oninput="KD.note=this.value">${esc(KD.note)}</textarea></span></label>`;
+  return { title: 'Delay', sub: `${esc(r.id)} · ${esc(diet(r.base)?.name || r.title)}`, bottom: true, form: true, tall: true,
+    body: till + why + note,
+    foot: `<button class="az-btn az-btn--outline" onclick="closeSheet()">Back</button><button class="az-btn"${KD.reason ? '' : ' disabled'} onclick="doAct(KD.id,'kdelay',{until:addDays(TODAY,KD.days),reason:KD.reason,note:KD.note})">Delay</button>` };
 }
 
 /* ---------- the bell: what is new for this person ---------- */
@@ -46,10 +33,11 @@ function notesFor(uid) {
     if (r.approver === uid && e.by !== uid) {
       if (e.kind === 'raised') add(r, e.at, 'add_circle', `New request: ${nm}`, `From ${by_}`);
       if (e.kind === 'nostock') add(r, e.at, 'inventory_2', e.mode === 'sub' ? `Substitute to approve: ${esc(item(e.to).name)}` : `Waiting for stock: ${esc(item(e.item).name)}`, `${nm} · ${by_}`);
-      if (e.kind === 'completed') add(r, e.at, 'task_alt', `Items updated: ${nm}`, `By ${by_}`);
+      if (e.kind === 'completed') add(r, e.at, 'task_alt', `Updated in the kitchen: ${nm}`, `By ${by_}`);
+      if (e.kind === 'kdelay') add(r, e.at, 'schedule', `Delayed till ${fmtDay(e.until)}: ${nm}`, `${esc(e.reason)} · ${by_}`);
     }
-    if (ownsReq(r, uid) && e.by !== uid && ['approved', 'rejected', 'completed', 'nostock'].includes(e.kind))
-      add(r, e.at, EVT[e.kind][1], `${e.kind === 'completed' ? 'Items updated' : e.kind === 'nostock' ? 'Item not in stock' : EVT[e.kind][0]}: ${nm}`, `By ${by_}`);
+    if (ownsReq(r, uid) && e.by !== uid && ['approved', 'rejected', 'completed', 'nostock', 'kdelay'].includes(e.kind))
+      add(r, e.at, EVT[e.kind][1], `${e.kind === 'completed' ? 'Updated in the kitchen' : e.kind === 'kdelay' ? `Delayed till ${fmtDay(e.until)}` : e.kind === 'nostock' ? 'Item not in stock' : EVT[e.kind][0]}: ${nm}`, e.kind === 'kdelay' ? `${esc(e.reason)} · ${by_}` : `By ${by_}`);
   }));
   return out.sort((a, b) => b.at.localeCompare(a.at));
 }
@@ -64,14 +52,14 @@ function bellSheet() {
 }
 
 /* ---------- the kitchen's To Update tab ---------- */
-/* To Update: approved changes still to make (with a substitute waiting on the Dietitian, or waiting for stock); Done: updated in the kitchen */
+/* To Update: approved changes still to make; Delayed: the kitchen put them off till a day (Overdue past it); Done: updated in the kitchen */
 function kitchenParts(cur = null) {
   const u = me(), q = S.rQ.trim().toLowerCase(), k = S.kTab || 'todo';
   const mine = r => isDiet(r) && visibleTo(r, u) && (!q || [r.id, r.title, r.text, species(r.sp)?.name].some(x => (x || '').toLowerCase().includes(q)));
-  const todo = D.requests.filter(r => mine(r) && ['approved', 'subcheck', 'waitstock'].includes(r.state)), done = D.requests.filter(r => mine(r) && r.state === 'completed');
-  const list = (k === 'todo' ? todo : done).sort((a, b) => (PRIO_RANK[a.prio] - PRIO_RANK[b.prio]) || (lastAt(a) < lastAt(b) ? 1 : -1));
+  const todo = D.requests.filter(r => mine(r) && ['approved', 'subcheck'].includes(r.state)), late = D.requests.filter(r => mine(r) && r.state === 'waitstock'), done = D.requests.filter(r => mine(r) && r.state === 'completed');
+  const list = (k === 'todo' ? todo : k === 'late' ? late : done).sort((a, b) => (PRIO_RANK[a.prio] - PRIO_RANK[b.prio]) || (lastAt(a) < lastAt(b) ? 1 : -1));
   const search = `<div class="az-searchrow"><label class="az-search">${I('search', 20)}<input id="hd-q" placeholder="Search request, diet or ID" value="${esc(S.rQ)}" oninput="S.rQ=this.value;render()" aria-label="Search requests"></label></div>`;
-  const seg = `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Kitchen">${thumb()}${[['todo', `To Update - ${todo.length}`], ['done', `Done - ${done.length}`]].map(([v, l]) => `<button role="tab" aria-selected="${k === v}" onclick="S.kTab='${v}';render();swapFx('.pane .list')">${l}</button>`).join('')}</div></div>`;
-  const body = `<div class="body">${seg}<p class="az-countline lcount">${countText(list.length, 'request')}</p>${list.length ? `<div class="list list--16 hdlist">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1(k === 'todo' ? 'Nothing to update in the kitchen' : 'Nothing updated yet')}</div>`;
+  const seg = `<div class="ltoggle"><div class="az-segment az-segment--sm" role="tablist" aria-label="Kitchen">${thumb()}${[['todo', `To Update - ${todo.length}`], ['late', `Delayed - ${late.length}`], ['done', `Done - ${done.length}`]].map(([v, l]) => `<button role="tab" aria-selected="${k === v}" onclick="S.kTab='${v}';render();swapFx('.pane .list')">${l}</button>`).join('')}</div></div>`;
+  const body = `<div class="body">${seg}<p class="az-countline lcount">${countText(list.length, 'request')}</p>${list.length ? `<div class="list list--16 hdlist">${list.map(r => hdCard(r, cur === r.id)).join('')}</div>` : empty1(k === 'todo' ? 'Nothing to update in the kitchen' : k === 'late' ? 'Nothing delayed' : 'Nothing updated yet')}</div>`;
   return { search, body };
 }
